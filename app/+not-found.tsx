@@ -8,7 +8,7 @@ import { translateWord } from '@/utils/utils';
 
 export default function NotFoundScreen() {
   return (
-    <ThemedView>
+    <ThemedView style={{ flex: 1 }}>
       <div
         style={{
           display: 'flex',
@@ -19,7 +19,7 @@ export default function NotFoundScreen() {
       >
         <AppLogo />
       </div>
-      <Stack.Screen options={{ title: 'Oops!' }} />
+      <Stack.Screen options={{ headerShown: false }} />
       <ThemedView style={styles.container}>
         <ThemedText type="title">{translateWord('wrongPage')}</ThemedText>
         <Link href="/" style={styles.link}>
