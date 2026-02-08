@@ -14,7 +14,7 @@ export default function NotFoundScreen() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '5px 15px 0 15px',
+          padding: '5px 16px 0 16px',
         }}
       >
         <AppLogo />
@@ -23,7 +23,7 @@ export default function NotFoundScreen() {
       <ThemedView style={styles.container}>
         <ThemedText type="title">{translateWord('wrongPage')}</ThemedText>
         <Link href="/" style={styles.link}>
-          <ThemedText type="link">{translateWord('homeScreen')}</ThemedText>
+          <ThemedText type="link">{translateWord('homeScreen').toUpperCase()}</ThemedText>
         </Link>
         <Link href="/" style={styles.link}>
           <img
