@@ -1,15 +1,5 @@
 {
   "projects": {
-    "default": "skedall-caf72",
-    "skedall": "skedall-caf72"
-  },
-  "targets": {
-    "skedall": {
-      "hosting": {
-        "skedall": [
-          "skedall"
-        ]
-      }
-    }
+    "default": "skedall-caf72"
   }
 }
