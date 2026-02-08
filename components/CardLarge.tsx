@@ -357,7 +357,7 @@ export default function CardLarge({
   );
 
   const bookmarkElement =
-    status === GameStatus.SCHEDULED && isSelected ? (
+    status === GameStatus.SCHEDULED && (isSelected || onSelection) ? (
       <View
         style={{
           justifyContent: 'center',
@@ -367,15 +367,19 @@ export default function CardLarge({
         }}
       >
         <Icon
-          name="bookmark"
+          name={isSelected ? 'bookmark' : 'bookmark-o'}
           type="font-awesome"
           size={20}
           color={isDark ? '#ffffff' : '#0f172a'}
-          style={{
-            textShadowColor: homeColorHex,
-            textShadowOffset: { width: 0, height: 0 },
-            textShadowRadius: 3,
-          }}
+          style={
+            isSelected
+              ? {
+                  textShadowColor: homeColorHex,
+                  textShadowOffset: { width: 0, height: 0 },
+                  textShadowRadius: 3,
+                }
+              : {}
+          }
         />
       </View>
     ) : null;
