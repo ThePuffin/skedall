@@ -740,15 +740,23 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     marginTop: 8,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 80,
   },
   timeText: {
     fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 16,
   },
   liveTimeText: {
     color: '#ef4444',
     fontSize: 12,
     fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 16,
   },
   footer: {
     borderTopWidth: 1,
