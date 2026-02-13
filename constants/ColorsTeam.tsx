@@ -79,17 +79,13 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#dd1a32',
     backgroundColor: '#000000',
   },
-  'OLYMPICS-WOMEN-CAN': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WINTER-WOMEN-CAN': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
   'OLYMPICS-MEN-CAN': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#ff0000',
+  },
+  'OLYMPICS-WOMEN-CAN': {
+    color: '#ffffff',
+    backgroundColor: '#ff0000',
   },
   'NHL-CAR': {
     color: '#e30426',
@@ -183,17 +179,13 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#f05023',
     backgroundColor: '#0a2240',
   },
-  'OLYMPICS-WOMEN-CZE': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WINTER-WOMEN-CZE': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
   'OLYMPICS-MEN-CZE': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#d7141a',
+  },
+  'OLYMPICS-WOMEN-CZE': {
+    color: '#ffffff',
+    backgroundColor: '#d7141a',
   },
   'MLS-DC': {
     color: '#d61018',
@@ -217,7 +209,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   },
   'OLYMPICS-MEN-DEN': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#c60c30',
   },
   'NFL-DEN': {
     color: '#fc4c02',
@@ -255,44 +247,32 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#c6093b',
     backgroundColor: '#001f5b',
   },
-  'OLYMPICS-WINTER-WOMEN-FIN': {
+  'OLYMPICS-MEN-FIN': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#002f6c',
   },
   'OLYMPICS-WOMEN-FIN': {
     color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-MEN-FIN': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#002f6c',
   },
   'NHL-FLA': {
     color: '#e51937',
     backgroundColor: '#002d62',
   },
-  'OLYMPICS-WOMEN-FRA': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
   'OLYMPICS-MEN-FRA': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#002395',
   },
-  'OLYMPICS-WINTER-WOMEN-FRA': {
+  'OLYMPICS-WOMEN-FRA': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#002395',
   },
   'OLYMPICS-WOMEN-GER': {
-    color: '#ffffff',
+    color: '#ffce00',
     backgroundColor: '#000000',
   },
   'OLYMPICS-MEN-GER': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WINTER-WOMEN-GER': {
-    color: '#ffffff',
+    color: '#ffce00',
     backgroundColor: '#000000',
   },
   'WNBA-GS': {
@@ -341,15 +321,11 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   },
   'OLYMPICS-WOMEN-ITA': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#0064aa',
   },
   'OLYMPICS-MEN-ITA': {
     color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WINTER-WOMEN-ITA': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#0064aa',
   },
   'NFL-JAX': {
     color: '#d7a22a',
@@ -357,11 +333,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   },
   'OLYMPICS-WOMEN-JPN': {
     color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WINTER-WOMEN-JPN': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#bc002d',
   },
   'NFL-KC': {
     color: '#ffb612',
@@ -393,7 +365,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   },
   'OLYMPICS-MEN-LAT': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#9e3039',
   },
   'MLB-LAA': {
     color: '#c4ced4',
@@ -685,7 +657,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   },
   'OLYMPICS-MEN-SVK': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#0b4ea2',
   },
   'MLS-SKC': {
     color: '#a7c6ed',
@@ -704,28 +676,20 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#001544',
   },
   'OLYMPICS-MEN-SWE': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
+    color: '#fecc00',
+    backgroundColor: '#006aa7',
   },
   'OLYMPICS-WOMEN-SWE': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WINTER-WOMEN-SWE': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WINTER-WOMEN-SUI': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
+    color: '#fecc00',
+    backgroundColor: '#006aa7',
   },
   'OLYMPICS-MEN-SUI': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#da291c',
   },
   'OLYMPICS-WOMEN-SUI': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#da291c',
   },
   'NFL-TB': {
     color: '#bd1c36',
@@ -769,15 +733,11 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   },
   'OLYMPICS-MEN-USA': {
     color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#002868',
   },
   'OLYMPICS-WOMEN-USA': {
     color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WINTER-WOMEN-USA': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
+    backgroundColor: '#002868',
   },
   'NBA-UTAH': {
     color: '#79a3dc',
