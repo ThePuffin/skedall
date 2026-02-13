@@ -27,6 +27,8 @@ const leagueLogos = {
   NCAAB: require('../assets/images/ncaa-basketball.png'),
   NCCABB: require('../assets/images/ncaa-baseball.png'),
   WNCAAB: require('../assets/images/ncaa-basketball-woman.png'),
+  OLYMPICS-MEN: require('../assets/images/OLYMPICS.png'),
+  OLYMPICS-WOMEN: require('../assets/images/OLYMPICS.png'),
   DEFAULT: require('../assets/images/DEFAULT.png'),
 };
 
