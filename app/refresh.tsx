@@ -67,7 +67,7 @@ export default function GameofTheDay() {
   width = windowWidth;
   const isTwoColumns = leaguesAvailable.length > 6;
   const gridTemplateColumns = isTwoColumns ? 'repeat(2, minmax(0, 1fr))' : 'repeat(1, 1fr)';
-  const containerMaxWidth = isTwoColumns ? (width < 700 ? '70%' : '500px') : '300px';
+  const containerMaxWidth = isTwoColumns ? (width < 700 ? '90%' : '600px') : '300px';
   const buttonMaxWidth = isTwoColumns ? (width < 700 ? '100%' : '300px') : width < 600 ? '100%' : '300px';
 
   const displayNoContent = () => {
@@ -186,7 +186,7 @@ export default function GameofTheDay() {
             {
               display: 'grid',
               gridTemplateColumns: gridTemplateColumns,
-              gap: '25px',
+              gap: '50px',
               width: '100%',
               maxWidth: containerMaxWidth,
 
@@ -229,6 +229,7 @@ export default function GameofTheDay() {
                   transition: 'background 0.2s',
                   minWidth: isTwoColumns ? '100px' : '300px',
                   maxWidth: buttonMaxWidth,
+                  width: '100%',
                   display: 'block',
                 }}
               >
