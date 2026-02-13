@@ -40,6 +40,8 @@ export const emoticonEnum = {
   WNCAAB: '⛹️‍♀️',
   WNBA: '⛹️‍♀️',
   MLS: '⚽',
+  'OLYMPICS-MEN': '🏒',
+  'OLYMPICS-WOMEN': '🏒',
 };
 
 export const timeDurationEnum = {
