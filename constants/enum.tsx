@@ -74,8 +74,8 @@ export const leagueLogos = {
   WNCAAB: require('../assets/images/ncaa-basketball-woman.png'),
   'OLYMPICS-MEN': require('../assets/images/OLYMPICS.png'),
   'OLYMPICS-WOMEN': require('../assets/images/OLYMPICS.png'),
-  'OLYMPICS-HOCKEY-MEN': require('../assets/images/OLYMPICS.png'),
-  'OLYMPICS-HOCKEY-WOMEN': require('../assets/images/OLYMPICS.png'),
+  OLYMPICS_HOCKEY_MEN: require('../assets/images/OLYMPICS.png'),
+  OLYMPICS_HOCKEY_WOMEN: require('../assets/images/OLYMPICS.png'),
   DEFAULT: require('../assets/images/DEFAULT.png'),
 };
 

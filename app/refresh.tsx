@@ -2,6 +2,7 @@ import AppLogo from '@/components/AppLogo';
 import NoResults from '@/components/NoResults';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { leagueLogos } from '@/constants/enum';
 import {
   fetchLeagues,
   refreshGamesLeague as refreshGamesLeagueApi,
@@ -13,23 +14,6 @@ import { Image, View, useWindowDimensions } from 'react-native';
 import LoadingView from '../components/LoadingView';
 
 let width: number;
-
-const leagueLogos = {
-  MLB: require('../assets/images/MLB.png'),
-  NBA: require('../assets/images/NBA.png'),
-  NFL: require('../assets/images/NFL.png'),
-  NHL: require('../assets/images/NHL.png'),
-  WNBA: require('../assets/images/WNBA.png'),
-  MLS: require('../assets/images/MLS.png'),
-  PWHL: require('../assets/images/PWHL.png'),
-  NCAAF: require('../assets/images/ncaa-football.png'),
-  NCAAB: require('../assets/images/ncaa-basketball.png'),
-  NCCABB: require('../assets/images/ncaa-baseball.png'),
-  WNCAAB: require('../assets/images/ncaa-basketball-woman.png'),
-  'OLYMPICS-MEN': require('../assets/images/OLYMPICS.png'),
-  'OLYMPICS-WOMEN': require('../assets/images/OLYMPICS.png'),
-  DEFAULT: require('../assets/images/DEFAULT.png'),
-};
 
 export default function GameofTheDay() {
   const [leaguesAvailable, setLeaguesAvailable] = useState<string[]>([]);
@@ -250,7 +234,7 @@ export default function GameofTheDay() {
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
                   <ThemedText style={{ color: '#fff', fontSize: '16px', marginRight: 10 }}>
-                    {league.toUpperCase()}
+                    {league.replace('-', ' ').toUpperCase()}
                   </ThemedText>
                   <Image
                     source={leagueLogos[league.toUpperCase()] || leagueLogos.DEFAULT}
