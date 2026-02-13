@@ -174,7 +174,7 @@ export default function GameofTheDay() {
       const status = getGamesStatus(game);
       if (status === GameStatus.IN_PROGRESS && (!game.homeTeamScore || game.homeTeamScore === null)) {
         inProgress.push(game);
-      } else if (status === GameStatus.FINAL || game.homeTeamScore != null) {
+      } else if (status === GameStatus.FINISHED || game.homeTeamScore != null) {
         finished.push(game);
       } else {
         scheduled.push(game);

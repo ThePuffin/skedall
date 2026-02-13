@@ -74,13 +74,12 @@ export const leagueLogos = {
   WNCAAB: require('../assets/images/ncaa-basketball-woman.png'),
   'OLYMPICS-MEN': require('../assets/images/OLYMPICS.png'),
   'OLYMPICS-WOMEN': require('../assets/images/OLYMPICS.png'),
-  OLYMPICS_HOCKEY_MEN: require('../assets/images/OLYMPICS.png'),
-  OLYMPICS_HOCKEY_WOMEN: require('../assets/images/OLYMPICS.png'),
   DEFAULT: require('../assets/images/DEFAULT.png'),
 };
 
 export enum GameStatus {
   SCHEDULED = 'SCHEDULED',
   IN_PROGRESS = 'IN_PROGRESS',
+  FINISHED = 'FINISHED',
   FINAL = 'FINAL',
 }

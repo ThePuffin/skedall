@@ -173,8 +173,10 @@ export default function CardLarge({
   }, [isLive, pulseAnim]);
 
   let timeText = '';
-  if (status === GameStatus.FINAL) {
+  if ( status === GameStatus.FINISHED) {
     timeText = translateWord('ended');
+  } else if (status === GameStatus.FINAL) {
+    timeText = translateWord('final');
   } else if (status === GameStatus.IN_PROGRESS) {
     timeText = translateWord('followLive');
   } else if (startTimeUTC) {

@@ -27,10 +27,12 @@ export const addDays = (date: string, nbDay: number) => {
 export const getGamesStatus = (game: GameFormatted) => {
   const now = new Date();
   const startTime = new Date(game.startTimeUTC);
-  const duration = timeDurationEnum[game.league as keyof typeof timeDurationEnum] ?? 3;
+  const duration = timeDurationEnum[game.league as keyof typeof timeDurationEnum] ?? 2.5;
   const endTime = new Date(startTime);
   endTime.setHours(endTime.getHours() + duration);
-  if (now > endTime || (game.homeTeamScore && game.awayTeamScore)) {
+  if (game.homeTeamScore !== null && game.awayTeamScore !== null) {
+    return GameStatus.FINISHED;
+  } else if (now > endTime) {
     return GameStatus.FINAL;
   } else if (now >= startTime && now <= endTime) {
     return GameStatus.IN_PROGRESS;
