@@ -40,6 +40,8 @@ export const emoticonEnum = {
   WNCAAB: '⛹️‍♀️',
   WNBA: '⛹️‍♀️',
   MLS: '⚽',
+  OLYMPICS_HOCKEY_MEN: '🏒',
+  OLYMPICS_HOCKEY_WOMEN: '🏒',
   'OLYMPICS-MEN': '🏒',
   'OLYMPICS-WOMEN': '🏒',
 };
@@ -72,6 +74,8 @@ export const leagueLogos = {
   WNCAAB: require('../assets/images/ncaa-basketball-woman.png'),
   'OLYMPICS-MEN': require('../assets/images/OLYMPICS.png'),
   'OLYMPICS-WOMEN': require('../assets/images/OLYMPICS.png'),
+  'OLYMPICS-HOCKEY-MEN': require('../assets/images/OLYMPICS.png'),
+  'OLYMPICS-HOCKEY-WOMEN': require('../assets/images/OLYMPICS.png'),
   DEFAULT: require('../assets/images/DEFAULT.png'),
 };
 
