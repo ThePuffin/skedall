@@ -19,4 +19,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SKEDALL_CAF72 }} 
           channelId: live
           # Correction de l'ID du projet pour pointer vers le projet actif
-          projectId: american-league-schedule
+          projectId: american-sport-leagues-d1e2a

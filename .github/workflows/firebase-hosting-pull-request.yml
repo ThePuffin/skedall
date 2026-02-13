@@ -20,5 +20,5 @@ jobs:
           # Assurez-vous que ce secret contient la clé JSON du projet american-league-schedule
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SKEDALL_CAF72 }}
           # Correction de l'ID du projet
-          projectId: american-league-schedule
+          projectId: american-sport-leagues-d1e2a
           entryPoint: .
