@@ -1,4 +1,5 @@
 import Selector from '@/components/Selector';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { Team } from '@/utils/types';
 import { translateWord } from '@/utils/utils';
 import { Icon } from '@rneui/themed';
@@ -19,10 +20,15 @@ export default function TeamReorderSelector({
   maxTeams = 5,
   onChange,
   allowedLeagues = [],
-}: TeamReorderSelectorProps) {
+}: Readonly<TeamReorderSelectorProps>) {
   const [isSmallDevice, setIsSmallDevice] = useState(Dimensions.get('window').width < 768);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [openFirstTeamSelector, setOpenFirstTeamSelector] = useState(false);
+
+  const textColor = useThemeColor({}, 'text');
+  const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#000' }, 'background');
+  const borderColor = useThemeColor({}, 'text');
+  const effectiveIconColor = textColor;
 
   useEffect(() => {
     const subscription = Dimensions.addEventListener('change', ({ window }) => {
@@ -121,7 +127,7 @@ export default function TeamReorderSelector({
                             name="chevron-up"
                             type="font-awesome"
                             size={14}
-                            color="#333"
+                            color={textColor}
                             style={{ marginBottom: 2 }}
                           />
                         </TouchableOpacity>
@@ -132,14 +138,14 @@ export default function TeamReorderSelector({
                             name="chevron-down"
                             type="font-awesome"
                             size={14}
-                            color="#333"
+                            color={textColor}
                             style={{ marginTop: 2 }}
                           />
                         </TouchableOpacity>
                       )}
                     </View>
                   ) : (
-                    <Icon name="bars" type="font-awesome" size={14} color="#ccc" />
+                    <Icon name="bars" type="font-awesome" size={14} color={textColor} />
                   ))}
               </View>
               <View style={{ flex: 1 }}>
@@ -155,9 +161,9 @@ export default function TeamReorderSelector({
                   isClearable={true}
                   placeholder={translateWord('findTeam')}
                   startOpen={index === 0 && openFirstTeamSelector}
-                  style={{ backgroundColor: 'white', borderColor: '#ccc' }}
-                  textStyle={{ color: '#333', fontWeight: 'normal' }}
-                  iconColor="#666"
+                  style={{ backgroundColor, borderColor }}
+                  textStyle={{ color: textColor, fontWeight: 'normal' }}
+                  iconColor={effectiveIconColor}
                 />
               </View>
             </View>

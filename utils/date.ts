@@ -18,7 +18,7 @@ export const getHourGame = (startTimeUTC: string | Date, venueUTCOffset: string)
   return `${hourStart}:${minStart}`;
 };
 
-export const addDays = (date: string, nbDay: number) => {
+export const addDays = (date: string | Date, nbDay: number) => {
   const day = new Date(date);
   day.setDate(day.getDate() + nbDay);
   return day.toString();

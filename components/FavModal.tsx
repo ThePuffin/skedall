@@ -3,6 +3,7 @@ import Selector from '@/components/Selector';
 import TeamReorderSelector from '@/components/TeamReorderSelector';
 import { LeaguesEnum } from '@/constants/Leagues';
 import { TeamsEnum } from '@/constants/Teams';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { fetchLeagues, getCache, saveCache } from '@/utils/fetchData';
 import { Team } from '@/utils/types';
 import { translateWord } from '@/utils/utils';
@@ -30,6 +31,11 @@ const FavModal = ({
     return cached && cached.length > 0 ? cached : Object.values(LeaguesEnum);
   });
   const [showScores, setShowScores] = useState(false);
+
+  const textColor = useThemeColor({}, 'text');
+  const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#000' }, 'background');
+  const borderColor = useThemeColor({}, 'text');
+  const itemBackgroundColor = useThemeColor({ light: '#f0f0f0', dark: '#2c2c2e' }, 'background');
 
   useEffect(() => {
     if (isOpen) {
@@ -100,10 +106,10 @@ const FavModal = ({
     <Modal visible={isOpen} transparent animationType="slide" onRequestClose={() => hasFavorites && onClose()}>
       <Pressable style={styles.centeredView} onPress={() => hasFavorites && onClose()}>
         <Pressable
-          style={[styles.modalView, isSmallDevice && { width: '90%', maxHeight: '90%' }]}
+          style={[styles.modalView, { backgroundColor }, isSmallDevice && { width: '90%', maxHeight: '90%' }]}
           onPress={(e) => e.stopPropagation()}
         >
-          <Text style={styles.modalText}>{translateWord('leagueSurveilled')}:</Text>
+          <Text style={[styles.modalText, { color: textColor }]}>{translateWord('leagueSurveilled')}:</Text>
 
           <View style={{ marginBottom: 15, zIndex: 20, flexDirection: 'row', alignItems: 'center' }}>
             <View style={{ marginRight: 5, width: 20 }} />
@@ -126,14 +132,14 @@ const FavModal = ({
                 isClearable={false}
                 placeholder={translateWord('filterLeagues')}
                 startOpen={!hasFavorites}
-                style={{ backgroundColor: 'white', borderColor: '#ccc' }}
-                textStyle={{ color: '#333', fontWeight: 'normal' }}
-                iconColor="#666"
+                style={{ backgroundColor, borderColor }}
+                textStyle={{ color: textColor, fontWeight: 'normal' }}
+                iconColor={textColor}
               />
             </View>
           </View>
 
-          <Text style={styles.modalText}>{translateWord('yourFav')}:</Text>
+          <Text style={[styles.modalText, { color: textColor }]}>{translateWord('yourFav')}:</Text>
           <View style={styles.selector}>
             <TeamReorderSelector
               teams={localFavorites}
@@ -144,7 +150,7 @@ const FavModal = ({
             />
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 15 }}>
-            <Text style={{ marginRight: 10 }}>{translateWord('scoreView')} :</Text>
+            <Text style={{ marginRight: 10, color: textColor }}>{translateWord('scoreView')} :</Text>
             <ScoreToggle value={showScores} onValueChange={setShowScores} />
           </View>
 
@@ -175,7 +181,6 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: 'white',
     borderRadius: 20,
     padding: 20,
     alignItems: 'stretch',

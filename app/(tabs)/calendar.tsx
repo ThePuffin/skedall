@@ -16,7 +16,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  useColorScheme,
   useWindowDimensions,
 } from 'react-native';
 import Accordion from '../../components/Accordion';
@@ -32,9 +31,10 @@ const EXPO_PUBLIC_API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://sportschedule2025backend.onrender.com';
 
 export default function Calendar() {
-  const theme = useColorScheme() ?? 'light';
   const iconColor = useThemeColor({}, 'text');
   const backgroundColor = useThemeColor({ light: '#F0F0F0', dark: '#121212' }, 'background');
+  const modalBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#000' }, 'background');
+  const textColor = useThemeColor({}, 'text');
   const { width } = useWindowDimensions();
   const isSmallDevice = width < 768;
   const [games, setGames] = useState<FilterGames>({});
@@ -42,7 +42,6 @@ export default function Calendar() {
   const [teamsSelected, setTeamsSelected] = useState<string[]>([]);
   const [gamesSelected, setGamesSelected] = useState<GameFormatted[]>([]);
   const [maxTeamsNumber, setMaxTeamsNumber] = useState(6);
-  const [teamIdToOpen, setTeamIdToOpen] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const ActionButtonRef = useRef<ActionButtonRef>(null);
   const [allowedLeagues, setAllowedLeagues] = useState<string[]>([]);
@@ -239,20 +238,6 @@ export default function Calendar() {
 
     if (selectedTeams.length !== 0) {
       saveCache('teamsSelected', selectedTeams);
-    }
-  };
-
-  const handleTeamSelectionChange = (teamSelectedId: string | string[], i: number) => {
-    setTeamIdToOpen(null);
-    if (typeof teamSelectedId === 'string') {
-      const newTeamsSelected = [...teamsSelected];
-      newTeamsSelected[i] = teamSelectedId;
-      storeTeamsSelected(newTeamsSelected);
-      const newSelection = gamesSelected.filter((gameSelected) =>
-        newTeamsSelected.includes(gameSelected.teamSelectedId),
-      );
-      setGamesSelected(newSelection);
-      saveCache('gameSelected', newSelection);
     }
   };
 
@@ -489,8 +474,8 @@ export default function Calendar() {
         onRequestClose={() => setReorderModalVisible(false)}
       >
         <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>{translateWord('filterTeams')}</Text>
+          <View style={[styles.modalView, { backgroundColor: modalBackgroundColor }]}>
+            <Text style={[styles.modalText, { color: textColor }]}>{translateWord('filterTeams')}</Text>
             <ScrollView style={{ width: '100%', maxHeight: 400 }}>
               <TeamReorderSelector
                 teams={tempTeams}
@@ -504,7 +489,10 @@ export default function Calendar() {
               <Pressable style={[styles.button, styles.buttonCancel]} onPress={() => setReorderModalVisible(false)}>
                 <Text style={styles.textStyle}>{translateWord('cancel')}</Text>
               </Pressable>
-              <Pressable style={[styles.button, styles.buttonSave]} onPress={handleSaveReorder}>
+              <Pressable
+                style={[styles.button, styles.buttonSave, { borderColor: textColor, borderWidth: 1 }]}
+                onPress={handleSaveReorder}
+              >
                 <Text style={styles.textStyle}>{translateWord('register')}</Text>
               </Pressable>
             </View>
@@ -525,7 +513,6 @@ const styles = StyleSheet.create({
   },
   modalView: {
     margin: 20,
-    backgroundColor: 'white',
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
@@ -569,6 +556,5 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontSize: 18,
     fontWeight: 'bold',
-    color: 'black',
   },
 });
