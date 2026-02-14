@@ -1,24 +1,44 @@
 import AppLogo from '@/components/AppLogo';
 import DateRangePicker from '@/components/DatePicker';
+import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { fetchTeams, getCache, saveCache } from '@/utils/fetchData';
+import { FontAwesome } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, ScrollView } from 'react-native';
+import {
+  Dimensions,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+  useWindowDimensions,
+} from 'react-native';
 import Accordion from '../../components/Accordion';
 import { ActionButton, ActionButtonRef } from '../../components/ActionButton';
 import Buttons from '../../components/Buttons';
+import FilterSlider from '../../components/FilterSlider';
 import GamesSelected from '../../components/GamesSelected';
 import LoadingView from '../../components/LoadingView';
-import Selector from '../../components/Selector';
-import { ButtonsKind, GameStatus } from '../../constants/enum';
-import { addDays, getGamesStatus, readableDate } from '../../utils/date';
+import TeamReorderSelector from '../../components/TeamReorderSelector';
+import { ButtonsKind } from '../../constants/enum';
+import { addDays, readableDate } from '../../utils/date';
 import { FilterGames, GameFormatted, Team } from '../../utils/types';
 import { addNewTeamId, removeLastTeamId, translateWord } from '../../utils/utils';
 const EXPO_PUBLIC_API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://sportschedule2025backend.onrender.com';
 
 export default function Calendar() {
+  const theme = useColorScheme() ?? 'light';
+  const iconColor = useThemeColor({}, 'text');
+  const backgroundColor = useThemeColor({ light: '#F0F0F0', dark: '#121212' }, 'background');
+  const { width } = useWindowDimensions();
+  const isSmallDevice = width < 768;
   const [games, setGames] = useState<FilterGames>({});
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsSelected, setTeamsSelected] = useState<string[]>([]);
@@ -29,6 +49,8 @@ export default function Calendar() {
   const scrollViewRef = useRef<ScrollView>(null);
   const ActionButtonRef = useRef<ActionButtonRef>(null);
   const [allowedLeagues, setAllowedLeagues] = useState<string[]>([]);
+  const [reorderModalVisible, setReorderModalVisible] = useState(false);
+  const [tempTeams, setTempTeams] = useState<string[]>([]);
 
   useEffect(() => {
     const updateLeagues = () => {
@@ -96,6 +118,7 @@ export default function Calendar() {
   });
 
   const handleDateChange = (startDate: Date, endDate: Date) => {
+    setGames({});
     const start = startDate.toISOString();
     const end = endDate.toISOString();
     localStorage.setItem('startDate', start);
@@ -185,8 +208,8 @@ export default function Calendar() {
       let start = readableDate(dateRange.startDate);
       let end = readableDate(dateRange.endDate);
       if (startDate && endDate) {
-        start = readableDate(startDate);
-        end = readableDate(endDate);
+        start = readableDate(new Date(startDate));
+        end = readableDate(new Date(endDate));
       }
 
       try {
@@ -289,29 +312,14 @@ export default function Calendar() {
     saveCache('gameSelected', newSelection);
   };
 
-  const displaySelectors = () => {
-    return filteredTeamsSelected.map((teamSelectedId) => {
-      const i = teamsSelected.indexOf(teamSelectedId);
-      const teamsAvailable = teams.filter(
-        (team) =>
-          (!teamsSelected.includes(team.uniqueId) || team.uniqueId === teamSelectedId) &&
-          (allowedLeagues.length === 0 || allowedLeagues.includes(team.league)),
-      );
-      const data = { i, items: teamsAvailable, itemsSelectedIds: teamsSelected, itemSelectedId: teamSelectedId };
-      return (
-        <div key={`selector-${teamSelectedId}-${teamsSelected.length}`} style={{ padding: 5, minWidth: 30, flex: 1 }}>
-          <ThemedView>
-            <Selector
-              data={data}
-              onItemSelectionChange={handleTeamSelectionChange}
-              isClearable={false}
-              placeholder={translateWord('filterTeams')}
-              startOpen={teamSelectedId === teamIdToOpen}
-            />
-          </ThemedView>
-        </div>
-      );
-    });
+  const handleOpenReorder = () => {
+    setTempTeams(teamsSelected);
+    setReorderModalVisible(true);
+  };
+
+  const handleSaveReorder = () => {
+    storeTeamsSelected(tempTeams);
+    setReorderModalVisible(false);
   };
 
   const displayAccordions = () => {
@@ -320,15 +328,21 @@ export default function Calendar() {
     const sortedDates = Object.keys(games).sort();
 
     return sortedDates.map((date, index) => {
-      const gamesForDate = games[date].filter(
-        (g) => filteredTeamsSelected.includes(g.teamSelectedId) && getGamesStatus(g) === GameStatus.SCHEDULED,
-      );
+      const [year, month, day] = date.split('-').map(Number);
+      const gameDate = new Date(year, month - 1, day);
+      if (isNaN(gameDate.getTime())) return null;
+      const startDate = new Date(dateRange.startDate);
+      startDate.setHours(0, 0, 0, 0);
+      const endDate = new Date(dateRange.endDate);
+      endDate.setHours(23, 59, 59, 999);
+
+      if (gameDate < startDate || gameDate > endDate) return null;
+
+      const gamesForDate = games[date].filter((g) => filteredTeamsSelected.includes(g.teamSelectedId));
 
       if (gamesForDate.length === 0) return null;
 
-      const [year, month, day] = date.split('-').map(Number);
-      const localDate = new Date(year, month - 1, day);
-      const formattedDate = localDate.toLocaleDateString(undefined, {
+      const formattedDate = gameDate.toLocaleDateString(undefined, {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
@@ -405,35 +419,155 @@ export default function Calendar() {
         )}
         <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
           <ThemedView>
-            <div style={{ position: 'relative', zIndex: 20 }}>
-              <DateRangePicker dateRange={dateRange} onDateChange={handleDateChange} />
-            </div>
-            <Buttons
-              onClicks={handleButtonClick}
-              data={{
-                selectedTeamsNumber: teamsSelected.length,
-                selectedGamesNumber: gamesSelected.length,
-                loadingTeams,
-                maxTeamsNumber,
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'row',
-                flexWrap: 'nowrap',
-                overflowX: 'auto',
-                width: '100%',
-              }}
-            >
-              {displaySelectors()}
+            <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
+              <div style={{ position: 'relative', zIndex: 20 }}>
+                <DateRangePicker dateRange={dateRange} onDateChange={handleDateChange} />
+              </div>
+              <Buttons
+                onClicks={handleButtonClick}
+                data={{
+                  selectedTeamsNumber: teamsSelected.length,
+                  selectedGamesNumber: gamesSelected.length,
+                  loadingTeams,
+                  maxTeamsNumber,
+                }}
+              />
+              <ThemedElements>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'row',
+                    width: '100%',
+                    alignItems: 'center',
+                    paddingLeft: 15,
+                    maskImage:
+                      'linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%)',
+                    WebkitMaskImage:
+                      'linear-gradient(to right, transparent 0%, black 40px, black calc(100% - 40px), transparent 100%)',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={handleOpenReorder}
+                    style={{
+                      position: 'relative',
+                      width: 40,
+                      height: 40,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 10,
+                      backgroundColor,
+                      border: `1px solid ${iconColor}`,
+                      borderRadius: '50%',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <FontAwesome name="columns" size={20} color={iconColor} />
+                  </TouchableOpacity>
+                  <View style={{ flex: 1, overflow: 'hidden' }}>
+                    <FilterSlider
+                      data={filteredTeamsSelected
+                        .map((id) => teams.find((t) => t.uniqueId === id))
+                        .filter((t): t is Team => !!t)
+                        .map((t) => ({ label: t.teamCommonName, value: t.uniqueId }))}
+                    />
+                  </View>
+                </div>
+              </ThemedElements>
             </div>
           </ThemedView>
         </div>
         {!teamsSelected.length && <LoadingView />}
         {displayAccordions()}
       </ScrollView>
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={reorderModalVisible}
+        onRequestClose={() => setReorderModalVisible(false)}
+      >
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalText}>{translateWord('filterTeams')}</Text>
+            <ScrollView style={{ width: '100%', maxHeight: 400 }}>
+              <TeamReorderSelector
+                teams={tempTeams}
+                allTeams={teams}
+                maxTeams={9}
+                onChange={setTempTeams}
+                allowedLeagues={allowedLeagues}
+              />
+            </ScrollView>
+            <View style={styles.buttonsContainer}>
+              <Pressable style={[styles.button, styles.buttonCancel]} onPress={() => setReorderModalVisible(false)}>
+                <Text style={styles.textStyle}>{translateWord('cancel')}</Text>
+              </Pressable>
+              <Pressable style={[styles.button, styles.buttonSave]} onPress={handleSaveReorder}>
+                <Text style={styles.textStyle}>{translateWord('register')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
       <ActionButton ref={ActionButtonRef} scrollViewRef={scrollViewRef} />
     </ThemedView>
   );
 }
+
+const styles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: '90%',
+    maxWidth: 500,
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 20,
+    gap: 10,
+  },
+  button: {
+    borderRadius: 20,
+    padding: 10,
+    elevation: 2,
+    flex: 1,
+  },
+  buttonCancel: {
+    backgroundColor: '#808080',
+  },
+  buttonSave: {
+    backgroundColor: 'black',
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'black',
+  },
+});

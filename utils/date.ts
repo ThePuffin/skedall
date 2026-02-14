@@ -30,7 +30,7 @@ export const getGamesStatus = (game: GameFormatted) => {
   const duration = timeDurationEnum[game.league as keyof typeof timeDurationEnum] ?? 2.5;
   const endTime = new Date(startTime);
   endTime.setHours(endTime.getHours() + duration);
-  if (game.homeTeamScore !== null && game.awayTeamScore !== null) {
+  if (now >= startTime && typeof game.homeTeamScore === 'number' && typeof game.awayTeamScore === 'number') {
     return GameStatus.FINISHED;
   } else if (now > endTime) {
     return GameStatus.FINAL;
