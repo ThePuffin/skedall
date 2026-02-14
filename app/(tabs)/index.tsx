@@ -347,7 +347,7 @@ export default function GameofTheDay() {
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          padding: '5px 15px 0 15px',
+          padding: '5px 15px 5px 15px',
         }}
       >
         <AppLogo />

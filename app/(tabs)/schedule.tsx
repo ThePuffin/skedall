@@ -428,7 +428,7 @@ export default function Schedule() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  padding: '5px 15px 0 15px',
+                  padding: '5px 15px 5px 15px',
                 }}
               >
                 <AppLogo />
@@ -471,7 +471,7 @@ export default function Schedule() {
                   {showTeamFilter && (
                     <div style={{ width: isSmallDevice ? '100%' : '50%' }}>
                       <TeamFilter
-                        icon={<FontAwesome6 name="arrows-left-right-to-line" size={18} color="white" />}
+                        icon={<FontAwesome6 name="people-arrows" size={18} color="white" />}
                         selectorData={dataTeamsFilter}
                         onSelectorChange={handleTeamFilterChange}
                         selectorPlaceholder={translateWord('filterTeams')}
