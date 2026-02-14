@@ -1,3 +1,5 @@
+import { useFavoriteColor } from '@/hooks/useFavoriteColor';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import React from 'react';
 import { ScrollView, StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
 
@@ -5,6 +7,7 @@ interface FilterSliderProps {
   data?: { label: string; value: string }[];
   availableLeagues?: string[];
   selectedFilter?: string;
+  selectedFilters?: string[];
   onFilterChange?: (value: string) => void;
   showFavorites?: boolean;
   hasFavorites?: boolean;
@@ -22,6 +25,7 @@ export default function FilterSlider(props: FilterSliderProps) {
     data,
     availableLeagues,
     selectedFilter,
+    selectedFilters,
     onFilterChange,
     style,
     itemStyle,
@@ -29,6 +33,10 @@ export default function FilterSlider(props: FilterSliderProps) {
     textStyle,
     selectedTextStyle,
   } = props;
+
+  const themeTextColor = useThemeColor({}, 'text');
+  const unselectedBackgroundColor = useThemeColor({ light: '#e0e0e0', dark: '#333333' }, 'background');
+  const { backgroundColor: selectedBackgroundColor, textColor: selectedTextColor } = useFavoriteColor('#3b82f6');
 
   let items: { label: string; value: string }[] = [];
 
@@ -42,14 +50,15 @@ export default function FilterSlider(props: FilterSliderProps) {
     <View style={[styles.container, style]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {items.map((item) => {
-          const isSelected = selectedFilter === item.value;
+          const isSelected = selectedFilters ? selectedFilters.includes(item.value) : selectedFilter === item.value;
           return (
             <TouchableOpacity
               key={item.value}
               style={[
                 styles.chip,
+                { backgroundColor: unselectedBackgroundColor },
                 itemStyle,
-                isSelected ? { backgroundColor: 'black' } : {},
+                isSelected ? { backgroundColor: selectedBackgroundColor } : {},
                 isSelected ? selectedItemStyle : {},
               ]}
               onPress={() => onFilterChange && onFilterChange(item.value)}
@@ -57,8 +66,9 @@ export default function FilterSlider(props: FilterSliderProps) {
               <Text
                 style={[
                   styles.chipText,
+                  { color: themeTextColor },
                   textStyle,
-                  isSelected ? { color: 'white' } : {},
+                  isSelected ? { color: selectedTextColor } : {},
                   isSelected ? selectedTextStyle : {},
                 ]}
               >
@@ -85,7 +95,6 @@ const styles = StyleSheet.create({
     paddingLeft: 5,
   },
   chip: {
-    backgroundColor: '#e0e0e0',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
@@ -93,7 +102,6 @@ const styles = StyleSheet.create({
   },
   chipText: {
     fontSize: 14,
-    color: '#000',
     fontWeight: '500',
   },
 });
