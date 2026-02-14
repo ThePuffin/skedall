@@ -418,6 +418,7 @@ export default function Calendar() {
                     }
                   >
                     <FilterSlider
+                      multipleSelection={true}
                       data={[
                         { label: translateWord('all'), value: 'ALL' },
                         ...filteredTeamsSelected

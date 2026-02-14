@@ -59,15 +59,13 @@ const pruneOldGamesCache = (cache: { [key: string]: GameFormatted[] }) => {
 };
 
 export default function GameofTheDay() {
-  const LeaguesWithoutAll = Object.values(League).filter((league) => league !== League.ALL);
+  const allLeaguesList = Object.values(League);
   const currentDate = new Date();
   const [games, setGames] = useState<GameFormatted[]>([]);
   const [selectDate, setSelectDate] = useState<Date>(currentDate);
-  const [selectLeagues, setSelectLeagues] = useState<League[]>(
-    getCache<League[]>('leaguesSelected') || LeaguesWithoutAll,
-  );
+  const [selectLeagues, setSelectLeagues] = useState<League[]>(getCache<League[]>('leaguesSelected') || allLeaguesList);
   const [userLeagues, setUserLeagues] = useState<League[]>(
-    () => getCache<League[]>('leaguesSelected') || LeaguesWithoutAll,
+    () => getCache<League[]>('leaguesSelected') || allLeaguesList,
   );
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>(() => getCache<string[]>('favoriteTeams') || []);
   // Add state for the filter slider
@@ -310,7 +308,7 @@ export default function GameofTheDay() {
         setSelectLeagues(userLeagues);
         setTeamSelectedId('');
       } else if (filter === 'FAVORITES') {
-        setSelectLeagues(LeaguesWithoutAll);
+        setSelectLeagues(allLeaguesList);
         setTeamSelectedId('');
       } else {
         // Specific league
@@ -318,7 +316,7 @@ export default function GameofTheDay() {
         setTeamSelectedId('');
       }
     },
-    [LeaguesWithoutAll, userLeagues],
+    [allLeaguesList, userLeagues],
   );
 
   const handleTeamSelectionChange = useCallback((teamId: string | string[]) => {
@@ -513,7 +511,10 @@ export default function GameofTheDay() {
                     selectedFilter={activeFilter}
                     onFilterChange={handleFilterChange}
                     hasFavorites={hasFavorites}
-                    availableLeagues={userLeagues}
+                    data={[
+                      { label: translateWord('all'), value: 'ALL' },
+                      ...userLeagues.filter((l) => l !== 'ALL').map((l) => ({ label: l, value: l })),
+                    ]}
                   />
                 </ThemedElements>
                 <Separator />
