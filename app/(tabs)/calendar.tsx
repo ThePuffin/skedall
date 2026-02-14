@@ -23,6 +23,7 @@ import { ActionButton, ActionButtonRef } from '../../components/ActionButton';
 import FilterSlider from '../../components/FilterSlider';
 import GamesSelected from '../../components/GamesSelected';
 import LoadingView from '../../components/LoadingView';
+import Separator from '../../components/Separator';
 import TeamReorderSelector from '../../components/TeamReorderSelector';
 import { addDays, readableDate } from '../../utils/date';
 import { FilterGames, GameFormatted, Team } from '../../utils/types';
@@ -374,9 +375,6 @@ export default function Calendar() {
         <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
           <ThemedView>
             <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
-              <div style={{ position: 'relative', zIndex: 20 }}>
-                <DateRangePicker dateRange={dateRange} onDateChange={handleDateChange} />
-              </div>
               <ThemedElements>
                 <div
                   style={{
@@ -459,6 +457,12 @@ export default function Calendar() {
                   >
                     <Ionicons name="bookmarks-outline" size={20} color={iconColor} />
                   </TouchableOpacity>
+                </div>
+              </ThemedElements>
+              <Separator />
+              <ThemedElements style={{ zIndex: 20 }}>
+                <div style={{ position: 'relative' }}>
+                  <DateRangePicker dateRange={dateRange} onDateChange={handleDateChange} />
                 </div>
               </ThemedElements>
             </div>

@@ -2,8 +2,10 @@ import AppLogo from '@/components/AppLogo';
 import FilterSlider from '@/components/FilterSlider';
 import NoResults from '@/components/NoResults';
 import ScoreToggle from '@/components/ScoreToggle';
+import Separator from '@/components/Separator';
 import SliderDatePicker from '@/components/SliderDatePicker';
 import TeamFilter from '@/components/TeamFilter';
+import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
 import { getGamesStatus } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
@@ -506,13 +508,17 @@ export default function GameofTheDay() {
                     : {}
                 }
               >
-                <FilterSlider
-                  selectedFilter={activeFilter}
-                  onFilterChange={handleFilterChange}
-                  hasFavorites={hasFavorites}
-                  availableLeagues={userLeagues}
-                />
+                <ThemedElements>
+                  <FilterSlider
+                    selectedFilter={activeFilter}
+                    onFilterChange={handleFilterChange}
+                    hasFavorites={hasFavorites}
+                    availableLeagues={userLeagues}
+                  />
+                </ThemedElements>
+                <Separator />
                 {displayFilters()}
+                <Separator />
                 <SliderDatePicker onDateChange={(date) => handleDateChange(date, date)} selectDate={selectDate} />
               </div>
             </div>

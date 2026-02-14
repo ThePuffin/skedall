@@ -2,6 +2,7 @@ import AppLogo from '@/components/AppLogo';
 import FilterSlider from '@/components/FilterSlider';
 import NoResults from '@/components/NoResults';
 import TeamFilter from '@/components/TeamFilter';
+import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
 import { useFavoriteColor } from '@/hooks/useFavoriteColor';
 import { getRandomTeamId, randomNumber, translateWord } from '@/utils/utils';
@@ -14,6 +15,7 @@ import { ActionButton, ActionButtonRef } from '../../components/ActionButton';
 import CardLarge from '../../components/CardLarge';
 import { ColumnData } from '../../components/ColumnsLayout';
 import LoadingView from '../../components/LoadingView';
+import Separator from '../../components/Separator';
 import {
   fetchLeagues,
   fetchRemainingGamesByLeague,
@@ -434,7 +436,7 @@ export default function Schedule() {
                 <AppLogo />
               </div>
               <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
-                <div style={{ width: '100%' }}>
+                <ThemedElements style={{ width: '100%' }}>
                   <FilterSlider
                     selectedFilter={leagueOfSelectedTeam}
                     onFilterChange={handleLeagueSelectionChange}
@@ -443,7 +445,8 @@ export default function Schedule() {
                     hasFavorites={false}
                     showAll={false}
                   />
-                </div>
+                </ThemedElements>
+                <Separator />
                 <div
                   style={
                     isSmallDevice
