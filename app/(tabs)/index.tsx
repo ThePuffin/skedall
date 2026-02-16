@@ -11,7 +11,7 @@ import { getGamesStatus } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, useWindowDimensions } from 'react-native';
+import { PanResponder, ScrollView, useWindowDimensions, View } from 'react-native';
 import Accordion from '../../components/Accordion';
 import { ActionButton, ActionButtonRef } from '../../components/ActionButton';
 import LoadingView from '../../components/LoadingView';
@@ -106,6 +106,31 @@ export default function GameofTheDay() {
   const gamesDayCache = useRef<{ [key: string]: GameFormatted[] }>({});
   const scrollViewRef = useRef<ScrollView>(null);
   const ActionButtonRef = useRef<ActionButtonRef>(null);
+
+  const selectDateRef = useRef(selectDate);
+  useEffect(() => {
+    selectDateRef.current = selectDate;
+  }, [selectDate]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (evt, gestureState) => {
+        return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
+      },
+      onPanResponderEnd: (evt, gestureState) => {
+        if (Math.abs(gestureState.dx) > 50) {
+          const currentDate = selectDateRef.current;
+          const newDate = new Date(currentDate);
+          if (gestureState.dx > 0) {
+            newDate.setDate(newDate.getDate() - 1);
+          } else {
+            newDate.setDate(newDate.getDate() + 1);
+          }
+          handleDateChange(newDate, newDate);
+        }
+      },
+    }),
+  ).current;
 
   useEffect(() => {
     const updateFavorites = () => {
@@ -487,54 +512,55 @@ export default function GameofTheDay() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <ScrollView
-        ref={scrollViewRef}
-        onScroll={(event) => ActionButtonRef.current?.handleScroll(event)}
-        scrollEventThrottle={16}
-      >
-        <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-          <ThemedView>
-            <div style={{ position: 'relative', zIndex: 20 }}>
-              {displayScoreToggle()}
-              <div
-                style={
-                  windowWidth > 768
-                    ? {
-                        width: windowWidth < 1200 ? '95%' : '100%',
-                        margin: '0 auto',
-                        padding: 10,
-                        boxSizing: 'border-box',
-                      }
-                    : {}
-                }
-              >
-                <ThemedElements>
-                  <FilterSlider
-                    selectedFilter={activeFilter}
-                    onFilterChange={handleFilterChange}
-                    hasFavorites={hasFavorites}
-                    data={[
-                      { label: translateWord('all'), value: 'ALL' },
-                      ...userLeagues.filter((l) => l !== 'ALL').map((l) => ({ label: l, value: l })),
-                    ]}
+      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+        <ScrollView
+          ref={scrollViewRef}
+          onScroll={(event) => ActionButtonRef.current?.handleScroll(event)}
+          scrollEventThrottle={16}
+        >
+          <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
+            <ThemedView>
+              <div style={{ position: 'relative', zIndex: 20 }}>
+                {displayScoreToggle()}
+                <div
+                  style={
+                    windowWidth > 768
+                      ? {
+                          width: windowWidth < 1200 ? '95%' : '100%',
+                          margin: '0 auto',
+                          padding: 10,
+                          boxSizing: 'border-box',
+                        }
+                      : {}
+                  }
+                >
+                  <ThemedElements>
+                    <FilterSlider
+                      selectedFilter={activeFilter}
+                      onFilterChange={handleFilterChange}
+                      hasFavorites={hasFavorites}
+                      data={[
+                        { label: translateWord('all'), value: 'ALL' },
+                        ...userLeagues.filter((l) => l !== 'ALL').map((l) => ({ label: l, value: l })),
+                      ]}
+                    />
+                  </ThemedElements>
+                  <Separator />
+                  {displayFilters()}
+                  <Separator />
+                  <SliderDatePicker
+                    onDateChange={(date) => handleDateChange(date, date)}
+                    selectDate={selectDate}
+                    disabled={isLoading}
                   />
-                </ThemedElements>
-                <Separator />
-                {displayFilters()}
-                <Separator />
-                <SliderDatePicker
-                  onDateChange={(date) => handleDateChange(date, date)}
-                  selectDate={selectDate}
-                  disabled={isLoading}
-                />
+                </div>
               </div>
-            </div>
-          </ThemedView>
-        </div>
-        <ThemedView>{displayContent()}</ThemedView>
-      </ScrollView>
-
-      <ActionButton ref={ActionButtonRef} scrollViewRef={scrollViewRef} />
+            </ThemedView>
+          </div>
+          <ThemedView>{displayContent()}</ThemedView>
+        </ScrollView>
+        <ActionButton ref={ActionButtonRef} scrollViewRef={scrollViewRef} />
+      </View>
     </ThemedView>
   );
 }
