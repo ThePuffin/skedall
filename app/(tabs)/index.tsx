@@ -290,7 +290,9 @@ export default function GameofTheDay() {
       readonlyRef.current = true;
       setSelectDate(startDate);
       const YYYYMMDD = new Date(startDate).toISOString().split('T')[0];
-      setIsLoading(true);
+      if (!gamesDayCache.current[YYYYMMDD]) {
+        setIsLoading(true);
+      }
 
       getGamesFromApi(startDate).finally(() => {
         readonlyRef.current = false;
@@ -520,7 +522,11 @@ export default function GameofTheDay() {
                 <Separator />
                 {displayFilters()}
                 <Separator />
-                <SliderDatePicker onDateChange={(date) => handleDateChange(date, date)} selectDate={selectDate} />
+                <SliderDatePicker
+                  onDateChange={(date) => handleDateChange(date, date)}
+                  selectDate={selectDate}
+                  disabled={isLoading}
+                />
               </div>
             </div>
           </ThemedView>
