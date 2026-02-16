@@ -70,6 +70,11 @@ export default function GameofTheDay() {
   const containerMaxWidth = isTwoColumns ? (width < 700 ? '90%' : '600px') : '300px';
   const buttonMaxWidth = isTwoColumns ? (width < 700 ? '100%' : '300px') : width < 600 ? '100%' : '300px';
 
+  const topGridTemplateColumns = 'repeat(2, minmax(0, 1fr))';
+  const topContainerMaxWidth = width < 700 ? '90%' : '600px';
+  const topButtonMaxWidth = width < 700 ? '100%' : '300px';
+  const buttonHeight = width < 700 ? '70px' : '50px';
+
   const displayNoContent = () => {
     if (isLoading) {
       return <LoadingView />;
@@ -111,71 +116,90 @@ export default function GameofTheDay() {
           padding: '20px',
         }}
       >
-        <div
-          role="button"
-          tabIndex={isLoading ? -1 : 0}
-          aria-disabled={isLoading}
-          onClick={() => !isLoading && handleRefreshTeams()}
-          onKeyDown={(e) => {
-            if (isLoading) return;
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleRefreshTeams();
-            }
-          }}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '8px',
-            border: 'none',
-            backgroundColor: isLoading ? '#ccc' : '#007bff',
-            color: '#fff',
-            fontSize: '16px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-            transition: 'background 0.2s',
-            width: '100%',
-            maxWidth: buttonMaxWidth,
-            minWidth: buttonMaxWidth === '100%' ? undefined : '300px',
-            display: 'block',
-          }}
+        <View
+          style={
+            {
+              display: 'grid',
+              gridTemplateColumns: topGridTemplateColumns,
+              gap: '50px',
+              width: '100%',
+              maxWidth: topContainerMaxWidth,
+              alignItems: 'center',
+              justifyItems: 'center',
+            } as any
+          }
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-            <ThemedText style={{ color: '#fff', fontSize: '16px', marginRight: 10 }}>TEAMS</ThemedText>
-          </View>
-        </div>
-        <br />
-        <div
-          role="button"
-          tabIndex={isLoading ? -1 : 0}
-          aria-disabled={isLoading}
-          onClick={() => !isLoading && handleRefreshScores()}
-          onKeyDown={(e) => {
-            if (isLoading) return;
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleRefreshScores();
-            }
-          }}
-          style={{
-            padding: '10px 20px',
-            borderRadius: '8px',
-            border: 'none',
-            backgroundColor: isLoading ? '#ccc' : '#007bff',
-            color: '#fff',
-            fontSize: '16px',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-            boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-            transition: 'background 0.2s',
-            width: '100%',
-            maxWidth: buttonMaxWidth,
-            minWidth: buttonMaxWidth === '100%' ? undefined : '300px',
-            display: 'block',
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-            <ThemedText style={{ color: '#fff', fontSize: '16px', marginRight: 10 }}>SCORES</ThemedText>
-          </View>
-        </div>
+          <div
+            role="button"
+            tabIndex={isLoading ? -1 : 0}
+            aria-disabled={isLoading}
+            onClick={() => !isLoading && handleRefreshTeams()}
+            onKeyDown={(e) => {
+              if (isLoading) return;
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleRefreshTeams();
+              }
+            }}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: isLoading ? '#ccc' : '#007bff',
+              color: '#fff',
+              fontSize: '16px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+              transition: 'background 0.2s',
+              width: '100%',
+              maxWidth: topButtonMaxWidth,
+              minWidth: '100px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: buttonHeight,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <ThemedText style={{ color: '#fff', fontSize: '16px', marginRight: 10 }}>TEAMS</ThemedText>
+            </View>
+          </div>
+          <div
+            role="button"
+            tabIndex={isLoading ? -1 : 0}
+            aria-disabled={isLoading}
+            onClick={() => !isLoading && handleRefreshScores()}
+            onKeyDown={(e) => {
+              if (isLoading) return;
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleRefreshScores();
+              }
+            }}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: isLoading ? '#ccc' : '#007bff',
+              color: '#fff',
+              fontSize: '16px',
+              cursor: isLoading ? 'not-allowed' : 'pointer',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+              transition: 'background 0.2s',
+              width: '100%',
+              maxWidth: topButtonMaxWidth,
+              minWidth: '100px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: buttonHeight,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+              <ThemedText style={{ color: '#fff', fontSize: '16px', marginRight: 10 }}>SCORES</ThemedText>
+            </View>
+          </div>
+        </View>
         <br />
         <hr style={{ width: '300px' }} />
         <br />
@@ -230,11 +254,14 @@ export default function GameofTheDay() {
                   minWidth: isTwoColumns ? '100px' : '300px',
                   maxWidth: buttonMaxWidth,
                   width: '100%',
-                  display: 'block',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: buttonHeight,
                 }}
               >
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                  <ThemedText style={{ color: '#fff', fontSize: '16px', marginRight: 10 }}>
+                  <ThemedText style={{ color: '#fff', fontSize: '16px', marginRight: 10, textAlign: 'center' }}>
                     {league.replace('-', ' ').toUpperCase()}
                   </ThemedText>
                   <Image
