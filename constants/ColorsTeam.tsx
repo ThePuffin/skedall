@@ -79,19 +79,11 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#dd1a32',
     backgroundColor: '#000000',
   },
-  'OLYMPICS-HOCKEY-WOMEN-CAN': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-MEN-CAN': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WOMEN-CAN': {
-    color: '#ffffff',
-    backgroundColor: '#ff0000',
-  },
   'OLYMPICS-HOCKEY-MEN-CAN': {
+    color: '#ffffff',
+    backgroundColor: '#000000',
+  },
+  'OLYMPICS-HOCKEY-WOMEN-CAN': {
     color: '#ffffff',
     backgroundColor: '#000000',
   },
@@ -187,19 +179,11 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#f05023',
     backgroundColor: '#0a2240',
   },
-  'OLYMPICS-HOCKEY-WOMEN-CZE': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-MEN-CZE': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WOMEN-CZE': {
-    color: '#ffffff',
-    backgroundColor: '#d7141a',
-  },
   'OLYMPICS-HOCKEY-MEN-CZE': {
+    color: '#ffffff',
+    backgroundColor: '#000000',
+  },
+  'OLYMPICS-HOCKEY-WOMEN-CZE': {
     color: '#ffffff',
     backgroundColor: '#000000',
   },
@@ -224,10 +208,6 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#002b5c',
   },
   'OLYMPICS-HOCKEY-MEN-DEN': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-MEN-DEN': {
     color: '#ffffff',
     backgroundColor: '#000000',
   },
@@ -267,11 +247,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#c6093b',
     backgroundColor: '#001f5b',
   },
-  'OLYMPICS-WOMEN-FIN': {
-    color: '#ffffff',
-    backgroundColor: '#002f6c',
-  },
-  'OLYMPICS-MEN-FIN': {
+  'OLYMPICS-HOCKEY-MEN-FIN': {
     color: '#ffffff',
     backgroundColor: '#000000',
   },
@@ -279,15 +255,11 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#ffffff',
     backgroundColor: '#000000',
   },
-  'OLYMPICS-HOCKEY-MEN-FIN': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
   'NHL-FLA': {
     color: '#e51937',
     backgroundColor: '#002d62',
   },
-  'OLYMPICS-MEN-FRA': {
+  'OLYMPICS-HOCKEY-MEN-FRA': {
     color: '#ffffff',
     backgroundColor: '#000000',
   },
@@ -295,28 +267,12 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#ffffff',
     backgroundColor: '#000000',
   },
-  'OLYMPICS-HOCKEY-MEN-FRA': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WOMEN-FRA': {
-    color: '#ffffff',
-    backgroundColor: '#002395',
-  },
   'OLYMPICS-HOCKEY-WOMEN-GER': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-MEN-GER': {
     color: '#ffffff',
     backgroundColor: '#000000',
   },
   'OLYMPICS-HOCKEY-MEN-GER': {
     color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WOMEN-GER': {
-    color: '#ffce00',
     backgroundColor: '#000000',
   },
   'WNBA-GS': {
@@ -371,14 +327,6 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#ffffff',
     backgroundColor: '#000000',
   },
-  'OLYMPICS-WOMEN-ITA': {
-    color: '#ffffff',
-    backgroundColor: '#0064aa',
-  },
-  'OLYMPICS-MEN-ITA': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
   'NFL-JAX': {
     color: '#d7a22a',
     backgroundColor: '#007487',
@@ -386,10 +334,6 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   'OLYMPICS-HOCKEY-WOMEN-JPN': {
     color: '#ffffff',
     backgroundColor: '#000000',
-  },
-  'OLYMPICS-WOMEN-JPN': {
-    color: '#ffffff',
-    backgroundColor: '#bc002d',
   },
   'NFL-KC': {
     color: '#ffb612',
@@ -417,10 +361,6 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   },
   'NFL-LV': {
     color: '#a5acaf',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-MEN-LAT': {
-    color: '#ffffff',
     backgroundColor: '#000000',
   },
   'OLYMPICS-HOCKEY-MEN-LAT': {
@@ -719,10 +659,6 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#ffffff',
     backgroundColor: '#000000',
   },
-  'OLYMPICS-MEN-SVK': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
   'MLS-SKC': {
     color: '#a7c6ed',
     backgroundColor: '#0a2240',
@@ -739,10 +675,6 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#ec1458',
     backgroundColor: '#001544',
   },
-  'OLYMPICS-MEN-SWE': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
   'OLYMPICS-HOCKEY-MEN-SWE': {
     color: '#ffffff',
     backgroundColor: '#000000',
@@ -750,18 +682,6 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   'OLYMPICS-HOCKEY-WOMEN-SWE': {
     color: '#ffffff',
     backgroundColor: '#000000',
-  },
-  'OLYMPICS-WOMEN-SWE': {
-    color: '#fecc00',
-    backgroundColor: '#006aa7',
-  },
-  'OLYMPICS-MEN-SUI': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WOMEN-SUI': {
-    color: '#ffffff',
-    backgroundColor: '#da291c',
   },
   'OLYMPICS-HOCKEY-MEN-SUI': {
     color: '#ffffff',
@@ -818,14 +738,6 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   'OLYMPICS-HOCKEY-WOMEN-USA': {
     color: '#ffffff',
     backgroundColor: '#000000',
-  },
-  'OLYMPICS-MEN-USA': {
-    color: '#ffffff',
-    backgroundColor: '#000000',
-  },
-  'OLYMPICS-WOMEN-USA': {
-    color: '#ffffff',
-    backgroundColor: '#002868',
   },
   'NBA-UTAH': {
     color: '#79a3dc',
