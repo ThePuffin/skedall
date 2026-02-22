@@ -312,6 +312,7 @@ export default function GameofTheDay() {
 
   const handleDateChange = useCallback(
     (startDate: Date, endDate: Date) => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       readonlyRef.current = true;
       setSelectDate(startDate);
       const YYYYMMDD = new Date(startDate).toISOString().split('T')[0];
