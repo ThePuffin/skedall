@@ -74,6 +74,7 @@ export default function GameofTheDay() {
   const topContainerMaxWidth = width < 700 ? '90%' : '600px';
   const topButtonMaxWidth = width < 700 ? '100%' : '300px';
   const buttonHeight = width < 700 ? '70px' : '50px';
+  const gap = width < 700 ? '20px' : '50px';
 
   const displayNoContent = () => {
     if (isLoading) {
@@ -121,7 +122,7 @@ export default function GameofTheDay() {
             {
               display: 'grid',
               gridTemplateColumns: topGridTemplateColumns,
-              gap: '50px',
+              gap,
               width: '100%',
               maxWidth: topContainerMaxWidth,
               alignItems: 'center',
@@ -210,7 +211,7 @@ export default function GameofTheDay() {
             {
               display: 'grid',
               gridTemplateColumns: gridTemplateColumns,
-              gap: '50px',
+              gap,
               width: '100%',
               maxWidth: containerMaxWidth,
 
