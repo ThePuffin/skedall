@@ -513,7 +513,7 @@ export default function GameofTheDay() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <View style={{ flex: 1 }} {...panResponder.panHandlers}>
+      <View style={{ flex: 1 }}>
         <ScrollView
           ref={scrollViewRef}
           onScroll={(event) => ActionButtonRef.current?.handleScroll(event)}
@@ -558,7 +558,9 @@ export default function GameofTheDay() {
               </div>
             </ThemedView>
           </div>
-          <ThemedView>{displayContent()}</ThemedView>
+          <View {...panResponder.panHandlers}>
+            <ThemedView>{displayContent()}</ThemedView>
+          </View>
         </ScrollView>
         <ActionButton ref={ActionButtonRef} scrollViewRef={scrollViewRef} />
       </View>
