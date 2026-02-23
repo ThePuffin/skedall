@@ -1,4 +1,5 @@
 import { ThemedText } from '@/components/ThemedText';
+import { leagueLogos } from '@/constants/enum';
 import { GameFormatted } from '@/utils/types';
 import { generateICSFile, translateWord } from '@/utils/utils';
 import { Icon } from '@rneui/themed';
@@ -47,8 +48,10 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
   const iconColor = isDark ? 'white' : 'black';
   const buttonBackgroundColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)';
 
-  const displayHomeLogo = isDark && homeTeamLogoDark ? homeTeamLogoDark : homeTeamLogo;
-  const displayAwayLogo = isDark && awayTeamLogoDark ? awayTeamLogoDark : awayTeamLogo;
+  const displayHomeLogo =
+    isDark && homeTeamLogoDark ? homeTeamLogoDark || leagueLogos.DEFAULT : homeTeamLogo || leagueLogos.DEFAULT;
+  const displayAwayLogo =
+    isDark && awayTeamLogoDark ? awayTeamLogoDark || leagueLogos.DEFAULT : awayTeamLogo || leagueLogos.DEFAULT;
 
   return (
     <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
