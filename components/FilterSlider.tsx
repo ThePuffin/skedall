@@ -1,7 +1,17 @@
 import { useFavoriteColor } from '@/hooks/useFavoriteColor';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import React, { useMemo } from 'react';
-import { ScrollView, StyleProp, StyleSheet, Text, TextStyle, TouchableOpacity, View, ViewStyle } from 'react-native';
+import React, { useEffect, useMemo, useRef } from 'react';
+import {
+  Platform,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 interface FilterSliderProps {
   data?: { label: string; value: string }[];
@@ -41,6 +51,58 @@ export default function FilterSlider(props: FilterSliderProps) {
   const unselectedBackgroundColor = useThemeColor({ light: '#e0e0e0', dark: '#333333' }, 'background');
   const { backgroundColor: selectedBackgroundColor, textColor: selectedTextColor } = useFavoriteColor('#3b82f6');
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    if (Platform.OS === 'web' && scrollViewRef.current) {
+      // @ts-ignore
+      const element = scrollViewRef.current.getScrollableNode
+        ? scrollViewRef.current.getScrollableNode()
+        : scrollViewRef.current;
+      if (element) {
+        let isDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+
+        const onMouseDown = (e: MouseEvent) => {
+          isDown = true;
+          element.style.cursor = 'grabbing';
+          startX = e.pageX - element.offsetLeft;
+          scrollLeft = element.scrollLeft;
+        };
+        const onMouseLeave = () => {
+          isDown = false;
+          element.style.cursor = 'grab';
+        };
+        const onMouseUp = () => {
+          isDown = false;
+          element.style.cursor = 'grab';
+        };
+        const onMouseMove = (e: MouseEvent) => {
+          if (!isDown) return;
+          e.preventDefault();
+          const x = e.pageX - element.offsetLeft;
+          const walk = (x - startX) * 2;
+          element.scrollLeft = scrollLeft - walk;
+        };
+
+        element.addEventListener('mousedown', onMouseDown);
+        element.addEventListener('mouseleave', onMouseLeave);
+        element.addEventListener('mouseup', onMouseUp);
+        element.addEventListener('mousemove', onMouseMove);
+        element.style.cursor = 'grab';
+
+        return () => {
+          element.removeEventListener('mousedown', onMouseDown);
+          element.removeEventListener('mouseleave', onMouseLeave);
+          element.removeEventListener('mouseup', onMouseUp);
+          element.removeEventListener('mousemove', onMouseMove);
+          element.style.cursor = 'default';
+        };
+      }
+    }
+  }, []);
+
   const sortedItems = useMemo(() => {
     let items: { label: string; value: string }[] = [];
 
@@ -70,7 +132,12 @@ export default function FilterSlider(props: FilterSliderProps) {
 
   return (
     <View style={[styles.container, style]}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        ref={scrollViewRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {sortedItems.map((item, index) => {
           const isSelected = selectedFilters ? selectedFilters.includes(item.value) : selectedFilter === item.value;
           return (
