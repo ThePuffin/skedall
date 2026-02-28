@@ -752,7 +752,7 @@ export const TeamsEnum: Record<string, string> = {
   'NCCABB-SM': 'St. Martins Saints',
   'NCCABB-SMC': 'Saint Mary\'s Gaels',
   'NCCABB-SMU': 'Smu Mustangs',
-  'NCCABB-SOU': 'Cosn Coyotes',
+  'NCCABB-SOU': 'Southwest Mustangs',
   'NCCABB-SPU': 'Saint Peter\'s Peacocks',
   'NCCABB-SSU': 'Salisbury Sea Gulls',
   'NCCABB-ST.': 'St. Olaf Oles',
