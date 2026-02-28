@@ -32,6 +32,7 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
   } = data;
 
   const hasScore = homeTeamScore != null && awayTeamScore != null;
+  const isStarted = startTimeUTC ? new Date(startTimeUTC) < new Date() : false;
 
   const dateOptions: Intl.DateTimeFormatOptions = {
     weekday: 'long',
@@ -109,7 +110,7 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
                 )}
               </View>
             </View>
-            {!hasScore ? (
+            {!hasScore && !isStarted ? (
               <>
                 <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
                   {startTimeUTC ? new Date(startTimeUTC).toLocaleDateString(undefined, dateOptions) : ''}
