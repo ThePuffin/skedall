@@ -10,13 +10,14 @@ import { ThemedView } from '@/components/ThemedView';
 import { HorizontalScrollProvider, useHorizontalScroll } from '@/context/HorizontalScrollContext';
 import { getGamesStatus } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { PanResponder, ScrollView, useWindowDimensions, View } from 'react-native';
 import Accordion from '../../components/Accordion';
 import { ActionButton, ActionButtonRef } from '../../components/ActionButton';
 import LoadingView from '../../components/LoadingView';
 import { GameStatus, League } from '../../constants/enum';
+import { getDateRangeLimits } from '../../utils/dateRange';
 import { fetchGamesByHour, fetchLeagues, getCache, saveCache } from '../../utils/fetchData';
 import { GameFormatted } from '../../utils/types';
 import { randomNumber, translateWord } from '../../utils/utils';
@@ -60,11 +61,20 @@ const pruneOldGamesCache = (cache: { [key: string]: GameFormatted[] }) => {
 };
 
 const GameofTheDayContent = () => {
+  const router = useRouter();
+  const { date: dateParam } = useLocalSearchParams<{ date: string }>();
   const { isScrollingHorizontally } = useHorizontalScroll();
   const allLeaguesList = Object.values(League);
   const currentDate = new Date();
   const [games, setGames] = useState<GameFormatted[]>([]);
-  const [selectDate, setSelectDate] = useState<Date>(currentDate);
+  const [selectDate, setSelectDate] = useState<Date>(() => {
+    if (dateParam) {
+      const param = Array.isArray(dateParam) ? dateParam[0] : dateParam;
+      const d = new Date(param);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return currentDate;
+  });
   const [selectLeagues, setSelectLeagues] = useState<League[]>(getCache<League[]>('leaguesSelected') || allLeaguesList);
   const [userLeagues, setUserLeagues] = useState<League[]>(
     () => getCache<League[]>('leaguesSelected') || allLeaguesList,
@@ -79,30 +89,13 @@ const GameofTheDayContent = () => {
   const readonlyRef = useRef(false);
   const hasInitializedRef = useRef(false);
 
+  const { minDate, maxDate } = useMemo(() => {
+    return getDateRangeLimits();
+  }, []);
+
   const [gamesSelected, setGamesSelected] = useState<GameFormatted[]>(
     () => getCache<GameFormatted[]>('gameSelected') || [],
   );
-
-  const teamsOfTheDay = useMemo(() => {
-    const teamsMap = new Map<string, { label: string; uniqueId: string; league: string }>();
-
-    games.forEach((game) => {
-      if (selectLeagues.includes(game.league as League)) {
-        teamsMap.set(game.homeTeamId, {
-          label: game.homeTeam,
-          uniqueId: game.homeTeamId,
-          league: game.league,
-        });
-        teamsMap.set(game.awayTeamId, {
-          label: game.awayTeam,
-          uniqueId: game.awayTeamId,
-          league: game.league,
-        });
-      }
-    });
-
-    return Array.from(teamsMap.values()).sort((a, b) => a.label.localeCompare(b.label));
-  }, [games, selectLeagues]);
 
   const [teamSelectedId, setTeamSelectedId] = useState<string>('');
   const gamesDayCache = useRef<{ [key: string]: GameFormatted[] }>({});
@@ -111,6 +104,7 @@ const GameofTheDayContent = () => {
 
   const selectDateRef = useRef(selectDate);
   const isScrollingHorizontallyRef = useRef(isScrollingHorizontally);
+  const isInternalChange = useRef(false);
 
   useEffect(() => {
     selectDateRef.current = selectDate;
@@ -330,10 +324,21 @@ const GameofTheDayContent = () => {
 
   const handleDateChange = useCallback(
     (startDate: Date, endDate: Date) => {
+      const dateStr = startDate.toISOString().split('T')[0];
+      const currentStr = selectDateRef.current.toISOString().split('T')[0];
+
+      router.setParams({ date: dateStr });
+
+      if (dateStr === currentStr) {
+        return;
+      }
+
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       readonlyRef.current = true;
+      isInternalChange.current = true;
       setSelectDate(startDate);
-      const YYYYMMDD = new Date(startDate).toISOString().split('T')[0];
+
+      const YYYYMMDD = dateStr;
       if (!gamesDayCache.current[YYYYMMDD]) {
         setIsLoading(true);
       }
@@ -343,7 +348,7 @@ const GameofTheDayContent = () => {
         setIsLoading(false);
       });
     },
-    [getGamesFromApi],
+    [getGamesFromApi, router],
   );
 
   const handleFilterChange = useCallback(
@@ -385,6 +390,45 @@ const GameofTheDayContent = () => {
   const handleScoreToggle = useCallback((value: boolean) => {
     setShowScores(value);
   }, []);
+
+  const teamsOfTheDay = useMemo(() => {
+    const teamsMap = new Map<string, Team>();
+
+    games.forEach((game) => {
+      if (!teamsMap.has(game.homeTeamId)) {
+        teamsMap.set(game.homeTeamId, {
+          uniqueId: game.homeTeamId,
+          value: game.homeTeamId,
+          id: game.homeTeamId,
+          label: game.homeTeam,
+          teamLogo: game.homeTeamLogo,
+          teamCommonName: game.homeTeam,
+          league: game.league,
+          abbrev: game.homeTeamShort,
+          conferenceName: '',
+          divisionName: '',
+          updateDate: '',
+        });
+      }
+      if (!teamsMap.has(game.awayTeamId)) {
+        teamsMap.set(game.awayTeamId, {
+          uniqueId: game.awayTeamId,
+          value: game.awayTeamId,
+          id: game.awayTeamId,
+          label: game.awayTeam,
+          teamLogo: game.awayTeamLogo,
+          teamCommonName: game.awayTeam,
+          league: game.league,
+          abbrev: game.awayTeamShort,
+          conferenceName: '',
+          divisionName: '',
+          updateDate: '',
+        });
+      }
+    });
+
+    return Array.from(teamsMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+  }, [games]);
 
   const displayScoreToggle = useCallback(() => {
     return (
@@ -522,6 +566,54 @@ const GameofTheDayContent = () => {
     initializeGames();
   }, []); // Only run once on mount
 
+  useEffect(() => {
+    const param = Array.isArray(dateParam) ? dateParam[0] : dateParam;
+    let d = new Date();
+    let invalidParam = false;
+
+    if (param) {
+      const parsed = new Date(param);
+      if (isNaN(parsed.getTime())) {
+        invalidParam = true;
+      } else {
+        const parsedStr = parsed.toISOString().split('T')[0];
+        if (/^\d{4}-\d{2}-\d{2}$/.test(param) && param !== parsedStr) {
+          invalidParam = true;
+        } else {
+          if (parsed < minDate || parsed > maxDate) {
+            invalidParam = true;
+          } else {
+            d = parsed;
+          }
+        }
+      }
+    }
+
+    if (invalidParam) {
+      d = new Date();
+      setTimeout(() => {
+        router.setParams({ date: undefined });
+      }, 0);
+    }
+
+    const dStr = d.toISOString().split('T')[0];
+    const currentStr = selectDate.toISOString().split('T')[0];
+
+    if (dStr === currentStr) {
+      isInternalChange.current = false;
+      return;
+    }
+
+    if (isInternalChange.current) return;
+
+    setSelectDate(d);
+    const YYYYMMDD = dStr;
+    if (!gamesDayCache.current[YYYYMMDD]) {
+      setIsLoading(true);
+    }
+    getGamesFromApi(d).finally(() => setIsLoading(false));
+  }, [dateParam, selectDate, getGamesFromApi, router, minDate, maxDate]);
+
   useFocusEffect(
     useCallback(() => {
       setGamesSelected(getCache<GameFormatted[]>('gameSelected') || []);
@@ -571,6 +663,8 @@ const GameofTheDayContent = () => {
                     onDateChange={(date) => handleDateChange(date, date)}
                     selectDate={selectDate}
                     disabled={isLoading}
+                    minDate={minDate}
+                    maxDate={maxDate}
                   />
                 </div>
               </div>
