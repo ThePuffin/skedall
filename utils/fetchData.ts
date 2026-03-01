@@ -279,3 +279,18 @@ export const fetchGames = async (date: string): Promise<GameFormatted[]> => {
     10000,
   );
 };
+
+export const fetchDateRangeFromApi = async () => {
+  const cacheKey = 'date_range_limits';
+
+  if (isCacheValid(cacheKey, 24)) {
+    const cached = getCache<{ minDate: string | null; maxDate: string | null }>(cacheKey);
+    if (cached) return cached;
+  }
+
+  return fetchWithCacheStrategy<{ minDate: string | null; maxDate: string | null }>(
+    `${EXPO_PUBLIC_API_BASE_URL}/games/dates/range`,
+    cacheKey,
+    { minDate: null, maxDate: null },
+  );
+};

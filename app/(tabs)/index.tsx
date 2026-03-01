@@ -17,7 +17,7 @@ import Accordion from '../../components/Accordion';
 import { ActionButton, ActionButtonRef } from '../../components/ActionButton';
 import LoadingView from '../../components/LoadingView';
 import { GameStatus, League } from '../../constants/enum';
-import { getDateRangeLimits } from '../../utils/dateRange';
+import { fetchDateRangeLimits, getDateRangeLimits } from '../../utils/dateRange';
 import { fetchGamesByHour, fetchLeagues, getCache, saveCache } from '../../utils/fetchData';
 import { GameFormatted } from '../../utils/types';
 import { randomNumber, translateWord } from '../../utils/utils';
@@ -89,9 +89,13 @@ const GameofTheDayContent = () => {
   const readonlyRef = useRef(false);
   const hasInitializedRef = useRef(false);
 
-  const { minDate, maxDate } = useMemo(() => {
-    return getDateRangeLimits();
+  const [dateLimits, setDateLimits] = useState(() => getDateRangeLimits());
+
+  useEffect(() => {
+    fetchDateRangeLimits().then(setDateLimits);
   }, []);
+
+  const { minDate, maxDate } = dateLimits;
 
   const [gamesSelected, setGamesSelected] = useState<GameFormatted[]>(
     () => getCache<GameFormatted[]>('gameSelected') || [],
