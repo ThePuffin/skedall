@@ -1,3 +1,4 @@
+import { useHorizontalScroll } from '@/context/HorizontalScrollContext';
 import { useFavoriteColor } from '@/hooks/useFavoriteColor';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import React, { useEffect, useMemo, useRef } from 'react';
@@ -50,6 +51,7 @@ export default function FilterSlider(props: FilterSliderProps) {
   const themeTextColor = useThemeColor({}, 'text');
   const unselectedBackgroundColor = useThemeColor({ light: '#e0e0e0', dark: '#333333' }, 'background');
   const { backgroundColor: selectedBackgroundColor, textColor: selectedTextColor } = useFavoriteColor('#3b82f6');
+  const { setIsScrollingHorizontally } = useHorizontalScroll();
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -66,16 +68,19 @@ export default function FilterSlider(props: FilterSliderProps) {
 
         const onMouseDown = (e: MouseEvent) => {
           isDown = true;
+          setIsScrollingHorizontally(true);
           element.style.cursor = 'grabbing';
           startX = e.pageX - element.offsetLeft;
           scrollLeft = element.scrollLeft;
         };
         const onMouseLeave = () => {
           isDown = false;
+          setIsScrollingHorizontally(false);
           element.style.cursor = 'grab';
         };
         const onMouseUp = () => {
           isDown = false;
+          setIsScrollingHorizontally(false);
           element.style.cursor = 'grab';
         };
         const onMouseMove = (e: MouseEvent) => {
@@ -101,7 +106,7 @@ export default function FilterSlider(props: FilterSliderProps) {
         };
       }
     }
-  }, []);
+  }, [setIsScrollingHorizontally]);
 
   const sortedItems = useMemo(() => {
     let items: { label: string; value: string }[] = [];
@@ -150,7 +155,7 @@ export default function FilterSlider(props: FilterSliderProps) {
                   isSelected ? { backgroundColor: selectedBackgroundColor } : {},
                   isSelected ? selectedItemStyle : {},
                 ]}
-                onPress={() => onFilterChange && onFilterChange(item.value)}
+                onPress={() => onFilterChange?.(item.value)}
               >
                 <Text
                   style={[

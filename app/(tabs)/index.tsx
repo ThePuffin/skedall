@@ -7,6 +7,7 @@ import SliderDatePicker from '@/components/SliderDatePicker';
 import TeamFilter from '@/components/TeamFilter';
 import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
+import { HorizontalScrollProvider, useHorizontalScroll } from '@/context/HorizontalScrollContext';
 import { getGamesStatus } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
@@ -58,7 +59,8 @@ const pruneOldGamesCache = (cache: { [key: string]: GameFormatted[] }) => {
   return Object.fromEntries(prunedEntries);
 };
 
-export default function GameofTheDay() {
+const GameofTheDayContent = () => {
+  const { isScrollingHorizontally } = useHorizontalScroll();
   const allLeaguesList = Object.values(League);
   const currentDate = new Date();
   const [games, setGames] = useState<GameFormatted[]>([]);
@@ -108,13 +110,23 @@ export default function GameofTheDay() {
   const ActionButtonRef = useRef<ActionButtonRef>(null);
 
   const selectDateRef = useRef(selectDate);
+  const isScrollingHorizontallyRef = useRef(isScrollingHorizontally);
+
   useEffect(() => {
     selectDateRef.current = selectDate;
   }, [selectDate]);
 
+  useEffect(() => {
+    isScrollingHorizontallyRef.current = isScrollingHorizontally;
+  }, [isScrollingHorizontally]);
+
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (evt, gestureState) => {
+        // Don't capture horizontal swipes if we're scrolling horizontally (e.g., in FilterSlider)
+        if (isScrollingHorizontallyRef.current) {
+          return false;
+        }
         return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy);
       },
       onPanResponderEnd: (evt, gestureState) => {
@@ -192,6 +204,7 @@ export default function GameofTheDay() {
       .sort((a, b) => new Date(a.startTimeUTC).getTime() - new Date(b.startTimeUTC).getTime());
 
     const inProgress: GameFormatted[] = [];
+    const final: GameFormatted[] = [];
     const finished: GameFormatted[] = [];
     const scheduled: GameFormatted[] = [];
 
@@ -199,6 +212,8 @@ export default function GameofTheDay() {
       const status = getGamesStatus(game);
       if (status === GameStatus.IN_PROGRESS && (!game.homeTeamScore || game.homeTeamScore === null)) {
         inProgress.push(game);
+      } else if (status === GameStatus.FINAL) {
+        final.push(game);
       } else if (status === GameStatus.FINISHED || game.homeTeamScore != null) {
         finished.push(game);
       } else {
@@ -225,6 +240,9 @@ export default function GameofTheDay() {
       const timeB = b.games[0]?.startTimeUTC ? new Date(b.games[0].startTimeUTC).getTime() : 0;
       return timeA - timeB;
     });
+    if (final.length > 0) {
+      groups.push({ hour: translateWord('final'), games: sortGamesByFavorites(final) });
+    }
     if (finished.length > 0) {
       groups.push({ hour: translateWord('ended'), games: sortGamesByFavorites(finished) });
     }
@@ -565,5 +583,13 @@ export default function GameofTheDay() {
         <ActionButton ref={ActionButtonRef} scrollViewRef={scrollViewRef} />
       </View>
     </ThemedView>
+  );
+};
+
+export default function GameofTheDay() {
+  return (
+    <HorizontalScrollProvider>
+      <GameofTheDayContent />
+    </HorizontalScrollProvider>
   );
 }

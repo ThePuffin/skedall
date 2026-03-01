@@ -1,3 +1,4 @@
+import { useHorizontalScroll } from '@/context/HorizontalScrollContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useFavoriteColor } from '@/hooks/useFavoriteColor';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -13,6 +14,7 @@ interface SliderDatePickerProps {
 export default function SliderDatePicker({ selectDate, onDateChange, disabled = false }: SliderDatePickerProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const monthScrollViewRef = useRef<ScrollView>(null);
+  const { setIsScrollingHorizontally } = useHorizontalScroll();
   const [dates, setDates] = useState<Date[]>([]);
   const [months, setMonths] = useState<Date[]>([]);
   const [locale, setLocale] = useState('en-US');
@@ -131,16 +133,19 @@ export default function SliderDatePicker({ selectDate, onDateChange, disabled = 
 
           const onMouseDown = (e: MouseEvent) => {
             isDown = true;
+            setIsScrollingHorizontally(true);
             element.style.cursor = 'grabbing';
             startX = e.pageX - element.offsetLeft;
             scrollLeft = element.scrollLeft;
           };
           const onMouseLeave = () => {
             isDown = false;
+            setIsScrollingHorizontally(false);
             element.style.cursor = 'grab';
           };
           const onMouseUp = () => {
             isDown = false;
+            setIsScrollingHorizontally(false);
             element.style.cursor = 'grab';
           };
           const onMouseMove = (e: MouseEvent) => {
@@ -166,7 +171,7 @@ export default function SliderDatePicker({ selectDate, onDateChange, disabled = 
           };
         }
       }
-    }, [ref]);
+    }, [ref, setIsScrollingHorizontally]);
   };
 
   useDragScroll(scrollViewRef);
