@@ -15,7 +15,6 @@ export enum League {
   NCAAMH = 'NCAAMH',
   NCAAS = 'NCAAS',
   NCAAWH = 'NCAAWH',
-  UFL = 'UFL',
   NWSL = 'NWSL',
   'OLYMPICS-MEN' = 'OLYMPICS-MEN',
   'OLYMPICS-WOMEN' = 'OLYMPICS-WOMEN',
@@ -56,7 +55,6 @@ export const emoticonEnum = {
   NCAAMH: '🏒',
   NCAAS: '🥎',
   NCAAWH: '⛸️',
-  UFL: '🏈',
   NWSL: '⚽',
 };
 
@@ -76,7 +74,6 @@ export const timeDurationEnum = {
   NCAAMH: 3,
   NCAAS: 2.25,
   NCAAWH: 3,
-  UFL: 3,
   NWSL: 2.25,
   'OLYMPICS-MEN': 2.5,
   'OLYMPICS-WOMEN': 2.5,
@@ -100,7 +97,6 @@ export const leagueLogos = {
   NCAAMH: require('../assets/images/NCAAMH.png'),
   NCAAS: require('../assets/images/NCAAS.png'),
   NCAAWH: require('../assets/images/NCAAWH.png'),
-  UFL: require('../assets/images/UFL.png'),
   NWSL: require('../assets/images/NWSL.png'),
   DEFAULT: require('../assets/images/DEFAULT.png'),
 };

@@ -14,7 +14,6 @@ export const LeaguesEnum: Record<string, string> = {
   'OLYMPICS-MEN': 'OLYMPICS-MEN',
   'OLYMPICS-WOMEN': 'OLYMPICS-WOMEN',
   'PWHL': 'PWHL',
-  'UFL': 'UFL',
   'WNBA': 'WNBA',
   'WNCAAB': 'WNCAAB',
 };
