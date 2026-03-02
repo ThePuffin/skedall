@@ -399,6 +399,8 @@ const GameofTheDayContent = () => {
     const teamsMap = new Map<string, Team>();
 
     games.forEach((game) => {
+      if (!selectLeagues.includes(game.league as League)) return;
+
       if (!teamsMap.has(game.homeTeamId)) {
         teamsMap.set(game.homeTeamId, {
           uniqueId: game.homeTeamId,
@@ -432,7 +434,7 @@ const GameofTheDayContent = () => {
     });
 
     return Array.from(teamsMap.values()).sort((a, b) => a.label.localeCompare(b.label));
-  }, [games]);
+  }, [games, selectLeagues]);
 
   const displayScoreToggle = useCallback(() => {
     return (
