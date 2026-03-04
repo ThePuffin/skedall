@@ -579,6 +579,10 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#fdd023',
     backgroundColor: '#461d76',
   },
+  'NCAAB-LUC': {
+    color: '#9d1244',
+    backgroundColor: '#000000',
+  },
   'NCAAB-M-OH': {
     color: '#ffffff',
     backgroundColor: '#c41230',
@@ -778,6 +782,10 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   'NCAAB-TEX': {
     color: '#ffffff',
     backgroundColor: '#af5c37',
+  },
+  'NCAAB-TOL': {
+    color: '#ffcd00',
+    backgroundColor: '#0b2240',
   },
   'NCAAB-TTU': {
     color: '#da291c',
@@ -2027,7 +2035,6 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#ffffff',
     backgroundColor: '#000000',
   },
-
   'NCAAWH-AU': {
     color: '#ffffff',
     backgroundColor: '#000000',
