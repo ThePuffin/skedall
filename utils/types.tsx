@@ -62,6 +62,11 @@ export interface Team {
   awayTeamBackgroundColor?: string;
   homeTeamColor?: string;
   homeTeamBackgroundColor?: string;
+  teamLogoDark?: string;
+  wins?: number;
+  losses?: number;
+  ties?: number;
+  otLosses?: number;
 }
 
 export interface FilterGames {
