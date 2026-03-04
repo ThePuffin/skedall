@@ -77,6 +77,7 @@ export type AccordionProps = {
   readonly disableToggle?: boolean;
   readonly showDate?: boolean;
   readonly gamesSelected?: readonly GameFormatted[];
+  readonly showTime?: boolean;
 };
 
 export interface ButtonsProps {

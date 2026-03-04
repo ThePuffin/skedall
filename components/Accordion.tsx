@@ -20,6 +20,7 @@ export default function Accordion({
   showScores,
   gamesSelected,
   onSelection,
+  showTime = false,
 }: Readonly<
   AccordionProps & { onRetry?: () => void; showScores?: boolean; onSelection?: (game: GameFormatted) => void }
 >) {
@@ -55,6 +56,7 @@ export default function Accordion({
             showScores={showScores}
             onSelection={onSelection}
             isSelected={isSelected}
+            showTime={showTime}
           />
         </div>
       );

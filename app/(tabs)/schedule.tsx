@@ -604,6 +604,7 @@ export default function Schedule() {
               gamesFiltred={games}
               open={!isSmallDevice || teamFilter?.length > 0 || i === 0}
               showDate={true}
+              showTime={true}
               isCounted={true}
             />
           </div>
