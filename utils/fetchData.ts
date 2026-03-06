@@ -88,7 +88,7 @@ export const getCache = <T>(cacheKey: string, storage: Storage = localStorage): 
 const isCacheContentValid = (data: unknown): boolean => {
   if (data === null || data === undefined) return false;
   if (Array.isArray(data)) return data.length > 0;
-  if (typeof data === 'object') return Object.keys(data as object).length > 0;
+  if (typeof data === 'object') return Object.keys(data).length > 0;
   return true;
 };
 
@@ -178,7 +178,7 @@ export const fetchGamesByHour = async (date: string): Promise<{ [key: string]: G
 export const fetchLeagues = async (setLeaguesAvailable: (leagues: string[]) => void) => {
   const cacheKey = 'leagues';
 
-  if (isCacheValid(cacheKey)) {
+  if (isCacheValid(cacheKey, 24)) {
     const cached = getCache<string[]>(cacheKey);
     if (cached) {
       console.info('Using cached leagues');
@@ -202,7 +202,7 @@ export const fetchLeagues = async (setLeaguesAvailable: (leagues: string[]) => v
 export const fetchTeams = async () => {
   const cacheKey = 'teams';
 
-  if (isCacheValid(cacheKey, 0.1)) {
+  if (isCacheValid(cacheKey, 24)) {
     const cached = getCache<Team[]>(cacheKey);
     if (cached) {
       console.info('Using cached teams');
@@ -236,7 +236,10 @@ export const fetchRemainingGamesByTeam = async (teamSelected: string) => {
 };
 
 export const fetchRemainingGamesByLeague = async (league: string, limit?: number) => {
-  const cacheKey = `games_league_${league}${limit ? `_${limit}` : ''}`;
+  let cacheKey = `games_league_${league}`;
+  if (limit) {
+    cacheKey += `_${limit}`;
+  }
 
   let url = `${EXPO_PUBLIC_API_BASE_URL}/games/league/${league}`;
   if (limit) {
@@ -290,7 +293,7 @@ export const fetchDateRangeFromApi = async () => {
 
     if (isCacheValid(cacheKey, 24)) {
       const cached = getCache<{ minDate: string | null; maxDate: string | null }>(cacheKey);
-      if (cached && cached.minDate && cached.maxDate) return cached;
+      if (cached?.minDate && cached?.maxDate) return cached;
     }
 
     const dates = await fetchWithCacheStrategy<{ minDate: string | null; maxDate: string | null }>(
