@@ -157,7 +157,15 @@ const fetchWithCacheStrategy = async <T>(
 };
 
 export const fetchGamesByHour = async (date: string): Promise<{ [key: string]: GameFormatted[] }> => {
-  const cacheKey = `games_hour_${date}`;
+  const leaguesSelected = getCache<string[]>('leaguesSelected') || [];
+  let cacheKey = `games_hour_${date}`;
+  let url = `${EXPO_PUBLIC_API_BASE_URL}/games/hour/${date}`;
+
+  if (leaguesSelected?.length > 0) {
+    const leaguesParam = leaguesSelected.join('+');
+    cacheKey += `_${leaguesParam}`;
+    url += `?leagues=${leaguesParam}`;
+  }
 
   if (isCacheValid(cacheKey, 2 / 60, sessionStorage)) {
     const cached = getCache<{ [key: string]: GameFormatted[] }>(cacheKey, sessionStorage);
@@ -165,12 +173,12 @@ export const fetchGamesByHour = async (date: string): Promise<{ [key: string]: G
   }
 
   return fetchWithCacheStrategy<{ [key: string]: GameFormatted[] }>(
-    `${EXPO_PUBLIC_API_BASE_URL}/games/hour/${date}`,
+    url,
     cacheKey,
     {},
     undefined,
     undefined,
-    10000,
+    100000,
     sessionStorage,
   );
 };
