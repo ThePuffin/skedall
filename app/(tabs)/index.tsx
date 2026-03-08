@@ -296,10 +296,23 @@ const GameofTheDayContent = () => {
 
     // Fetch from API if not in cache
     try {
-      const gamesByHourData = await fetchGamesByHour(YYYYMMDD);
-      const gamesOfTheDay = Object.values(gamesByHourData).flat();
-      gamesDayCache.current[YYYYMMDD] = gamesOfTheDay;
-      setGames(gamesOfTheDay);
+      const initialGamesByHour = await fetchGamesByHour(YYYYMMDD, 15);
+      const initialGames = Object.values(initialGamesByHour).flat();
+      setGames(initialGames);
+
+      let allGames = initialGames;
+
+      if (initialGames.length >= 15) {
+        const restGamesByHour = await fetchGamesByHour(YYYYMMDD, undefined, 15);
+        const restGames = Object.values(restGamesByHour).flat();
+        // Fusionner en évitant les doublons potentiels
+        const existingIds = new Set(initialGames.map((g) => g.uniqueId));
+        const newGames = restGames.filter((g) => !existingIds.has(g.uniqueId));
+        allGames = [...initialGames, ...newGames];
+        setGames(allGames);
+      }
+
+      gamesDayCache.current[YYYYMMDD] = allGames;
 
       if (YYYYMMDD === today) {
         getNextGamesFromApi(dateToFetch).then((nextFetchedGames) => {

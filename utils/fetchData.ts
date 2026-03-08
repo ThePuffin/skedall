@@ -156,16 +156,33 @@ const fetchWithCacheStrategy = async <T>(
   }
 };
 
-export const fetchGamesByHour = async (date: string): Promise<{ [key: string]: GameFormatted[] }> => {
+export const fetchGamesByHour = async (
+  date: string,
+  limit?: number,
+  skip?: number,
+): Promise<{ [key: string]: GameFormatted[] }> => {
   const leaguesSelected = getCache<string[]>('leaguesSelected') || [];
   let cacheKey = `games_hour_${date}`;
   let url = `${EXPO_PUBLIC_API_BASE_URL}/games/hour/${date}`;
 
+  const params = new URLSearchParams();
+
   if (leaguesSelected?.length > 0) {
     const leaguesParam = leaguesSelected.join('+');
+    params.append('leagues', leaguesParam);
     cacheKey += `_${leaguesParam}`;
-    url += `?leagues=${leaguesParam}`;
   }
+
+  if (limit) {
+    params.append('maxResults', limit.toString());
+    cacheKey += `_limit_${limit}`;
+  }
+  if (skip) {
+    params.append('skip', skip.toString());
+    cacheKey += `_skip_${skip}`;
+  }
+
+  if (params.toString()) url += `?${params.toString()}`;
 
   if (isCacheValid(cacheKey, 2 / 60, sessionStorage)) {
     const cached = getCache<{ [key: string]: GameFormatted[] }>(cacheKey, sessionStorage);
