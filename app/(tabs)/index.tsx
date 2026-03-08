@@ -537,14 +537,20 @@ const GameofTheDayContent = () => {
   useEffect(() => {
     const updateLeagues = () => {
       const stored = getCache<League[]>('leaguesSelected');
-      if (stored) setSelectLeagues(stored);
-      if (stored) setUserLeagues(stored);
+      if (stored) {
+        setSelectLeagues(stored);
+        setUserLeagues(stored);
+        gamesDayCache.current = {};
+        saveCache('gamesDay', {});
+        setIsLoading(true);
+        getGamesFromApi(selectDateRef.current).finally(() => setIsLoading(false));
+      }
     };
     if (globalThis.window !== undefined) {
       globalThis.window.addEventListener('leaguesUpdated', updateLeagues);
       return () => globalThis.window.removeEventListener('leaguesUpdated', updateLeagues);
     }
-  }, []);
+  }, [getGamesFromApi]);
 
   useEffect(() => {
     if (hasInitializedRef.current) return;
