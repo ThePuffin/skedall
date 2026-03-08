@@ -27,6 +27,22 @@ import {
 } from '../../utils/fetchData';
 import { FilterGames, GameFormatted, Team } from '../../utils/types';
 
+const mergeGames = (initial: FilterGames, remaining: FilterGames): FilterGames => {
+  const merged = { ...initial };
+  Object.keys(remaining).forEach((date) => {
+    if (merged[date]) {
+      const existingIds = new Set(merged[date].map((g) => g.uniqueId));
+      const newGames = remaining[date].filter((g) => !existingIds.has(g.uniqueId));
+      merged[date] = [...merged[date], ...newGames].sort(
+        (a, b) => new Date(a.startTimeUTC).getTime() - new Date(b.startTimeUTC).getTime(),
+      );
+    } else {
+      merged[date] = remaining[date];
+    }
+  });
+  return merged;
+};
+
 export default function Schedule() {
   const router = useRouter();
   const { league: leagueParam } = useLocalSearchParams<{ league: string }>();
@@ -650,7 +666,14 @@ export default function Schedule() {
           setGames(removeOldGames(smallScheduleData));
           setGamesTeamId(teamSelected);
           setleagueOfSelectedTeam(selectionLeague);
-          scheduleData = await fetchRemainingGamesByLeague(selectionLeague);
+          const remainingScheduleData = await fetchRemainingGamesByLeague(
+            selectionLeague,
+            undefined,
+            50,
+            undefined,
+            true,
+          );
+          scheduleData = mergeGames(smallScheduleData, remainingScheduleData);
         } else {
           scheduleData = await fetchRemainingGamesByTeam(teamSelected);
         }

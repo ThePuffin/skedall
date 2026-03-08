@@ -221,44 +221,86 @@ export const fetchTeams = async () => {
   return fetchWithCacheStrategy<Team[]>(`${EXPO_PUBLIC_API_BASE_URL}/teams`, cacheKey, [], undefined, undefined, 60000);
 };
 
-export const fetchRemainingGamesByTeam = async (teamSelected: string) => {
+export const fetchRemainingGamesByTeam = async (teamSelected: string, startDate?: string) => {
   const teamGamesCache = loadTeamGamesCache();
   const cachedEntry = teamGamesCache[teamSelected];
 
-  if (isTeamGamesEntryFresh(cachedEntry)) {
+  if (!startDate && isTeamGamesEntryFresh(cachedEntry)) {
     console.info(`Using cached games for team ${teamSelected}`);
     return cachedEntry.data;
   }
 
+  let url = `${EXPO_PUBLIC_API_BASE_URL}/games/team/${teamSelected}?clean=true`;
+  if (startDate) {
+    url += `&startDate=${startDate}`;
+  }
+
   return fetchWithCacheStrategy<FilterGames>(
-    `${EXPO_PUBLIC_API_BASE_URL}/games/team/${teamSelected}`,
+    url,
     null,
     {},
-    () => teamGamesCache[teamSelected]?.data || null,
+    // Custom getter: only provide a fallback from cache if no startDate was given.
+    () => {
+      if (startDate) {
+        return null; // Don't use cache if filtering by date
+      }
+      return teamGamesCache[teamSelected]?.data || null;
+    },
+    // Custom setter: only save to cache if we fetched the full schedule (no startDate).
     (data) => {
-      teamGamesCache[teamSelected] = { data, timestamp: Date.now() };
-      persistTeamGamesCache(teamGamesCache);
+      if (!startDate) {
+        teamGamesCache[teamSelected] = { data, timestamp: Date.now() };
+        persistTeamGamesCache(teamGamesCache);
+      }
     },
     60000,
   );
 };
 
-export const fetchRemainingGamesByLeague = async (league: string, limit?: number) => {
+export const fetchRemainingGamesByLeague = async (
+  league: string,
+  limit?: number,
+  skip?: number,
+  startDate?: string,
+  isHome?: boolean,
+) => {
   let cacheKey = `games_league_${league}`;
   if (limit) {
     cacheKey += `_${limit}`;
   }
+  if (skip) {
+    cacheKey += `_skip_${skip}`;
+  }
+  if (startDate) {
+    cacheKey += `_${startDate}`;
+  }
+  if (isHome) {
+    cacheKey += `_home`;
+  }
 
   let url = `${EXPO_PUBLIC_API_BASE_URL}/games/league/${league}`;
+  const params = new URLSearchParams();
   if (limit) {
-    url += `?maxResults=${limit}`;
+    params.append('maxResults', limit.toString());
+  }
+  if (skip) {
+    params.append('skip', skip.toString());
+  }
+  if (startDate) {
+    params.append('startDate', startDate);
+  }
+  if (isHome) {
+    params.append('isHome', 'true');
+  }
+  if (params.toString()) {
+    url += `?${params.toString()}`;
   }
 
   return fetchWithCacheStrategy<FilterGames>(url, cacheKey, {}, undefined, undefined, 60000);
 };
 
 export const smallFetchRemainingGamesByLeague = async (league: string) => {
-  return fetchRemainingGamesByLeague(league, 50);
+  return fetchRemainingGamesByLeague(league, 50, undefined, undefined, true);
 };
 
 export const refreshGamesLeague = async (league: string): Promise<void> => {
