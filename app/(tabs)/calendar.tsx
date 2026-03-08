@@ -550,11 +550,22 @@ export default function Calendar() {
               </TouchableOpacity>
             </View>
             <ScrollView style={{ width: '100%' }}>
-              <GamesSelected
-                onAction={handleGamesSelection}
-                data={filteredGamesSelected}
-                teamNumber={filteredGamesSelected.length}
-              />
+              {isSmallDevice && filteredGamesSelected.length === 1 ? (
+                <Accordion
+                  gamesFiltred={filteredGamesSelected}
+                  open={true}
+                  showDate={true}
+                  gamesSelected={filteredGamesSelected}
+                  onSelection={handleGamesSelection}
+                  disableToggle={true}
+                />
+              ) : (
+                <GamesSelected
+                  onAction={handleGamesSelection}
+                  data={filteredGamesSelected}
+                  teamNumber={filteredGamesSelected.length}
+                />
+              )}
             </ScrollView>
           </Pressable>
         </Pressable>

@@ -83,6 +83,7 @@ export type AccordionProps = {
   readonly showDate?: boolean;
   readonly gamesSelected?: readonly GameFormatted[];
   readonly showTime?: boolean;
+  readonly onSelection?: (game: GameFormatted) => void;
 };
 
 export interface ButtonsProps {
