@@ -22,6 +22,13 @@ import { fetchGamesByHour, fetchLeagues, getCache, saveCache } from '../../utils
 import { GameFormatted } from '../../utils/types';
 import { randomNumber, translateWord } from '../../utils/utils';
 
+const formatDateLocal = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const groupGamesByHour = (games: GameFormatted[]) => {
   const grouped: { [key: string]: GameFormatted[] } = {};
   games.forEach((game) => {
@@ -39,13 +46,13 @@ const groupGamesByHour = (games: GameFormatted[]) => {
 
 const getNextGamesFromApi = async (date: Date): Promise<{ [key: string]: GameFormatted[] }> => {
   const today = new Date(date);
-  const todayYYYYMMDD = today.toISOString().split('T')[0];
+  const todayYYYYMMDD = formatDateLocal(today);
   const newFetch: { [key: string]: GameFormatted[] } = {};
   for (let i = 0; i <= 5; i++) {
     const nextDate = new Date(todayYYYYMMDD);
     nextDate.setDate(nextDate.getDate() + i);
-    const nextYYYYMMDD = nextDate.toISOString().split('T')[0];
-    const gamesByHour = await fetchGamesByHour(nextYYYYMMDD);
+    const nextYYYYMMDD = formatDateLocal(nextDate);
+    const gamesByHour = await fetchGamesByHour(nextYYYYMMDD, 1000);
     newFetch[nextYYYYMMDD] = Object.values(gamesByHour).flat();
   }
   // Return fetched days to caller so caller (component) can merge into its cache and persist
@@ -55,7 +62,7 @@ const getNextGamesFromApi = async (date: Date): Promise<{ [key: string]: GameFor
 const pruneOldGamesCache = (cache: { [key: string]: GameFormatted[] }) => {
   const limitDate = new Date();
   limitDate.setDate(limitDate.getDate() - 1);
-  const limitDateStr = limitDate.toISOString().split('T')[0];
+  const limitDateStr = formatDateLocal(limitDate);
   const prunedEntries = Object.entries(cache).filter(([date]) => date >= limitDateStr);
   return Object.fromEntries(prunedEntries);
 };
@@ -249,8 +256,8 @@ const GameofTheDayContent = () => {
   }, [games, selectLeagues, teamSelectedId, activeFilter, favoriteTeams]);
 
   const getGamesFromApi = useCallback(async (dateToFetch: Date) => {
-    const YYYYMMDD = new Date(dateToFetch).toISOString().split('T')[0];
-    const today = new Date().toISOString().split('T')[0];
+    const YYYYMMDD = formatDateLocal(dateToFetch);
+    const today = formatDateLocal(new Date());
 
     if (YYYYMMDD < today) {
       if (gamesDayCache.current[YYYYMMDD]) {
@@ -258,7 +265,7 @@ const GameofTheDayContent = () => {
         saveCache('gamesDay', gamesDayCache.current);
       }
       try {
-        const gamesByHourData = await fetchGamesByHour(YYYYMMDD);
+        const gamesByHourData = await fetchGamesByHour(YYYYMMDD, 1000);
         const gamesOfTheDay = Object.values(gamesByHourData).flat();
         setGames(gamesOfTheDay);
       } catch (error) {
@@ -296,37 +303,20 @@ const GameofTheDayContent = () => {
 
     // Fetch from API if not in cache
     try {
-      const initialGamesByHour = await fetchGamesByHour(YYYYMMDD, 15);
-      const initialGames = Object.values(initialGamesByHour).flat();
-      setGames(initialGames);
-
-      let allGames = initialGames;
-
-      if (initialGames.length >= 15) {
-        const restGamesByHour = await fetchGamesByHour(YYYYMMDD, undefined, 15);
-        const restGames = Object.values(restGamesByHour).flat();
-        // Fusionner en évitant les doublons potentiels
-        const existingIds = new Set(initialGames.map((g) => g.uniqueId));
-        const newGames = restGames.filter((g) => !existingIds.has(g.uniqueId));
-        allGames = [...initialGames, ...newGames];
-        setGames(allGames);
-      }
-
+      const gamesByHourData = await fetchGamesByHour(YYYYMMDD, 1000);
+      const allGames = Object.values(gamesByHourData).flat();
+      setGames(allGames);
       gamesDayCache.current[YYYYMMDD] = allGames;
 
       if (YYYYMMDD === today) {
         getNextGamesFromApi(dateToFetch).then((nextFetchedGames) => {
-          Object.entries(nextFetchedGames).forEach(([date, games]) => {
-            gamesDayCache.current[date] = games;
-          });
-          const pruned = pruneOldGamesCache({ ...(gamesDayCache.current || {}) });
-          gamesDayCache.current = pruned;
-          saveCache('gamesDay', pruned);
+          gamesDayCache.current = pruneOldGamesCache({ ...gamesDayCache.current, ...nextFetchedGames });
+          saveCache('gamesDay', gamesDayCache.current);
         });
+      } else {
+        // Pour les autres jours, on sauvegarde le cache qui a été mis à jour dans le if/else
+        saveCache('gamesDay', gamesDayCache.current);
       }
-      const pruned = pruneOldGamesCache({ ...(gamesDayCache.current || {}) });
-      gamesDayCache.current = pruned;
-      saveCache('gamesDay', pruned);
     } catch (error) {
       console.error(error);
       if (!cachedGames) {
@@ -341,8 +331,8 @@ const GameofTheDayContent = () => {
 
   const handleDateChange = useCallback(
     (startDate: Date, endDate: Date) => {
-      const dateStr = startDate.toISOString().split('T')[0];
-      const currentStr = selectDateRef.current.toISOString().split('T')[0];
+      const dateStr = formatDateLocal(startDate);
+      const currentStr = formatDateLocal(selectDateRef.current);
 
       router.setParams({ date: dateStr });
 
@@ -574,7 +564,7 @@ const GameofTheDayContent = () => {
       }
 
       // Only show loader if there's no cached data for today
-      const YYYYMMDD = new Date(selectDate).toISOString().split('T')[0];
+      const YYYYMMDD = formatDateLocal(new Date(selectDate));
       const hasCachedDataForToday = gamesDayCache.current[YYYYMMDD]?.length > 0;
 
       if (!hasCachedDataForToday) {
@@ -601,7 +591,7 @@ const GameofTheDayContent = () => {
       if (isNaN(parsed.getTime())) {
         invalidParam = true;
       } else {
-        const parsedStr = parsed.toISOString().split('T')[0];
+        const parsedStr = formatDateLocal(parsed);
         if (/^\d{4}-\d{2}-\d{2}$/.test(param) && param !== parsedStr) {
           invalidParam = true;
         } else {
@@ -621,8 +611,8 @@ const GameofTheDayContent = () => {
       }, 0);
     }
 
-    const dStr = d.toISOString().split('T')[0];
-    const currentStr = selectDate.toISOString().split('T')[0];
+    const dStr = formatDateLocal(d);
+    const currentStr = formatDateLocal(selectDate);
 
     if (dStr === currentStr) {
       isInternalChange.current = false;
