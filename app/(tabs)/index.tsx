@@ -588,7 +588,7 @@ const GameofTheDayContent = () => {
 
     if (param) {
       const parsed = new Date(param);
-      if (isNaN(parsed.getTime())) {
+      if (Number.isNaN(parsed.getTime())) {
         invalidParam = true;
       } else {
         const parsedStr = formatDateLocal(parsed);

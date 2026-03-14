@@ -416,7 +416,7 @@ export default function Calendar() {
                         ...filteredTeamsSelected
                           .map((id) => teams.find((t) => t.uniqueId === id))
                           .filter((t): t is Team => !!t)
-                          .map((t) => ({ label: t.teamCommonName, value: t.uniqueId })),
+                          .map((t) => ({ label: t.label, value: t.uniqueId })),
                       ]}
                       selectedFilters={
                         hiddenTeams.length === 0
