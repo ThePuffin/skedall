@@ -1,5 +1,6 @@
 import { ThemedText } from '@/components/ThemedText';
-import { leagueLogos } from '@/constants/enum';
+import { League, leagueLogos } from '@/constants/enum';
+import { leagueMapping } from '@/constants/Leagues';
 import { GameFormatted } from '@/utils/types';
 import { generateICSFile, translateWord } from '@/utils/utils';
 import { Icon } from '@rneui/themed';
@@ -29,6 +30,7 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
     homeTeamRecord,
     awayTeamRecord,
     urlLive,
+    league,
   } = data;
 
   const hasScore = homeTeamScore != null && awayTeamScore != null;
@@ -53,6 +55,18 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
     isDark && homeTeamLogoDark ? homeTeamLogoDark || leagueLogos.DEFAULT : homeTeamLogo || leagueLogos.DEFAULT;
   const displayAwayLogo =
     isDark && awayTeamLogoDark ? awayTeamLogoDark || leagueLogos.DEFAULT : awayTeamLogo || leagueLogos.DEFAULT;
+
+  const getEspnStandingsUrl = (leagueKey: string) => {
+    const baseUrl = 'https://www.espn.com';
+
+    const path = leagueMapping[leagueKey.toUpperCase() as keyof typeof leagueMapping];
+
+    if (!path) return null;
+
+    return `${baseUrl}/${path}`;
+  };
+
+  const standingUrl = league === League.PWHL ? 'https://pwhl.ca/standings' : getEspnStandingsUrl(league);
 
   return (
     <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
@@ -180,7 +194,7 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
                   >
                     <View style={[styles.actionButton, { backgroundColor: buttonBackgroundColor, width: '100%' }]}>
                       <Icon
-                        name="info-circle"
+                        name="list-alt"
                         type="font-awesome"
                         size={20}
                         color={iconColor}
@@ -191,6 +205,34 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
                       </ThemedText>
                     </View>
                   </a>
+                  {standingUrl && (
+                    <a
+                      href={standingUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        textDecoration: 'none',
+                        display: 'flex',
+                        width: '100%',
+                        maxWidth: 250,
+                        justifyContent: 'center',
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <View style={[styles.actionButton, { backgroundColor: buttonBackgroundColor, width: '100%' }]}>
+                        <Icon
+                          name="list-ol"
+                          type="font-awesome"
+                          size={20}
+                          color={iconColor}
+                          style={{ marginRight: 10 }}
+                        />
+                        <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.actionButtonText}>
+                          {translateWord('standings')}
+                        </ThemedText>
+                      </View>
+                    </a>
+                  )}
                 </View>
               )
             )}

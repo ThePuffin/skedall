@@ -121,6 +121,7 @@ export const translateWord = (word: string) => {
         gameDetails: 'Détails du match',
         events: 'Evenements',
         final: 'Finalisation',
+        standings: 'Classement',
       };
       break;
     case 'de':
@@ -160,6 +161,7 @@ export const translateWord = (word: string) => {
         gameDetails: 'Spieldetails',
         events: 'Ereignisse',
         final: 'Ergebnis',
+        standings: 'Standings',
       };
       break;
     case 'es':
@@ -199,6 +201,7 @@ export const translateWord = (word: string) => {
         gameDetails: 'Detalles del juego',
         events: 'Eventos',
         final: 'Final',
+        standings: 'Clasificaciones',
       };
       break;
 
@@ -239,6 +242,7 @@ export const translateWord = (word: string) => {
         gameDetails: 'Dettagli del gioco',
         events: 'Eventi',
         final: 'Finale',
+        standings: 'Classifica',
       };
       break;
     case 'ja':
@@ -278,6 +282,7 @@ export const translateWord = (word: string) => {
         gameDetails: 'ゲームの詳細',
         events: 'イベント',
         final: '最終',
+        standings: 'スタンディング',
       };
       break;
     case 'ko':
@@ -317,6 +322,7 @@ export const translateWord = (word: string) => {
         gameDetails: '게임 세부 정보',
         events: '이벤트',
         final: '최종',
+        standings: '표준',
       };
       break;
     case 'nl':
@@ -356,6 +362,7 @@ export const translateWord = (word: string) => {
         gameDetails: 'Spel details',
         events: 'Evenementen',
         final: 'Eind',
+        standings: 'Standings',
       };
       break;
     case 'pt':
@@ -395,6 +402,7 @@ export const translateWord = (word: string) => {
         gameDetails: 'Detalhes do jogo',
         events: 'Eventos',
         final: 'Final',
+        standings: 'Classificação',
       };
       break;
     case 'ru':
@@ -434,6 +442,7 @@ export const translateWord = (word: string) => {
         gameDetails: 'Детали игры',
         events: 'События',
         final: 'Финал',
+        standings: 'Таблица',
       };
       break;
     case 'zh':
@@ -473,6 +482,7 @@ export const translateWord = (word: string) => {
         gameDetails: '比赛详情',
         events: '事件',
         final: '最终',
+        standings: '排名',
       };
       break;
     default:
@@ -512,6 +522,7 @@ export const translateWord = (word: string) => {
         gameDetails: 'Game Details',
         events: 'Events',
         final: 'Final',
+        standings: 'Standings',
       };
       break;
   }
