@@ -1,8 +1,7 @@
 import { FilterGames, GameFormatted, Team } from '@/utils/types';
 import * as fflate from 'fflate';
 
-const EXPO_PUBLIC_API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://sportschedule2025backend.onrender.com';
+const EXPO_PUBLIC_API_BASE_URL =  process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://sportschedule2025backend.onrender.com';
 
 type TeamGamesCacheEntry = {
   data: FilterGames;
@@ -352,6 +351,28 @@ export const fetchGames = async (date: string): Promise<GameFormatted[]> => {
     undefined,
     10000,
   );
+};
+
+export const fetchLiveScores = async (gameIds: string[]): Promise<GameFormatted[]> => {
+  if (gameIds.length === 0) return [];
+
+  try {
+    const res = await fetchWithTimeout(`${EXPO_PUBLIC_API_BASE_URL}/games/live`, 15000, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ gameIds }),
+    });
+
+    if (res.ok) {
+      return (await res.json()) as GameFormatted[];
+    }
+    return [];
+  } catch (error) {
+    console.error('Error fetching live scores:', error);
+    return [];
+  }
 };
 
 export const fetchDateRangeFromApi = async () => {

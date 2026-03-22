@@ -35,6 +35,9 @@ export interface GameFormatted {
   awayTeamBackgroundColor: string;
   homeTeamColor: string;
   homeTeamBackgroundColor: string;
+  gameStatus?: string;
+  gameClock?: string;
+  gamePeriod?: number;
 }
 
 export interface League {

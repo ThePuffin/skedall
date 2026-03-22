@@ -1,9 +1,11 @@
 import { ThemedText } from '@/components/ThemedText';
-import { League, leagueLogos, leagueMapping } from '@/constants/enum';
+import { GameStatus, League, leagueLogos, leagueMapping } from '@/constants/enum';
+import { getGamesStatus } from '@/utils/date';
+import { fetchLiveScores } from '@/utils/fetchData';
 import { GameFormatted } from '@/utils/types';
 import { generateICSFile, translateWord } from '@/utils/utils';
 import { Icon } from '@rneui/themed';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
 
 interface GameModalProps {
@@ -14,6 +16,30 @@ interface GameModalProps {
 }
 
 export default function GameModal({ visible, onClose, data, gradientStyle }: GameModalProps) {
+  const [liveGame, setLiveGame] = useState<GameFormatted | null>(null);
+
+  useEffect(() => {
+    if (visible) {
+      const fetchLiveGameData = async () => {
+        const gameTime = new Date(data.startTimeUTC);
+        const now = new Date();
+        const hoursDiff = (now.getTime() - gameTime.getTime()) / (1000 * 60 * 60);
+
+        if (hoursDiff > -0.25 && hoursDiff < 5 && data.gameStatus !== 'FINAL' && data.gameStatus !== 'FINISHED') {
+          const liveScores = await fetchLiveScores([data.uniqueId]);
+          if (liveScores && liveScores.length > 0) {
+            setLiveGame(liveScores[0]);
+          }
+        }
+      };
+
+      fetchLiveGameData();
+    } else {
+      setLiveGame(null);
+    }
+  }, [visible, data.uniqueId, data.startTimeUTC, data.gameStatus]);
+
+  const displayData = liveGame || data;
   const {
     startTimeUTC,
     homeTeamLogo,
@@ -30,10 +56,22 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
     awayTeamRecord,
     urlLive,
     league,
-  } = data;
+    gameStatus,
+    gameClock,
+  } = displayData;
 
   const hasScore = homeTeamScore != null && awayTeamScore != null;
-  const isStarted = startTimeUTC ? new Date(startTimeUTC) < new Date() : false;
+  const status = getGamesStatus(displayData);
+  const isToday = new Date().toDateString() === new Date(startTimeUTC).toDateString();
+  const isLive =
+    status === GameStatus.IN_PROGRESS ||
+    (!!gameStatus &&
+      ['Top', 'Bot', 'Mid', 'End', '1st', '2nd', '3rd', '4th', 'OT', 'Half', "'", 'In SO'].some((s) =>
+        gameStatus.includes(s),
+      ) &&
+      !gameStatus.toUpperCase().includes('FINAL') &&
+      !gameStatus.toUpperCase().includes('ENDED')) ||
+    (hasScore && isToday && status !== GameStatus.FINISHED && status !== GameStatus.FINAL);
 
   const dateOptions: Intl.DateTimeFormatOptions = {
     weekday: 'long',
@@ -66,6 +104,37 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
   };
 
   const standingUrl = league === League.PWHL ? 'https://pwhl.ca/standings' : getEspnStandingsUrl(league);
+
+  const renderStatusText = () => {
+    if (isLive) {
+      if ((!gameClock || gameClock === '00:00') && gameStatus && gameStatus !== 'IN_PROGRESS') {
+        return (
+          <ThemedText style={[styles.dateText, { color: '#ef4444', fontWeight: 'bold' }]}>{gameStatus}</ThemedText>
+        );
+      }
+
+      return (
+        <ThemedText style={[styles.dateText, { color: '#ef4444', fontWeight: 'bold' }]}>
+          {gameStatus || translateWord('inProgress')}
+        </ThemedText>
+      );
+    }
+
+    if (hasScore) {
+      const statusText = status === GameStatus.FINAL ? translateWord('final') : translateWord('ended');
+      return (
+        <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
+          {statusText}
+        </ThemedText>
+      );
+    }
+
+    return (
+      <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
+        {startTimeUTC ? new Date(startTimeUTC).toLocaleDateString(undefined, dateOptions) : ''}
+      </ThemedText>
+    );
+  };
 
   return (
     <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
@@ -123,61 +192,11 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
                 )}
               </View>
             </View>
-            {!hasScore && !isStarted ? (
-              <>
-                <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
-                  {startTimeUTC ? new Date(startTimeUTC).toLocaleDateString(undefined, dateOptions) : ''}
-                </ThemedText>
+            {renderStatusText()}
 
-                <View style={styles.actionsRow}>
-                  {/* Premier bouton (ICS) */}
-                  <View style={styles.buttonWrapper}>
-                    <TouchableOpacity
-                      style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}
-                      onPress={() => {
-                        generateICSFile(data);
-                        onClose();
-                      }}
-                    >
-                      <Icon
-                        name="calendar-plus-o"
-                        type="font-awesome"
-                        size={18}
-                        color={iconColor}
-                        style={styles.buttonIcon}
-                      />
-                      <ThemedText style={styles.actionButtonText}>{translateWord('downloadICS')}</ThemedText>
-                    </TouchableOpacity>
-                  </View>
-
-                  {/* Deuxième bouton (Arena) */}
-                  {arenaName && (
-                    <View style={styles.buttonWrapper}>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${stadiumSearch}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ textDecoration: 'none' }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <View style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}>
-                          <Icon
-                            name="map-marker"
-                            type="font-awesome"
-                            size={18}
-                            color={iconColor}
-                            style={styles.buttonIcon}
-                          />
-                          <ThemedText style={styles.actionButtonText}>{translateWord('localizeArena')}</ThemedText>
-                        </View>
-                      </a>
-                    </View>
-                  )}
-                </View>
-              </>
-            ) : (
-              urlLive && (
-                <View style={styles.actionsRow}>
+            <View style={styles.actionsRow}>
+              {isLive || hasScore ? (
+                <>
                   <a
                     href={urlLive}
                     target="_blank"
@@ -185,8 +204,7 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
                     style={{
                       textDecoration: 'none',
                       display: 'flex',
-                      width: '100%',
-                      maxWidth: 250,
+                      flex: 1,
                       justifyContent: 'center',
                     }}
                     onClick={(e) => e.stopPropagation()}
@@ -212,8 +230,7 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
                       style={{
                         textDecoration: 'none',
                         display: 'flex',
-                        width: '100%',
-                        maxWidth: 250,
+                        flex: 1,
                         justifyContent: 'center',
                       }}
                       onClick={(e) => e.stopPropagation()}
@@ -232,9 +249,53 @@ export default function GameModal({ visible, onClose, data, gradientStyle }: Gam
                       </View>
                     </a>
                   )}
-                </View>
-              )
-            )}
+                </>
+              ) : (
+                <>
+                  <View style={styles.buttonWrapper}>
+                    <TouchableOpacity
+                      style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}
+                      onPress={() => {
+                        generateICSFile(data);
+                        onClose();
+                      }}
+                    >
+                      <Icon
+                        name="calendar-plus-o"
+                        type="font-awesome"
+                        size={18}
+                        color={iconColor}
+                        style={styles.buttonIcon}
+                      />
+                      <ThemedText style={styles.actionButtonText}>{translateWord('downloadICS')}</ThemedText>
+                    </TouchableOpacity>
+                  </View>
+
+                  {arenaName && (
+                    <View style={styles.buttonWrapper}>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${stadiumSearch}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: 'none' }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <View style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}>
+                          <Icon
+                            name="map-marker"
+                            type="font-awesome"
+                            size={18}
+                            color={iconColor}
+                            style={styles.buttonIcon}
+                          />
+                          <ThemedText style={styles.actionButtonText}>{translateWord('localizeArena')}</ThemedText>
+                        </View>
+                      </a>
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
           </View>
         </Pressable>
       </Pressable>
@@ -324,18 +385,18 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 12,
     marginTop: 10,
-    justifyContent: 'center', // Centrage si un seul bouton
+    justifyContent: 'center',
     alignItems: 'center',
   },
   buttonWrapper: {
-    flex: 1, // Chaque wrapper prend la même largeur
-    maxWidth: 200, // Empêche les boutons de devenir trop larges sur grand écran
-    minWidth: 120, // Taille minimum pour la lisibilité
+    flex: 1,
+    maxWidth: 200,
+    minWidth: 120,
   },
   actionButton: {
     flexDirection: 'row',
-    height: 54, // Hauteur fixe identique pour tous
-    width: '100%', // Prend toute la place du wrapper (donc largeur identique)
+    height: 54,
+    width: '100%',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
@@ -348,7 +409,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 13,
     textAlign: 'center',
-    flexShrink: 1, // Force le texte à passer à la ligne si trop long au lieu de pousser le bouton
+    flexShrink: 1,
   },
   dateText: {
     marginBottom: 20,
