@@ -1,6 +1,5 @@
 import { ThemedText } from '@/components/ThemedText';
-import { League, leagueLogos } from '@/constants/enum';
-import { leagueMapping } from '@/constants/Leagues';
+import { League, leagueLogos, leagueMapping } from '@/constants/enum';
 import { GameFormatted } from '@/utils/types';
 import { generateICSFile, translateWord } from '@/utils/utils';
 import { Icon } from '@rneui/themed';
