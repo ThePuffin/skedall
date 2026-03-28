@@ -247,6 +247,11 @@ export default function CardLarge({
 
   const awayColorHex = getAdaptiveColor(awayTeamColor, awayTeamBackgroundColor);
   const homeColorHex = getAdaptiveColor(homeTeamColor, homeTeamBackgroundColor);
+  const backGroundColor = favoriteTeams.includes(homeTeamId)
+    ? homeColorHex
+    : favoriteTeams.includes(awayTeamId)
+      ? awayColorHex
+      : 'transparent';
 
   let gradientStyle = {
     backgroundColor: baseColor,
@@ -356,8 +361,8 @@ export default function CardLarge({
           </a>
         ) : (
           <ThemedText
-            lightColor={!isLive ? '#475569' : undefined}
-            darkColor={!isLive ? '#94a3b8' : undefined}
+            lightColor={isLive ? undefined : '#475569'}
+            darkColor={isLive ? undefined : '#94a3b8'}
             style={[isLive ? styles.liveTimeText : styles.timeText, isSmallCard && { fontSize: 10 }]}
           >
             {timeText}
@@ -401,7 +406,20 @@ export default function CardLarge({
       onLayout={(event) => setCardWidth(event.nativeEvent.layout.width)}
     >
       <Card
-        containerStyle={[styles.cardContainer, { padding: 0, backgroundColor: 'transparent' }]}
+        containerStyle={[
+          styles.cardContainer,
+          {
+            padding: 0,
+            backgroundColor: 'transparent',
+            borderWidth: 0,
+            shadowColor: backGroundColor,
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: 1,
+            shadowRadius: 10,
+            elevation: 5,
+            boxShadow: backGroundColor === 'transparent' ? 'none' : `0px 0px 5px ${backGroundColor}`,
+          },
+        ]}
         wrapperStyle={{ padding: 0 }}
       >
         <Pressable

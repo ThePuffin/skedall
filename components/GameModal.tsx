@@ -16,7 +16,7 @@ interface GameModalProps {
   favoriteTeams: string[];
 }
 
-export default function GameModal({ visible, onClose, data, gradientStyle, favoriteTeams }: GameModalProps) {
+export default function GameModal({ visible, onClose, data, gradientStyle, favoriteTeams }: Readonly<GameModalProps>) {
   const [liveGame, setLiveGame] = useState<GameFormatted | null>(null);
 
   useEffect(() => {
