@@ -10,6 +10,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   TouchableOpacity,
@@ -29,7 +30,8 @@ export default function CardLarge({
   animateEntry = false,
   verticalMode = false,
   showTime = false,
-}: Readonly<CardsProps & { showTime?: boolean; showScores?: boolean }>) {
+  delay = 0,
+}: Readonly<CardsProps & { showTime?: boolean; showScores?: boolean; delay?: number }>) {
   let { homeTeamShort, awayTeamShort } = data;
   const {
     homeTeamLogo,
@@ -99,9 +101,12 @@ export default function CardLarge({
   const [scoreRevealed, setScoreRevealed] = useState(false);
   const fadeAnim = useRef(new Animated.Value(animateEntry ? 0 : 1)).current;
   const scaleAnim = useRef(new Animated.Value(animateEntry ? 0.95 : 1)).current;
+  const translateYAnim = useRef(new Animated.Value(animateEntry ? 40 : 0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [cardWidth, setCardWidth] = useState(0);
   const isSmallCard = cardWidth > 0 && cardWidth < 190;
+  const viewRef = useRef<View>(null);
+  const [hasBeenSeen, setHasBeenSeen] = useState(!animateEntry);
 
   useEffect(() => {
     const updateFavorites = () => {
@@ -124,22 +129,40 @@ export default function CardLarge({
   }, []);
 
   useEffect(() => {
+    const isWeb = Platform.OS === 'web';
+    if (!animateEntry || !isWeb || !viewRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setHasBeenSeen(true);
+          // Très important : on arrête d'observer une fois vue pour libérer des ressources
+          if (viewRef.current) observer.unobserve(viewRef.current as any);
+        }
+      },
+      { threshold: 0.05, rootMargin: '100px' }, // Seuil plus bas et marge plus grande pour plus de fluidité
+    );
+
+    observer.observe(viewRef.current as any);
+
+    return () => observer.disconnect();
+  }, [animateEntry]);
+
+  useEffect(() => {
     if (animateEntry) {
-      Animated.parallel([
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 8,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      if (hasBeenSeen) {
+        // Animation d'APPARITION
+        Animated.sequence([
+          Animated.delay(delay),
+          Animated.parallel([
+            Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+            Animated.spring(scaleAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
+            Animated.timing(translateYAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+          ]),
+        ]).start();
+      }
     }
-  }, [animateEntry, fadeAnim, scaleAnim]);
+  }, [hasBeenSeen, animateEntry, fadeAnim, scaleAnim, translateYAnim, delay]);
 
   useEffect(() => {
     if (!showScores) {
@@ -402,7 +425,14 @@ export default function CardLarge({
 
   return (
     <Animated.View
-      style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}
+      ref={viewRef}
+      style={
+        {
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
+          willChange: animateEntry ? 'opacity, transform' : 'auto', // Optimisation GPU
+        } as any
+      }
       onLayout={(event) => setCardWidth(event.nativeEvent.layout.width)}
     >
       <Card

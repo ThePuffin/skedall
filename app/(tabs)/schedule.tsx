@@ -459,9 +459,19 @@ export default function Schedule() {
     const columnsData: ColumnData[] = visibleGamesByMonth.map(({ month, games }) => ({
       title: month,
       key: month,
-      content: games.map((game) => {
+      content: games.map((game, index) => {
         const gameId = game._id ?? randomNumber(999999);
-        return <CardLarge key={gameId} data={game} numberSelected={1} showButtons={true} showDate={true} />;
+        return (
+          <CardLarge
+            key={gameId}
+            data={game}
+            numberSelected={1}
+            showButtons={true}
+            showDate={true}
+            animateEntry={true}
+            delay={index * 50}
+          />
+        );
       }),
     }));
 
