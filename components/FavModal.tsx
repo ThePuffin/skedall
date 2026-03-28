@@ -10,7 +10,7 @@ import { translateWord } from '@/utils/utils';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Dimensions, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-const maxFavorites = 9;
+import { maxFavoritesNumber } from '../constants/Constants';
 
 const FavModal = ({
   isOpen,
@@ -148,7 +148,7 @@ const FavModal = ({
                   <TeamReorderSelector
                     teams={localFavorites}
                     allTeams={teamsForFavorites}
-                    maxTeams={maxFavorites}
+                    maxTeams={maxFavoritesNumber}
                     onChange={setLocalFavorites}
                     allowedLeagues={localLeagues}
                   />

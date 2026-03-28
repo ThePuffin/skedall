@@ -1,3 +1,5 @@
+import { maxFavoritesNumber } from '@/constants/Constants';
+import { saveCache } from '@/utils/fetchData';
 import { Team } from './types';
 
 export const randomNumber = (max) => {
@@ -19,6 +21,22 @@ export const addNewTeamId = (selection: string[], teams: Team[]) => {
 export const removeLastTeamId = (selection: string[]) => {
   selection.pop();
   return selection;
+};
+
+export const addFavoriteTeam = (favoriteTeams: string[], teamId: string) => {
+  const isIncluded = favoriteTeams.includes(teamId);
+
+  if (isIncluded && favoriteTeams.length > 1) {
+    // On retire l'équipe seulement s'il en reste au moins une après
+    const updatedFavorites = favoriteTeams.filter((id) => id !== teamId);
+    saveCache('favoriteTeams', updatedFavorites);
+  } else if (!isIncluded && favoriteTeams.length < maxFavoritesNumber) {
+    const updatedFavorites = [...favoriteTeams, teamId];
+    saveCache('favoriteTeams', updatedFavorites);
+  }
+  if (globalThis.window !== undefined) {
+    globalThis.window.dispatchEvent(new Event('favoritesUpdated'));
+  }
 };
 
 interface ICSFileParams {

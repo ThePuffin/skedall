@@ -3,7 +3,7 @@ import { GameStatus, leagueLogos } from '@/constants/enum';
 import { getGamesStatus } from '@/utils/date';
 import { getCache } from '@/utils/fetchData';
 import { CardsProps, GameFormatted } from '@/utils/types';
-import { translateWord } from '@/utils/utils';
+import { addFavoriteTeam, translateWord } from '@/utils/utils';
 import { Card } from '@rneui/base';
 import { Icon } from '@rneui/themed';
 import React, { useEffect, useRef, useState } from 'react';
@@ -520,9 +520,17 @@ export default function CardLarge({
                       >
                         {awayTeamShort || '\u00A0'}
                       </ThemedText>
-                      {favoriteTeams.includes(awayTeamId) && (
-                        <Icon name="star" type="font-awesome" size={14} color="#FFD700" style={{ marginLeft: 5 }} />
-                      )}
+                      <Icon
+                        onPress={(e) => {
+                          e?.stopPropagation();
+                          addFavoriteTeam(favoriteTeams, awayTeamId);
+                        }}
+                        name={favoriteTeams.includes(awayTeamId) ? 'star' : 'star-o'}
+                        type="font-awesome"
+                        size={14}
+                        color={favoriteTeams.includes(awayTeamId) ? '#FFD700' : '#94a3b8'}
+                        style={{ marginLeft: 5 }}
+                      />
                     </View>
                   )}
                   {!isSmallCard && (
@@ -587,9 +595,17 @@ export default function CardLarge({
                       >
                         {homeTeamShort || '\u00A0'}
                       </ThemedText>
-                      {favoriteTeams.includes(homeTeamId) && (
-                        <Icon name="star" type="font-awesome" size={14} color="#FFD700" style={{ marginLeft: 5 }} />
-                      )}
+                      <Icon
+                        onPress={(e) => {
+                          e?.stopPropagation();
+                          addFavoriteTeam(favoriteTeams, homeTeamId);
+                        }}
+                        name={favoriteTeams.includes(homeTeamId) ? 'star' : 'star-o'}
+                        type="font-awesome"
+                        size={14}
+                        color={favoriteTeams.includes(homeTeamId) ? '#FFD700' : '#94a3b8'}
+                        style={{ marginLeft: 5 }}
+                      />
                     </View>
                   )}
                   {!isSmallCard && (
@@ -654,6 +670,7 @@ export default function CardLarge({
         onClose={() => setModalVisible(false)}
         data={data}
         gradientStyle={gradientStyle}
+        favoriteTeams={favoriteTeams}
       />
     </Animated.View>
   );
