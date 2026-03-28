@@ -101,7 +101,7 @@ export default function CardLarge({
   const [scoreRevealed, setScoreRevealed] = useState(false);
   const fadeAnim = useRef(new Animated.Value(animateEntry ? 0 : 1)).current;
   const scaleAnim = useRef(new Animated.Value(animateEntry ? 0.95 : 1)).current;
-  const translateYAnim = useRef(new Animated.Value(animateEntry ? 40 : 0)).current;
+  const translateYAnim = useRef(new Animated.Value(animateEntry ? 20 : 0)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [cardWidth, setCardWidth] = useState(0);
   const isSmallCard = cardWidth > 0 && cardWidth < 190;
@@ -140,7 +140,7 @@ export default function CardLarge({
           if (viewRef.current) observer.unobserve(viewRef.current as any);
         }
       },
-      { threshold: 0.05, rootMargin: '100px' }, // Seuil plus bas et marge plus grande pour plus de fluidité
+      { threshold: 0.01, rootMargin: '250px' }, // On anticipe le scroll beaucoup plus tôt (250px)
     );
 
     observer.observe(viewRef.current as any);
@@ -155,9 +155,9 @@ export default function CardLarge({
         Animated.sequence([
           Animated.delay(delay),
           Animated.parallel([
-            Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+            Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }),
             Animated.spring(scaleAnim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true }),
-            Animated.timing(translateYAnim, { toValue: 0, duration: 600, useNativeDriver: true }),
+            Animated.timing(translateYAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
           ]),
         ]).start();
       }

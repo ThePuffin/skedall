@@ -58,7 +58,7 @@ export default function Accordion({
             isSelected={isSelected}
             showTime={showTime}
             animateEntry={true}
-            delay={index * 80}
+            delay={index * 15}
           />
         </div>
       );

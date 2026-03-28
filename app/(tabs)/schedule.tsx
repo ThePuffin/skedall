@@ -469,7 +469,7 @@ export default function Schedule() {
             showButtons={true}
             showDate={true}
             animateEntry={true}
-            delay={index * 50}
+            delay={index * 15}
           />
         );
       }),
