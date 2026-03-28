@@ -664,7 +664,6 @@ const GameofTheDayContent = () => {
                     <FilterSlider
                       selectedFilter={activeFilter}
                       onFilterChange={handleFilterChange}
-                      hasFavorites={hasFavorites}
                       data={[
                         { label: translateWord('all'), value: 'ALL' },
                         ...userLeagues.filter((l) => l !== 'ALL').map((l) => ({ label: l, value: l })),

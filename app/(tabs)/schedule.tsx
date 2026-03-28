@@ -495,9 +495,6 @@ export default function Schedule() {
                     selectedFilter={leagueOfSelectedTeam}
                     onFilterChange={handleLeagueSelectionChange}
                     availableLeagues={leagues}
-                    showFavorites={false}
-                    hasFavorites={false}
-                    showAll={false}
                   />
                 </ThemedElements>
                 <Separator />
@@ -592,15 +589,11 @@ export default function Schedule() {
               selectedFilter={monthFilter.length > 0 ? monthFilter[0] : 'ALL'}
               onFilterChange={(value) => setMonthFilter(value === 'ALL' ? [] : [value])}
               data={[{ label: translateWord('all'), value: 'ALL' }, ...months.map((m) => ({ label: m, value: m }))]}
-              showFavorites={false}
-              hasFavorites={false}
-              showAll={true}
               style={{ backgroundImage: 'none', backgroundColor: 'transparent' } as any}
               itemStyle={{ borderWidth: 1, borderColor: 'transparent' }}
               selectedItemStyle={{
                 backgroundColor: 'transparent',
                 borderWidth: 1,
-                fontWeight: 'bold',
                 borderColor: selectedBackgroundColor,
               }}
               textStyle={{
@@ -608,7 +601,10 @@ export default function Schedule() {
                 fontSize: 14,
                 textTransform: 'capitalize',
               }}
-              selectedTextStyle={{ color: colorScheme === 'light' ? selectedBackgroundColor : '#ecedee' }}
+              selectedTextStyle={{
+                color: colorScheme === 'light' ? selectedBackgroundColor : '#ecedee',
+                fontWeight: 'bold',
+              }}
             />
           </div>
         )}

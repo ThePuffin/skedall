@@ -162,7 +162,7 @@ export default function Cards({
   let favoriteCardStyle =
     isFavorite || isCardSelected
       ? {
-          border: 'double' + colorTeam?.color,
+          borderColor: colorTeam?.color,
           borderWidth: 3,
           borderStyle: 'solid',
           boxShadow: `0px 0px 9px #FFD700`,

@@ -259,8 +259,8 @@ export default function Calendar() {
   };
 
   const handleOpenReorder = () => {
-    const availableIds = teamsAvailableForReorder.map((t) => t.uniqueId);
-    const validTeams = teamsSelected.filter((id) => availableIds.includes(id));
+    const availableIds = new Set(teamsAvailableForReorder.map((t) => t.uniqueId));
+    const validTeams = teamsSelected.filter((id) => availableIds.has(id));
     setTempTeams(validTeams);
     setReorderModalVisible(true);
   };
@@ -275,6 +275,12 @@ export default function Calendar() {
     saveCache('gameSelected', []);
   };
 
+  useEffect(() => {
+    if (gamesModalVisible && filteredGamesSelected.length === 0) {
+      setGamesModalVisible(false);
+    }
+  }, [filteredGamesSelected, gamesModalVisible]);
+
   const displayAccordions = () => {
     if (!games || Object.keys(games).length === 0) return null;
 
@@ -283,7 +289,7 @@ export default function Calendar() {
     return sortedDates.map((date, index) => {
       const [year, month, day] = date.split('-').map(Number);
       const gameDate = new Date(year, month - 1, day);
-      if (isNaN(gameDate.getTime())) return null;
+      if (Number.isNaN(gameDate.getTime())) return null;
       const startDate = new Date(dateRange.startDate);
       startDate.setHours(0, 0, 0, 0);
       const endDate = new Date(dateRange.endDate);
@@ -391,8 +397,10 @@ export default function Calendar() {
                       justifyContent: 'center',
                       marginRight: 10,
                       backgroundColor,
-                      border: `1px solid ${iconColor}`,
-                      borderRadius: '50%',
+                      borderWidth: 1,
+                      borderColor: iconColor,
+                      borderStyle: 'solid',
+                      borderRadius: 20,
                       flexShrink: 0,
                     }}
                   >
@@ -445,8 +453,10 @@ export default function Calendar() {
                       justifyContent: 'center',
                       marginLeft: 10,
                       backgroundColor,
-                      border: `1px solid ${iconColor}`,
-                      borderRadius: '50%',
+                      borderWidth: 1,
+                      borderColor: iconColor,
+                      borderStyle: 'solid',
+                      borderRadius: 20,
                       flexShrink: 0,
                     }}
                   >
