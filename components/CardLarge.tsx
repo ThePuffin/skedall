@@ -136,11 +136,11 @@ export default function CardLarge({
       ([entry]) => {
         if (entry.isIntersecting) {
           setHasBeenSeen(true);
-          // Très important : on arrête d'observer une fois vue pour libérer des ressources
+          // Very important: stop observing once seen to free up resources
           if (viewRef.current) observer.unobserve(viewRef.current as any);
         }
       },
-      { threshold: 0.01, rootMargin: '250px' }, // On anticipe le scroll beaucoup plus tôt (250px)
+      { threshold: 0.01, rootMargin: '250px' }, // Anticipate scroll much earlier (250px)
     );
 
     observer.observe(viewRef.current as any);
@@ -151,7 +151,7 @@ export default function CardLarge({
   useEffect(() => {
     if (animateEntry) {
       if (hasBeenSeen) {
-        // Animation d'APPARITION
+        // Appearance animation
         Animated.sequence([
           Animated.delay(delay),
           Animated.parallel([
@@ -430,7 +430,7 @@ export default function CardLarge({
         {
           opacity: fadeAnim,
           transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
-          willChange: animateEntry ? 'opacity, transform' : 'auto', // Optimisation GPU
+          willChange: animateEntry ? 'opacity, transform' : 'auto', // GPU optimization
         } as any
       }
       onLayout={(event) => setCardWidth(event.nativeEvent.layout.width)}
@@ -726,7 +726,7 @@ export default function CardLarge({
 
 const styles = StyleSheet.create({
   cardContainer: {
-    backgroundColor: '#0f172a', // Bleu très foncé
+    backgroundColor: '#0f172a', // Very dark blue
     borderRadius: 20,
     borderWidth: 0,
     marginHorizontal: 10,

@@ -56,7 +56,7 @@ const FavModal = ({
         setAllLeagues(filtered);
         saveCache('allLeagues', filtered);
         const cachedLeagues = getCache<string[]>('leaguesSelected');
-        // Si pas de cache, on sélectionne tout par défaut
+        // If no cache, select all by default
         setLocalLeagues(cachedLeagues && cachedLeagues.length > 0 ? cachedLeagues : filtered);
       });
     }

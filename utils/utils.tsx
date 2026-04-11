@@ -27,7 +27,7 @@ export const addFavoriteTeam = (favoriteTeams: string[], teamId: string) => {
   const isIncluded = favoriteTeams.includes(teamId);
 
   if (isIncluded && favoriteTeams.length > 1) {
-    // On retire l'équipe seulement s'il en reste au moins une après
+    // Only remove team if at least one remains after
     const updatedFavorites = favoriteTeams.filter((id) => id !== teamId);
     saveCache('favoriteTeams', updatedFavorites);
   } else if (!isIncluded && favoriteTeams.length < maxFavoritesNumber) {
