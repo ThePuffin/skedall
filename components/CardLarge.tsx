@@ -54,6 +54,9 @@ export default function CardLarge({
     placeName = '',
     league,
     urlLive,
+    gameStatus,
+    gameClock,
+    gamePeriod,
   } = data;
 
   if (league.includes('OLYMPICS')) {
@@ -172,7 +175,20 @@ export default function CardLarge({
 
   const hasScore = homeTeamScore != null && awayTeamScore != null;
   const status = getGamesStatus(data);
-  const isLive = status === GameStatus.IN_PROGRESS;
+  const now = new Date();
+  const start = new Date(startTimeUTC);
+  const isToday = now.toDateString() === start.toDateString();
+  const diffHours = (now.getTime() - start.getTime()) / (1000 * 60 * 60);
+  const isLive =
+    (status === GameStatus.IN_PROGRESS ||
+      (!!gameStatus &&
+        ['Top', 'Bot', 'Mid', 'End', '1st', '2nd', '3rd', '4th', 'OT', 'Half', "'", 'In SO'].some((s) =>
+          gameStatus.includes(s),
+        ) &&
+        !gameStatus.toUpperCase().includes('FINAL') &&
+        !gameStatus.toUpperCase().includes('ENDED')) ||
+      (hasScore && isToday && status !== GameStatus.FINAL && status !== GameStatus.FINISHED)) &&
+    diffHours < 5;
 
   useEffect(() => {
     if (isLive) {
@@ -196,12 +212,90 @@ export default function CardLarge({
   }, [isLive, pulseAnim]);
 
   let timeText = '';
-  if (status === GameStatus.FINISHED) {
-    timeText = translateWord('ended');
-  } else if (status === GameStatus.FINAL) {
+  const isGameStatusFinal = gameStatus?.toUpperCase().includes('FINAL') || gameStatus?.toUpperCase().includes('ENDED');
+  const isGameStatusLive =
+    gameStatus &&
+    ['Top', 'Bot', 'Mid', 'End', '1st', '2nd', '3rd', '4th', 'OT', 'Half', "'", 'In SO'].some((s) =>
+      gameStatus.includes(s),
+    ) &&
+    !isGameStatusFinal;
+
+  const hasPeriodInGameStatus = (status?: string) => {
+    if (!status) return false;
+    return /\b(1st|2nd|3rd|4th|OT|SO|HT|Half|Top|Bot|Mid|End|P\d+)\b/i.test(status);
+  };
+
+  const gameStatusAlreadyIncludesClock = (status?: string, clock?: string) => {
+    if (!status || !clock) return false;
+    const normalizedStatus = status.toLowerCase();
+    const normalizedClock = clock.toLowerCase();
+    const variants = [normalizedClock];
+    if (normalizedClock.startsWith('00:')) {
+      variants.push(normalizedClock.replace(/^00:/, ''));
+    }
+    if (normalizedClock.startsWith('0:')) {
+      variants.push(normalizedClock.replace(/^0:/, ''));
+    }
+    return variants.some((variant) => normalizedStatus.includes(variant));
+  };
+
+  const livePeriodText = gameStatus || (typeof gamePeriod === 'number' ? `P${gamePeriod}` : '');
+  const isStarted3hAgo = diffHours > 3;
+  const serviceReportsNotTerminated =
+    isGameStatusLive ||
+    (!!gameStatus &&
+      !isGameStatusFinal &&
+      gameStatus !== 'FINAL' &&
+      gameStatus !== 'FINISHED' &&
+      gameStatus !== 'ENDED');
+  const showFinalization = !hasScore && serviceReportsNotTerminated && isStarted3hAgo;
+
+  if (showFinalization) {
     timeText = translateWord('final');
-  } else if (status === GameStatus.IN_PROGRESS) {
-    timeText = translateWord('followLive');
+  } else if ((status === GameStatus.FINISHED || status === GameStatus.FINAL) && !hasScore) {
+    timeText = translateWord('final');
+  } else if ((status === GameStatus.FINISHED || status === GameStatus.FINAL) && hasScore) {
+    timeText = translateWord('gameDetails');
+  } else if (isStarted3hAgo && !serviceReportsNotTerminated) {
+    // If we have gameStatus or gamePeriod info, display it instead of generic "ended"
+    if (gameStatus && typeof gamePeriod === 'number') {
+      timeText = hasPeriodInGameStatus(gameStatus) ? gameStatus : `${gameStatus} - P${gamePeriod}`;
+    } else if (gameStatus) {
+      timeText = gameStatus;
+    } else if (typeof gamePeriod === 'number') {
+      timeText = `P${gamePeriod}`;
+    } else {
+      timeText = translateWord('ended');
+    }
+  } else if (isGameStatusLive || isLive) {
+    if (gameClock && livePeriodText) {
+      if (gameStatusAlreadyIncludesClock(livePeriodText, gameClock)) {
+        timeText = livePeriodText;
+      } else {
+        timeText = `${gameClock} - ${livePeriodText}`;
+      }
+    } else if (gameClock) {
+      timeText = `${gameClock}`;
+    } else if (livePeriodText) {
+      timeText = livePeriodText;
+    } else {
+      timeText = translateWord('inProgress');
+    }
+  } else if (hasScore) {
+    if (isToday) {
+      // Display gameStatus and gamePeriod if available, otherwise show inProgress
+      if (gameStatus && typeof gamePeriod === 'number') {
+        timeText = hasPeriodInGameStatus(gameStatus) ? gameStatus : `${gameStatus} - P${gamePeriod}`;
+      } else if (gameStatus) {
+        timeText = gameStatus;
+      } else if (typeof gamePeriod === 'number') {
+        timeText = `P${gamePeriod}`;
+      } else {
+        timeText = translateWord('inProgress');
+      }
+    } else {
+      timeText = translateWord('final');
+    }
   } else if (startTimeUTC) {
     timeText = showDate
       ? showTime
@@ -298,53 +392,48 @@ export default function CardLarge({
 
   const stadiumSearch = arenaName.replace(/\s+/g, '+') + ',' + placeName.replace(/\s+/g, '+');
 
+  const shouldShowReveal = hasScore && (!showScores || (showScores && isFavorite && !isLive)) && !scoreRevealed;
+
   const centerContent = (
     <>
       <View style={{ minHeight: 40, justifyContent: 'center', alignItems: 'center' }}>
-        {hasScore ? (
-          (isFavorite || !showScores) && !scoreRevealed ? (
-            <TouchableOpacity
-              style={styles.revealButton}
-              onPress={(e) => {
-                e.stopPropagation();
-                setScoreRevealed(true);
-              }}
+        {shouldShowReveal ? (
+          <TouchableOpacity
+            style={styles.revealButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              setScoreRevealed(true);
+            }}
+          >
+            <Icon name="eye" type="font-awesome" size={verticalMode ? 20 : 30} color={isDark ? '#94a3b8' : '#475569'} />
+            <ThemedText lightColor="#475569" darkColor="#94a3b8" style={styles.revealText}>
+              {translateWord('score')}
+            </ThemedText>
+          </TouchableOpacity>
+        ) : hasScore ? (
+          <View style={styles.scoreRow}>
+            <ThemedText
+              lightColor="#0f172a"
+              darkColor="#ffffff"
+              style={[styles.scoreNumber, (isMedium || verticalMode) && { fontSize: 28 }]}
             >
-              <Icon
-                name="eye"
-                type="font-awesome"
-                size={verticalMode ? 20 : 30}
-                color={isDark ? '#94a3b8' : '#475569'}
-              />
-              <ThemedText lightColor="#475569" darkColor="#94a3b8" style={styles.revealText}>
-                {translateWord('score')}
-              </ThemedText>
-            </TouchableOpacity>
-          ) : (
-            <View style={styles.scoreRow}>
-              <ThemedText
-                lightColor="#0f172a"
-                darkColor="#ffffff"
-                style={[styles.scoreNumber, (isMedium || verticalMode) && { fontSize: 28 }]}
-              >
-                {awayTeamScore}
-              </ThemedText>
-              <ThemedText
-                lightColor="#475569"
-                darkColor="#CBD5E1"
-                style={[styles.scoreDivider, (isMedium || verticalMode) && { fontSize: 18, marginHorizontal: 5 }]}
-              >
-                -
-              </ThemedText>
-              <ThemedText
-                lightColor="#0f172a"
-                darkColor="#ffffff"
-                style={[styles.scoreNumber, (isMedium || verticalMode) && { fontSize: 28 }]}
-              >
-                {homeTeamScore}
-              </ThemedText>
-            </View>
-          )
+              {awayTeamScore}
+            </ThemedText>
+            <ThemedText
+              lightColor="#475569"
+              darkColor="#CBD5E1"
+              style={[styles.scoreDivider, (isMedium || verticalMode) && { fontSize: 18, marginHorizontal: 5 }]}
+            >
+              -
+            </ThemedText>
+            <ThemedText
+              lightColor="#0f172a"
+              darkColor="#ffffff"
+              style={[styles.scoreNumber, (isMedium || verticalMode) && { fontSize: 28 }]}
+            >
+              {homeTeamScore}
+            </ThemedText>
+          </View>
         ) : (
           <ThemedText
             lightColor="#475569"
@@ -719,6 +808,7 @@ export default function CardLarge({
         data={data}
         gradientStyle={gradientStyle}
         favoriteTeams={favoriteTeams}
+        showScores={showScores}
       />
     </Animated.View>
   );

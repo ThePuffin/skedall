@@ -14,9 +14,17 @@ interface GameModalProps {
   data: GameFormatted;
   gradientStyle: any;
   favoriteTeams: string[];
+  showScores?: boolean;
 }
 
-export default function GameModal({ visible, onClose, data, gradientStyle, favoriteTeams }: Readonly<GameModalProps>) {
+export default function GameModal({
+  visible,
+  onClose,
+  data,
+  gradientStyle,
+  favoriteTeams,
+  showScores = true,
+}: Readonly<GameModalProps>) {
   const [liveGame, setLiveGame] = useState<GameFormatted | null>(null);
 
   useEffect(() => {
@@ -61,11 +69,14 @@ export default function GameModal({ visible, onClose, data, gradientStyle, favor
     league,
     gameStatus,
     gameClock,
+    gamePeriod,
   } = displayData;
 
   const hasScore = homeTeamScore != null && awayTeamScore != null;
   const status = getGamesStatus(displayData);
   const isToday = new Date().toDateString() === new Date(startTimeUTC).toDateString();
+  const diffHours = (new Date().getTime() - new Date(startTimeUTC).getTime()) / (1000 * 60 * 60);
+  const isStarted3hAgo = diffHours > 3;
   const isLive =
     status === GameStatus.IN_PROGRESS ||
     (!!gameStatus &&
@@ -75,6 +86,40 @@ export default function GameModal({ visible, onClose, data, gradientStyle, favor
       !gameStatus.toUpperCase().includes('FINAL') &&
       !gameStatus.toUpperCase().includes('ENDED')) ||
     (hasScore && isToday && status !== GameStatus.FINISHED && status !== GameStatus.FINAL);
+  const isGameFinishedByStatus =
+    gameStatus?.toUpperCase().includes('FINAL') ||
+    gameStatus?.toUpperCase().includes('ENDED') ||
+    status === GameStatus.FINAL ||
+    status === GameStatus.FINISHED;
+  const gameStatusAlreadyIncludesClock = (status?: string, clock?: string) => {
+    if (!status || !clock) return false;
+    const normalizedStatus = status.toLowerCase();
+    const normalizedClock = clock.toLowerCase();
+    const variants = [normalizedClock];
+    if (normalizedClock.startsWith('00:')) {
+      variants.push(normalizedClock.replace(/^00:/, ''));
+    }
+    if (normalizedClock.startsWith('0:')) {
+      variants.push(normalizedClock.replace(/^0:/, ''));
+    }
+    return variants.some((variant) => normalizedStatus.includes(variant));
+  };
+
+  const livePeriodText = gameStatus || (typeof gamePeriod === 'number' ? `P${gamePeriod}` : '');
+  const liveTimeText =
+    gameClock && livePeriodText
+      ? gameStatusAlreadyIncludesClock(livePeriodText, gameClock)
+        ? livePeriodText
+        : `${gameClock} - ${livePeriodText}`
+      : gameClock || livePeriodText || translateWord('inProgress');
+  const showLiveScoreNumbers = hasScore;
+  const serviceReportsNotTerminated =
+    isLive ||
+    (!!gameStatus &&
+      !gameStatus.toUpperCase().includes('FINAL') &&
+      gameStatus.toUpperCase() !== 'FINISHED' &&
+      gameStatus.toUpperCase() !== 'ENDED');
+  const showFinalization = !hasScore && serviceReportsNotTerminated && isStarted3hAgo;
 
   const dateOptions: Intl.DateTimeFormatOptions = {
     weekday: 'long',
@@ -117,13 +162,27 @@ export default function GameModal({ visible, onClose, data, gradientStyle, favor
       }
 
       return (
-        <ThemedText style={[styles.dateText, { color: '#ef4444', fontWeight: 'bold' }]}>
-          {gameStatus || translateWord('inProgress')}
+        <ThemedText style={[styles.dateText, { color: '#ef4444', fontWeight: 'bold' }]}>{liveTimeText}</ThemedText>
+      );
+    }
+
+    if (showFinalization) {
+      return (
+        <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
+          {translateWord('final')}
         </ThemedText>
       );
     }
 
     if (hasScore) {
+      if (status === GameStatus.FINAL || status === GameStatus.FINISHED) {
+        return (
+          <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
+            {translateWord('score')}
+          </ThemedText>
+        );
+      }
+
       const statusText = status === GameStatus.FINAL ? translateWord('final') : translateWord('ended');
       return (
         <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
@@ -171,7 +230,7 @@ export default function GameModal({ visible, onClose, data, gradientStyle, favor
                 )}
               </View>
 
-              {hasScore ? (
+              {showLiveScoreNumbers ? (
                 <View style={styles.scoreContainer}>
                   <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.scoreText}>
                     {awayTeamScore}
