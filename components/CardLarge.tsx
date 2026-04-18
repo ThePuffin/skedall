@@ -105,6 +105,7 @@ export default function CardLarge({
   const fadeAnim = useRef(new Animated.Value(animateEntry ? 0 : 1)).current;
   const scaleAnim = useRef(new Animated.Value(animateEntry ? 0.95 : 1)).current;
   const translateYAnim = useRef(new Animated.Value(animateEntry ? 20 : 0)).current;
+  const selectionPulse = useRef(new Animated.Value(1)).current;
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const [cardWidth, setCardWidth] = useState(0);
   const isSmallCard = cardWidth > 0 && cardWidth < 190;
@@ -166,6 +167,27 @@ export default function CardLarge({
       }
     }
   }, [hasBeenSeen, animateEntry, fadeAnim, scaleAnim, translateYAnim, delay]);
+
+  const isFavorite = favoriteTeams.includes(homeTeamId) || favoriteTeams.includes(awayTeamId);
+  const isSelected =
+    propIsSelected ??
+    gamesSelected.some((g) => g.homeTeamId === data.homeTeamId && g.startTimeUTC === data.startTimeUTC);
+
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    Animated.sequence([
+      Animated.timing(selectionPulse, { toValue: 1.04, duration: 100, useNativeDriver: true }),
+      Animated.spring(selectionPulse, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [isSelected]);
 
   useEffect(() => {
     if (!showScores) {
@@ -314,10 +336,6 @@ export default function CardLarge({
   const leagueKey = (data.league || 'DEFAULT') as keyof typeof leagueLogos;
   const leagueLogo = leagueLogos[leagueKey] || leagueLogos.DEFAULT;
 
-  const isFavorite = favoriteTeams.includes(homeTeamId) || favoriteTeams.includes(awayTeamId);
-  const isSelected =
-    propIsSelected ??
-    gamesSelected.some((g) => g.homeTeamId === data.homeTeamId && g.startTimeUTC === data.startTimeUTC);
   const isSelectedTeam = teamSelectedId === homeTeamId;
   const isDark = theme === 'dark';
   const baseColor = isDark ? (isSelectedTeam ? '#0f172a' : '#1e293b') : isSelectedTeam ? '#e2e8f0' : '#f1f5f9';
@@ -516,7 +534,7 @@ export default function CardLarge({
       style={
         {
           opacity: fadeAnim,
-          transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
+          transform: [{ scale: scaleAnim }, { scale: selectionPulse }, { translateY: translateYAnim }],
           willChange: animateEntry ? 'opacity, transform' : 'auto', // GPU optimization
         } as any
       }
