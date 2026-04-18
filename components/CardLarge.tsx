@@ -240,7 +240,7 @@ export default function CardLarge({
   };
 
   const livePeriodText = gameStatus || (typeof gamePeriod === 'number' ? `P${gamePeriod}` : '');
-  const isStarted3hAgo = diffHours > 3;
+  const isStarted4hAgo = diffHours > 4;
   const serviceReportsNotTerminated =
     isGameStatusLive ||
     (!!gameStatus &&
@@ -248,15 +248,13 @@ export default function CardLarge({
       gameStatus !== 'FINAL' &&
       gameStatus !== 'FINISHED' &&
       gameStatus !== 'ENDED');
-  const showFinalization = !hasScore && serviceReportsNotTerminated && isStarted3hAgo;
+  const showFinalization = !hasScore && serviceReportsNotTerminated && isStarted4hAgo;
 
   if (showFinalization) {
     timeText = translateWord('final');
-  } else if ((status === GameStatus.FINISHED || status === GameStatus.FINAL) && !hasScore) {
-    timeText = translateWord('final');
   } else if ((status === GameStatus.FINISHED || status === GameStatus.FINAL) && hasScore) {
     timeText = translateWord('gameDetails');
-  } else if (isStarted3hAgo && !serviceReportsNotTerminated) {
+  } else if (isStarted4hAgo && !serviceReportsNotTerminated) {
     // If we have gameStatus or gamePeriod info, display it instead of generic "ended"
     if (gameStatus && typeof gamePeriod === 'number') {
       timeText = hasPeriodInGameStatus(gameStatus) ? gameStatus : `${gameStatus} - P${gamePeriod}`;
@@ -407,7 +405,7 @@ export default function CardLarge({
           >
             <Icon name="eye" type="font-awesome" size={verticalMode ? 20 : 30} color={isDark ? '#94a3b8' : '#475569'} />
             <ThemedText lightColor="#475569" darkColor="#94a3b8" style={styles.revealText}>
-              {translateWord('score')}
+              {gameStatus === 'FINISHED' ? translateWord('score') : translateWord('currentScore')}
             </ThemedText>
           </TouchableOpacity>
         ) : hasScore ? (
