@@ -520,10 +520,7 @@ export default function Calendar() {
       >
         <Pressable style={styles.centeredView} onPress={() => setGamesModalVisible(false)}>
           <Pressable
-            style={[
-              styles.modalView,
-              { backgroundColor: modalBackgroundColor, maxHeight: '80%', width: '95%', maxWidth: 600 },
-            ]}
+            style={[styles.modalView, { backgroundColor: modalBackgroundColor, maxHeight: '80%', minWidth: '75%' }]}
             onPress={(e) => e.stopPropagation()}
           >
             <View

@@ -419,6 +419,7 @@ const styles = StyleSheet.create({
   teamColumn: {
     alignItems: 'center',
     flex: 1,
+    marginTop: 'auto',
   },
   logo: {
     width: 60,
