@@ -154,10 +154,14 @@ const GameofTheDayContent = () => {
         return acc;
       }, []);
 
-      const newGames = currentGames.map((g) => {
-        const liveGame = liveData.find((l) => l.uniqueId === g.uniqueId);
-        return liveGame ? { ...g, ...liveGame } : g;
-      });
+      const newGames = currentGames
+        .map((g) => {
+          const liveGame = liveData.find((l) => l.uniqueId === g.uniqueId);
+          return liveGame ? { ...g, ...liveGame } : g;
+        })
+        .filter((g) => {
+          return g.isActive;
+        });
       return newGames;
     } catch (error) {
       console.error('Error fetching live scores:', error);
@@ -270,6 +274,7 @@ const GameofTheDayContent = () => {
     const relevantGames = games
       .filter(
         (game) =>
+          game.isActive &&
           selectLeagues.includes(game.league as League) &&
           (!teamSelectedId || game.homeTeamId === teamSelectedId || game.awayTeamId === teamSelectedId) &&
           game.awayTeamLogo &&

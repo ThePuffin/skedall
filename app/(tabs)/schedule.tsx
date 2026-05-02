@@ -332,7 +332,10 @@ export default function Schedule() {
       return [];
     }
 
-    let subFilteredGames = games;
+    let subFilteredGames = Object.fromEntries(
+      Object.entries(games).map(([date, dayGames]) => [date, dayGames.filter((g) => g.isActive)]),
+    ) as FilterGames;
+
     if (teamFilter && teamFilter !== '') {
       const filterNameGame = teamFilter === 'NHL-UTAH' ? 'NHL-UTA' : teamFilter;
       subFilteredGames = Object.fromEntries(
