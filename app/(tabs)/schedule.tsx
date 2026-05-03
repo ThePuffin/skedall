@@ -20,6 +20,8 @@ import {
   fetchLeagues,
   fetchRemainingGamesByLeague,
   fetchRemainingGamesByTeam,
+  fetchResultsByLeague,
+  fetchResultsByTeam,
   fetchTeams,
   getCache,
   saveCache,
@@ -47,6 +49,7 @@ export default function Schedule() {
   const router = useRouter();
   const { league: leagueParam } = useLocalSearchParams<{ league: string }>();
   const [games, setGames] = useState<FilterGames>({});
+  const [results, setResults] = useState<FilterGames>({});
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamSelected, setTeamSelected] = useState<string>('');
   const [gamesTeamId, setGamesTeamId] = useState<string>('');
@@ -63,6 +66,8 @@ export default function Schedule() {
   const [isLoading, setIsLoading] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const ActionButtonRef = useRef<ActionButtonRef>(null);
+  const [focusCount, setFocusCount] = useState(0);
+  const accordionRefs = useRef<Array<HTMLDivElement | null>>([]);
 
   const teamsForSelector = useMemo(() => {
     return [...leagueTeams];
@@ -168,7 +173,7 @@ export default function Schedule() {
 
   useFocusEffect(
     useCallback(() => {
-      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      setFocusCount((c) => c + 1);
     }, []),
   );
 
@@ -327,19 +332,24 @@ export default function Schedule() {
   }, [leaguesAvailable, leagueOfSelectedTeam, teams]);
 
   const visibleGamesByMonth = useMemo(() => {
+    let allGames = mergeGames(results, games);
+
     const today = new Date().toISOString().split('T')[0];
-    if (!games || (Object.keys(games).length === 1 && (games[today]?.[0]?.updateDate ?? '')) === '') {
+    if (!allGames || (Object.keys(allGames).length === 1 && (allGames[today]?.[0]?.updateDate ?? '')) === '') {
       return [];
     }
 
     let subFilteredGames = Object.fromEntries(
-      Object.entries(games).map(([date, dayGames]) => [date, dayGames.filter((g) => g.isActive)]),
+      Object.entries(allGames).map(([date, dayGames]) => [
+        date,
+        dayGames.filter((g) => g.isActive || g.homeTeamScore !== null),
+      ]),
     ) as FilterGames;
 
     if (teamFilter && teamFilter !== '') {
       const filterNameGame = teamFilter === 'NHL-UTAH' ? 'NHL-UTA' : teamFilter;
       subFilteredGames = Object.fromEntries(
-        Object.entries(games).filter(
+        Object.entries(allGames).filter(
           ([_, game]) => game[0].homeTeamId === filterNameGame || game[0].awayTeamId === filterNameGame,
         ),
       );
@@ -380,6 +390,31 @@ export default function Schedule() {
       })
       .filter((item) => item.games.length > 0);
   }, [games, teamFilter, gamesTeamId]);
+
+  const firstUpcomingGameId = useMemo(() => {
+    for (const m of visibleGamesByMonth) {
+      const game = m.games.find((g) => g.homeTeamScore === null || g.awayTeamScore === null);
+      if (game) return game.uniqueId;
+    }
+    return null;
+  }, [visibleGamesByMonth]);
+
+  const firstMonthToFocusIndex = useMemo(() => {
+    if (!firstUpcomingGameId) return -1;
+    return visibleGamesByMonth.findIndex((m) => m.games.some((g) => g.uniqueId === firstUpcomingGameId));
+  }, [visibleGamesByMonth, firstUpcomingGameId]);
+
+  useEffect(() => {
+    if (firstUpcomingGameId && !isLoading && !monthFilter.length) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`game-${firstUpcomingGameId}`);
+        if (el && typeof el.scrollIntoView === 'function') {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [firstUpcomingGameId, isLoading, monthFilter.length, focusCount]);
 
   const uniqueTeamsFromGames = useMemo(() => {
     if (teamSelected === 'all' && monthFilter.length === 0) {
@@ -473,6 +508,7 @@ export default function Schedule() {
             showDate={true}
             animateEntry={true}
             delay={index * 15}
+            forceShowScores={true}
           />
         );
       }),
@@ -622,15 +658,17 @@ export default function Schedule() {
           </div>
         )}
         {filteredMonths.map(({ month, games }, i) => (
-          <div key={month} style={{ width: '100%', margin: '0 auto' }}>
+          <div key={month} ref={(el) => (accordionRefs.current[i] = el)} style={{ width: '100%', margin: '0 auto' }}>
             <Accordion
               filter={month}
               i={i}
               gamesFiltred={games}
-              open={!isSmallDevice || teamFilter?.length > 0 || i === 0}
+              open={monthFilter.length > 0 || (firstMonthToFocusIndex !== -1 ? i === firstMonthToFocusIndex : i === 0)}
               showDate={true}
               showTime={true}
               isCounted={true}
+              showScores={true}
+              forceShowScores={true}
             />
           </div>
         ))}
@@ -683,7 +721,11 @@ export default function Schedule() {
             true,
           );
           scheduleData = mergeGames(smallScheduleData, remainingScheduleData);
+          const resultsByLeague = await fetchResultsByLeague(selectionLeague);
+          setResults(resultsByLeague);
         } else {
+          const teamResultsByDay = await fetchResultsByTeam(teamSelected);
+          setResults(teamResultsByDay);
           scheduleData = await fetchRemainingGamesByTeam(teamSelected);
         }
         setLeagueTeams(thisLeagueTeams);

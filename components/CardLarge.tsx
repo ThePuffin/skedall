@@ -24,6 +24,7 @@ export default function CardLarge({
   data,
   showDate = false,
   showScores: propShowScores,
+  forceShowScores = false,
   onSelection,
   isSelected: propIsSelected,
   animateExit = false,
@@ -408,7 +409,8 @@ export default function CardLarge({
 
   const stadiumSearch = arenaName.replace(/\s+/g, '+') + ',' + placeName.replace(/\s+/g, '+');
 
-  const shouldShowReveal = hasScore && (!showScores || (showScores && isFavorite && !isLive)) && !scoreRevealed;
+  const shouldShowReveal =
+    hasScore && !forceShowScores && (!showScores || (showScores && isFavorite && !isLive)) && !scoreRevealed;
 
   const centerContent = (
     <>
@@ -694,7 +696,8 @@ export default function CardLarge({
                       darkColor="#94a3b8"
                       style={[styles.recordText, verticalMode && { marginLeft: 10, marginTop: 0, height: 'auto' }]}
                     >
-                      {((showScores && !isFavorite) || scoreRevealed ? awayTeamRecord : '\u00A0') || '\u00A0'}
+                      {(forceShowScores || (showScores && !isFavorite) || scoreRevealed ? awayTeamRecord : '\u00A0') ||
+                        '\u00A0'}
                     </ThemedText>
                   )}
                 </View>
@@ -769,7 +772,8 @@ export default function CardLarge({
                       darkColor="#94a3b8"
                       style={[styles.recordText, verticalMode && { marginLeft: 10, marginTop: 0, height: 'auto' }]}
                     >
-                      {((showScores && !isFavorite) || scoreRevealed ? homeTeamRecord : '\u00A0') || '\u00A0'}
+                      {(forceShowScores || (showScores && !isFavorite) || scoreRevealed ? homeTeamRecord : '\u00A0') ||
+                        '\u00A0'}
                     </ThemedText>
                   )}
                 </View>
