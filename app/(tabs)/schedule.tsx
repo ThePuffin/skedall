@@ -15,6 +15,7 @@ import { ActionButton, ActionButtonRef } from '../../components/ActionButton';
 import CardLarge from '../../components/CardLarge';
 import { ColumnData } from '../../components/ColumnsLayout';
 import LoadingView from '../../components/LoadingView';
+import PreviousScoreToggle from '../../components/PreviousScoreToggle';
 import Separator from '../../components/Separator';
 import {
   fetchLeagues,
@@ -64,6 +65,17 @@ export default function Schedule() {
   const [leaguesAvailable, setLeaguesAvailable] = useState<string[]>([]);
   const [leagueOfSelectedTeam, setleagueOfSelectedTeam] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPreviousScores, setShowPreviousScores] = useState<boolean>(
+    () => getCache<boolean>('showPreviousScores') || false,
+  );
+
+  const handlePreviousScoreToggle = useCallback((value: boolean) => {
+    setShowPreviousScores(value);
+    saveCache('showPreviousScores', value);
+    if (!value) {
+      setResults({});
+    }
+  }, []);
   const scrollViewRef = useRef<ScrollView>(null);
   const ActionButtonRef = useRef<ActionButtonRef>(null);
   const [focusCount, setFocusCount] = useState(0);
@@ -184,7 +196,7 @@ export default function Schedule() {
       }
       fetchGames();
     }
-  }, [teamSelected, teams]);
+  }, [teamSelected, teams, showPreviousScores]);
 
   const getSelectedTeams = (allTeams: Team[], forcedLeague?: string) => {
     let selection = localStorage.getItem('teamSelected') || '';
@@ -342,17 +354,20 @@ export default function Schedule() {
     let subFilteredGames = Object.fromEntries(
       Object.entries(allGames).map(([date, dayGames]) => [
         date,
-        dayGames.filter((g) => g.isActive || g.homeTeamScore !== null),
+        dayGames.filter((g) => g && (g.isActive || g.homeTeamScore !== null)),
       ]),
     ) as FilterGames;
 
     if (teamFilter && teamFilter !== '') {
       const filterNameGame = teamFilter === 'NHL-UTAH' ? 'NHL-UTA' : teamFilter;
       subFilteredGames = Object.fromEntries(
-        Object.entries(allGames).filter(
-          ([_, game]) => game[0].homeTeamId === filterNameGame || game[0].awayTeamId === filterNameGame,
-        ),
-      );
+        Object.entries(subFilteredGames)
+          .map(([date, dayGames]) => [
+            date,
+            dayGames.filter((g) => g && (g.homeTeamId === filterNameGame || g.awayTeamId === filterNameGame)),
+          ])
+          .filter(([_, filteredDayGames]) => (filteredDayGames as GameFormatted[]).length > 0),
+      ) as FilterGames;
     }
 
     let filteredGamesDates = Object.keys(subFilteredGames).filter((day: string) => {
@@ -389,7 +404,7 @@ export default function Schedule() {
         return { month, games: gamesForThisMonth };
       })
       .filter((item) => item.games.length > 0);
-  }, [games, teamFilter, gamesTeamId]);
+  }, [games, results, teamFilter, gamesTeamId]);
 
   const firstUpcomingGameId = useMemo(() => {
     for (const m of visibleGamesByMonth) {
@@ -405,7 +420,7 @@ export default function Schedule() {
   }, [visibleGamesByMonth, firstUpcomingGameId]);
 
   useEffect(() => {
-    if (firstUpcomingGameId && !isLoading && !monthFilter.length) {
+    if (teamFilter === '' && firstUpcomingGameId && !isLoading && !monthFilter.length) {
       const timer = setTimeout(() => {
         const el = document.getElementById(`game-${firstUpcomingGameId}`);
         if (el && typeof el.scrollIntoView === 'function') {
@@ -414,7 +429,7 @@ export default function Schedule() {
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [firstUpcomingGameId, isLoading, monthFilter.length, focusCount]);
+  }, [firstUpcomingGameId, isLoading, monthFilter.length, focusCount, teamFilter]);
 
   const uniqueTeamsFromGames = useMemo(() => {
     if (teamSelected === 'all' && monthFilter.length === 0) {
@@ -422,15 +437,15 @@ export default function Schedule() {
     }
     const teamsFromGames: Team[] = [];
     const seenIds = new Set<string>();
-
-    for (const day in games) {
-      if (!Object.hasOwn(games, day)) continue;
+    const allGames = showPreviousScores ? mergeGames(results, games) : games;
+    for (const day in allGames) {
+      if (!Object.hasOwn(allGames, day)) continue;
       if (monthFilter.length > 0) {
         const month = new Date(day).toLocaleString('default', { month: 'long' });
         if (!monthFilter.includes(month)) continue;
       }
 
-      const dayGames = games[day];
+      const dayGames = allGames[day];
       if (!Array.isArray(dayGames)) continue;
 
       dayGames.forEach((game) => {
@@ -470,7 +485,7 @@ export default function Schedule() {
       });
     }
     return teamsFromGames.sort((a, b) => a.label.localeCompare(b.label));
-  }, [games, teamSelected, monthFilter, teamsForSelector]);
+  }, [games, results, teamSelected, monthFilter, teamsForSelector]);
 
   const showTeamFilter = uniqueTeamsFromGames.length > 1;
 
@@ -537,6 +552,7 @@ export default function Schedule() {
                 }}
               >
                 <AppLogo />
+                <PreviousScoreToggle value={showPreviousScores} onValueChange={handlePreviousScoreToggle} />
               </div>
               <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
                 <ThemedElements style={{ width: '100%' }}>
@@ -721,11 +737,19 @@ export default function Schedule() {
             true,
           );
           scheduleData = mergeGames(smallScheduleData, remainingScheduleData);
-          const resultsByLeague = await fetchResultsByLeague(selectionLeague);
-          setResults(resultsByLeague);
+          if (showPreviousScores) {
+            const resultsByLeague = await fetchResultsByLeague(selectionLeague);
+            setResults(resultsByLeague);
+          } else {
+            setResults({});
+          }
         } else {
-          const teamResultsByDay = await fetchResultsByTeam(teamSelected);
-          setResults(teamResultsByDay);
+          if (showPreviousScores) {
+            const teamResultsByDay = await fetchResultsByTeam(teamSelected);
+            setResults(teamResultsByDay);
+          } else {
+            setResults({});
+          }
           scheduleData = await fetchRemainingGamesByTeam(teamSelected);
         }
         setLeagueTeams(thisLeagueTeams);
