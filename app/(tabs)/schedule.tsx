@@ -48,7 +48,7 @@ const mergeGames = (initial: FilterGames, remaining: FilterGames): FilterGames =
 
 export default function Schedule() {
   const router = useRouter();
-  const { league: leagueParam } = useLocalSearchParams<{ league: string }>();
+  const { league: leagueParam, team: teamParam } = useLocalSearchParams<{ league: string; team: string }>();
   const [games, setGames] = useState<FilterGames>({});
   const [results, setResults] = useState<FilterGames>({});
   const [teams, setTeams] = useState<Team[]>([]);
@@ -69,6 +69,7 @@ export default function Schedule() {
     () => getCache<boolean>('showPreviousScores') || false,
   );
 
+  const isInternalChange = useRef(false);
   const handlePreviousScoreToggle = useCallback((value: boolean) => {
     setShowPreviousScores(value);
     saveCache('showPreviousScores', value);
@@ -84,6 +85,13 @@ export default function Schedule() {
   const teamsForSelector = useMemo(() => {
     return [...leagueTeams];
   }, [leagueTeams]);
+
+  useEffect(() => {
+    // If we're coming from another tab or initial load, ensure params match what's in state/LS if empty
+    if (!leagueParam && leagueOfSelectedTeam) {
+      router.setParams({ league: leagueOfSelectedTeam, team: teamSelected });
+    }
+  }, []);
 
   const allOption = {
     uniqueId: 'all',
@@ -124,6 +132,17 @@ export default function Schedule() {
     async function fetchTeamsAndRestore() {
       // try cached teams first
       const cachedTeams = getCache<Team[]>('teams');
+
+      if (isInternalChange.current) {
+        isInternalChange.current = false;
+        // If it was an internal change, we still might need to fetch if teams are empty
+        if (!teams.length && !cachedTeams) {
+          const teamsData: Team[] = await fetchTeams();
+          setTeams(teamsData);
+        }
+        return;
+      }
+
       const teamSelectedLS = localStorage.getItem('teamSelected') || '';
       const storedLeagues = getCache<string[]>('leaguesSelected') || [];
 
@@ -131,6 +150,11 @@ export default function Schedule() {
       if (leagueParam) {
         const param = (Array.isArray(leagueParam) ? leagueParam[0] : leagueParam).toUpperCase();
         forcedLeague = param;
+      }
+
+      let forcedTeam = '';
+      if (teamParam) {
+        forcedTeam = Array.isArray(teamParam) ? teamParam[0] : teamParam;
       }
 
       let foundTeam = cachedTeams?.find((t) => t.uniqueId === teamSelectedLS);
@@ -152,19 +176,19 @@ export default function Schedule() {
         if (cachedTeams) {
           setLeaguesAvailable([selectedTeam.league]);
           setTeams([selectedTeam]);
-          getSelectedTeams(cachedTeams, forcedLeague);
+          getSelectedTeams(cachedTeams, forcedLeague, forcedTeam);
         }
         const teamsData: Team[] = await fetchTeams();
         setTeams(teamsData);
         // cache teams for offline/cold-start
         saveCache('teams', teamsData);
         // restore selection using freshly fetched teams
-        getSelectedTeams(teamsData, forcedLeague);
+        getSelectedTeams(teamsData, forcedLeague, forcedTeam);
       } catch (err) {
         console.error('fetch teams failed, using cached teams if available', err);
         if (cachedTeams) {
           setTeams(cachedTeams);
-          getSelectedTeams(cachedTeams, forcedLeague);
+          getSelectedTeams(cachedTeams, forcedLeague, forcedTeam);
         } else {
           // fallback: try to restore selection from persisted keys (teams unknown)
           getStoredData();
@@ -181,7 +205,7 @@ export default function Schedule() {
       }
     }
     fetchTeamsAndRestore();
-  }, [leagueParam]);
+  }, [leagueParam, teamParam]);
 
   useFocusEffect(
     useCallback(() => {
@@ -198,8 +222,8 @@ export default function Schedule() {
     }
   }, [teamSelected, teams, showPreviousScores]);
 
-  const getSelectedTeams = (allTeams: Team[], forcedLeague?: string) => {
-    let selection = localStorage.getItem('teamSelected') || '';
+  const getSelectedTeams = (allTeams: Team[], forcedLeague?: string, forcedTeam?: string) => {
+    let selection = forcedTeam || localStorage.getItem('teamSelected') || '';
     let leagueToSet = '';
 
     if (forcedLeague) {
@@ -211,7 +235,7 @@ export default function Schedule() {
         leagueToSet = forcedLeague;
         const storedTeamsLeagues = getCache<{ [key: string]: string }>('teamsSelectedLeagues') || {};
         if (storedTeamsLeagues[forcedLeague]) {
-          selection = storedTeamsLeagues[forcedLeague];
+          selection = forcedTeam || storedTeamsLeagues[forcedLeague];
         } else {
           const favoriteTeams = getCache<string[]>('favoriteTeams') || [];
           const teamsInLeague = allTeams.filter((t) => t.league === forcedLeague);
@@ -279,11 +303,13 @@ export default function Schedule() {
     setTeamFilter('');
     setMonthFilter([]);
     const finalTeamId = Array.isArray(teamSelectedId) ? teamSelectedId[0] : teamSelectedId;
+    isInternalChange.current = true;
+    router.setParams({ team: finalTeamId });
     if (finalTeamId === 'all') {
       localStorage.setItem('teamSelected', 'all');
       setTeamSelected('all');
     } else {
-      storeTeamSelected(finalTeamId);
+      storeTeamSelected(finalTeamId, teams);
     }
     persistTeamForLeague(leagueOfSelectedTeam, finalTeamId);
   };
@@ -296,6 +322,7 @@ export default function Schedule() {
     setTeamFilter('');
     setMonthFilter([]);
     const finalLeagueId = Array.isArray(leagueSelectedId) ? leagueSelectedId[0] : leagueSelectedId;
+    isInternalChange.current = true;
     router.setParams({ league: finalLeagueId });
     localStorage.setItem('leagueSelected', finalLeagueId);
     const teamsAvailableInLeague = teams.filter(({ league }) => league === finalLeagueId);
@@ -320,6 +347,7 @@ export default function Schedule() {
       }
     }
     localStorage.setItem('teamSelected', team);
+    router.setParams({ league: finalLeagueId, team: team });
     setTeamSelected(team);
   };
 
@@ -406,30 +434,40 @@ export default function Schedule() {
       .filter((item) => item.games.length > 0);
   }, [games, results, teamFilter, gamesTeamId]);
 
-  const firstUpcomingGameId = useMemo(() => {
+  const scrollTargetId = useMemo(() => {
+    if (visibleGamesByMonth.length === 0) return null;
+
+    // Try to find the first upcoming game (without score)
     for (const m of visibleGamesByMonth) {
       const game = m.games.find((g) => g.homeTeamScore === null || g.awayTeamScore === null);
       if (game) return game.uniqueId;
     }
+
+    // If only results are displayed, target the last one
+    const lastMonth = visibleGamesByMonth[visibleGamesByMonth.length - 1];
+    if (lastMonth && lastMonth.games.length > 0) {
+      return lastMonth.games[lastMonth.games.length - 1].uniqueId;
+    }
+
     return null;
   }, [visibleGamesByMonth]);
 
-  const firstMonthToFocusIndex = useMemo(() => {
-    if (!firstUpcomingGameId) return -1;
-    return visibleGamesByMonth.findIndex((m) => m.games.some((g) => g.uniqueId === firstUpcomingGameId));
-  }, [visibleGamesByMonth, firstUpcomingGameId]);
+  const monthToFocusIndex = useMemo(() => {
+    if (!scrollTargetId) return -1;
+    return visibleGamesByMonth.findIndex((m) => m.games.some((g) => g.uniqueId === scrollTargetId));
+  }, [visibleGamesByMonth, scrollTargetId]);
 
   useEffect(() => {
-    if (teamFilter === '' && firstUpcomingGameId && !isLoading && !monthFilter.length) {
+    if (teamFilter === '' && scrollTargetId && !isLoading && !monthFilter.length) {
       const timer = setTimeout(() => {
-        const el = document.getElementById(`game-${firstUpcomingGameId}`);
+        const el = document.getElementById(`game-${scrollTargetId}`);
         if (el && typeof el.scrollIntoView === 'function') {
           el.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }, 800);
       return () => clearTimeout(timer);
     }
-  }, [firstUpcomingGameId, isLoading, monthFilter.length, focusCount, teamFilter]);
+  }, [scrollTargetId, isLoading, monthFilter.length, focusCount, teamFilter]);
 
   const uniqueTeamsFromGames = useMemo(() => {
     if (teamSelected === 'all' && monthFilter.length === 0) {
@@ -683,7 +721,7 @@ export default function Schedule() {
               filter={month}
               i={i}
               gamesFiltred={games}
-              open={monthFilter.length > 0 || (firstMonthToFocusIndex !== -1 ? i === firstMonthToFocusIndex : i === 0)}
+              open={monthFilter.length > 0 || (monthToFocusIndex !== -1 ? i === monthToFocusIndex : i === 0)}
               showDate={true}
               showTime={true}
               isCounted={true}
