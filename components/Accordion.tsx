@@ -50,7 +50,7 @@ export default function Accordion({
     return gamesFiltred.map((game, index) => {
       const isSelected = gamesSelected?.some((g) => g._id === game._id || (g.uniqueId && g.uniqueId === game.uniqueId));
       // Offset for the sticky header in schedule.tsx to prevent the card from being hidden
-      const scrollMarginTopValue = isSmallDevice ? 220 : 160;
+      const scrollMarginTopValue = isSmallDevice ? 220 : 260;
 
       return (
         <div

@@ -606,6 +606,36 @@ export default function Schedule() {
                     </div>
                   )}
                 </div>
+                {visibleGamesByMonth.length > 1 && (
+                  <>
+                    <Separator />
+                    <FilterSlider
+                      selectedFilter={monthFilter.length > 0 ? monthFilter[0] : 'ALL'}
+                      onFilterChange={(value) => setMonthFilter(value === 'ALL' ? [] : [value])}
+                      data={[
+                        { label: translateWord('all'), value: 'ALL' },
+                        ...visibleGamesByMonth.map((m) => ({ label: m.month, value: m.month })),
+                      ]}
+                      style={{ backgroundImage: 'none', backgroundColor: 'transparent' } as any}
+                      itemStyle={{ borderWidth: 1, borderColor: 'transparent' }}
+                      selectedItemStyle={{
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        borderColor: selectedBackgroundColor,
+                      }}
+                      textStyle={{
+                        fontFamily:
+                          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                        fontSize: 14,
+                        textTransform: 'capitalize',
+                      }}
+                      selectedTextStyle={{
+                        color: colorScheme === 'light' ? selectedBackgroundColor : '#ecedee',
+                        fontWeight: 'bold',
+                      }}
+                    />
+                  </>
+                )}
               </div>
             </ThemedView>
           </div>
@@ -642,37 +672,11 @@ export default function Schedule() {
       );
     }
 
-    const months = visibleGamesByMonth.map((m) => m.month);
     const filteredMonths =
       monthFilter.length > 0 ? visibleGamesByMonth.filter((m) => monthFilter.includes(m.month)) : visibleGamesByMonth;
 
     return (
       <div style={{ opacity: isLoading ? 0.5 : 1, transition: 'opacity 0.3s' }}>
-        {months.length > 1 && (
-          <div style={{ width: '100%', marginBottom: 10 }}>
-            <FilterSlider
-              selectedFilter={monthFilter.length > 0 ? monthFilter[0] : 'ALL'}
-              onFilterChange={(value) => setMonthFilter(value === 'ALL' ? [] : [value])}
-              data={[{ label: translateWord('all'), value: 'ALL' }, ...months.map((m) => ({ label: m, value: m }))]}
-              style={{ backgroundImage: 'none', backgroundColor: 'transparent' } as any}
-              itemStyle={{ borderWidth: 1, borderColor: 'transparent' }}
-              selectedItemStyle={{
-                backgroundColor: 'transparent',
-                borderWidth: 1,
-                borderColor: selectedBackgroundColor,
-              }}
-              textStyle={{
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                fontSize: 14,
-                textTransform: 'capitalize',
-              }}
-              selectedTextStyle={{
-                color: colorScheme === 'light' ? selectedBackgroundColor : '#ecedee',
-                fontWeight: 'bold',
-              }}
-            />
-          </div>
-        )}
         {filteredMonths.map(({ month, games }, i) => (
           <div key={month} ref={(el) => (accordionRefs.current[i] = el)} style={{ width: '100%', margin: '0 auto' }}>
             <Accordion
