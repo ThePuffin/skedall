@@ -405,11 +405,13 @@ export default function Schedule() {
     });
 
     const months = filteredGamesDates.reduce((acc: { [key: string]: string[] }, day: string) => {
+      const year = new Date(day).getFullYear();
       const month = new Date(day).toLocaleString('default', { month: 'long' });
-      if (!acc[month]) {
-        acc[month] = [];
+      const monthKey = `${month} ${year}`;
+      if (!acc[monthKey]) {
+        acc[monthKey] = [];
       }
-      acc[month].push(day);
+      acc[monthKey].push(day);
       return acc;
     }, {});
 
