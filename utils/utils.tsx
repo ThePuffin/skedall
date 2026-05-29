@@ -109,6 +109,7 @@ export const translateWord = (word: string) => {
         remainingGames: 'Matchs restants',
         focusTeam: 'Suivre une équipe',
         calendars: 'Agenda',
+        connection: 'Connexion',
         noResults: 'Pas de résultats',
         inProgress: 'En cours',
         noOptionsAvailable: 'Aucune option disponible',
@@ -144,6 +145,8 @@ export const translateWord = (word: string) => {
         currentScore: 'Score actuel',
         showHidePreviousScores: 'Afficher/Masquer les scores précédents',
         postponedGame: 'Match reporté',
+        signInWithGoogle: 'Se connecter avec Google',
+        signOut: 'Se déconnecter de Google',
       };
       break;
     case 'de':
@@ -153,6 +156,7 @@ export const translateWord = (word: string) => {
         remainingGames: 'Verbleibende Spiele',
         focusTeam: 'Team verfolgen',
         calendars: 'Agenda',
+        connection: 'Verbindung',
         noResults: 'Keine Ergebnisse',
         inProgress: 'In Bearbeitung',
         noOptionsAvailable: 'Keine Optionen verfügbar',
@@ -188,6 +192,8 @@ export const translateWord = (word: string) => {
         currentScore: 'Aktueller Spielstand',
         showHidePreviousScores: 'Vorherige Scores anzeigen/verstecken',
         postponedGame: 'Spiel verschoben',
+        signInWithGoogle: 'Mit Google anmelden',
+        signOut: 'Mit Google abmelden',
       };
       break;
     case 'es':
@@ -197,6 +203,7 @@ export const translateWord = (word: string) => {
         remainingGames: 'Juegos restantes',
         focusTeam: 'Seguir a un equipo',
         calendars: 'Agenda',
+        connection: 'Conexión',
         noResults: 'Sin resultados',
         inProgress: 'En progreso',
         noOptionsAvailable: 'No hay opciones disponibles',
@@ -232,6 +239,8 @@ export const translateWord = (word: string) => {
         currentScore: 'Marcador actual',
         showHidePreviousScores: 'Mostrar/Ocultar marcadores anteriores',
         postponedGame: 'Juego pospuesto',
+        signInWithGoogle: 'Iniciar sesión con Google',
+        signOut: 'Cerrar sesión con Google',
       };
       break;
 
@@ -242,6 +251,7 @@ export const translateWord = (word: string) => {
         remainingGames: 'Giochi rimanenti',
         focusTeam: 'Segui una squadra',
         calendars: 'Agenda',
+        connection: 'Connessione',
         noResults: 'Nessun risultato',
         inProgress: 'In corso',
         noOptionsAvailable: 'Nessuna opzione disponibile',
@@ -277,6 +287,8 @@ export const translateWord = (word: string) => {
         currentScore: 'Punteggio attuale',
         showHidePreviousScores: 'Mostra/Nascondi punteggi precedenti',
         postponedGame: 'Gioco posticipato',
+        signInWithGoogle: 'Accedi con Google',
+        signOut: 'Esci da Google',
       };
       break;
     case 'ja':
@@ -286,6 +298,7 @@ export const translateWord = (word: string) => {
         remainingGames: '残りのゲーム',
         focusTeam: 'チームをフォロー',
         calendars: 'アジェンダ',
+        connection: '接続',
         noResults: '結果なし',
         inProgress: '進行中',
         noOptionsAvailable: '利用可能なオプションはありません',
@@ -321,6 +334,8 @@ export const translateWord = (word: string) => {
         currentScore: '現在のスコア',
         showHidePreviousScores: '前のスコアを表示/非表示',
         postponedGame: '試合が延期されました',
+        signInWithGoogle: 'Googleでサインイン',
+        signOut: 'Googleでサインアウト',
       };
       break;
     case 'ko':
@@ -330,6 +345,7 @@ export const translateWord = (word: string) => {
         remainingGames: '남은 게임',
         focusTeam: '팀 팔로우',
         calendars: '아젠다',
+        connection: '연결',
         noResults: '결과 없음',
         inProgress: '진행 중',
         noOptionsAvailable: '사용 가능한 옵션이 없습니다',
@@ -365,6 +381,8 @@ export const translateWord = (word: string) => {
         currentScore: '현재 점수',
         showHidePreviousScores: '이전 점수 표시/숨기기',
         postponedGame: '경기 연기됨',
+        signInWithGoogle: 'Google로 로그인',
+        signOut: 'Google로 로그아웃',
       };
       break;
     case 'nl':
@@ -374,6 +392,7 @@ export const translateWord = (word: string) => {
         remainingGames: 'Resterende wedstrijden',
         focusTeam: 'Volg een team',
         calendars: 'Agenda',
+        connection: 'Verbinding',
         noResults: 'Geen resultaten',
         inProgress: 'In afwachting',
         noOptionsAvailable: 'Geen opties beschikbaar',
@@ -409,6 +428,8 @@ export const translateWord = (word: string) => {
         currentScore: 'Huidige score',
         showHidePreviousScores: 'Vorige scores tonen/verbergen',
         postponedGame: 'Spiel verschoben',
+        signInWithGoogle: 'Iniciar sesión con Google',
+        signOut: 'Cerrar sesión con Google',
       };
       break;
     case 'pt':
@@ -418,6 +439,7 @@ export const translateWord = (word: string) => {
         remainingGames: 'Jogos restantes',
         focusTeam: 'Siga um time',
         calendars: 'Agenda',
+        connection: 'Conexão',
         noResults: 'Sem resultados',
         inProgress: 'Em andamento',
         noOptionsAvailable: 'Nenhuma opção disponível',
@@ -453,6 +475,8 @@ export const translateWord = (word: string) => {
         currentScore: 'Placar atual',
         showHidePreviousScores: 'Mostrar/Ocultar placar anterior',
         postponedGame: 'Jogo adiado',
+        signInWithGoogle: 'Iniciar sesión con Google',
+        signOut: 'Cerrar sesión con Google',
       };
       break;
     case 'ru':
@@ -462,6 +486,7 @@ export const translateWord = (word: string) => {
         remainingGames: 'Оставшиеся игры',
         focusTeam: 'Следить за командой',
         calendars: 'Агенда',
+        connection: 'Подключение',
         noResults: 'Нет результатов',
         inProgress: 'В процессе',
         noOptionsAvailable: 'Нет доступных вариантов',
@@ -497,6 +522,8 @@ export const translateWord = (word: string) => {
         currentScore: 'Текущий счет',
         showHidePreviousScores: 'Показать/скрыть предыдущие счета',
         postponedGame: 'Игра отложена',
+        signInWithGoogle: 'Войти с помощью Google',
+        signOut: 'Выйти с помощью Google',
       };
       break;
     case 'zh':
@@ -506,6 +533,7 @@ export const translateWord = (word: string) => {
         remainingGames: '剩余比赛',
         focusTeam: '关注一个团队',
         calendars: '议程',
+        connection: '连接',
         noResults: '没有结果',
         inProgress: '进行中',
         noOptionsAvailable: '没有可用选项',
@@ -541,6 +569,8 @@ export const translateWord = (word: string) => {
         currentScore: '当前得分',
         showHidePreviousScores: '显示/隐藏之前的比分',
         postponedGame: '比赛推迟',
+        signInWithGoogle: '使用Google登录',
+        signOut: '使用Google退出登录',
       };
       break;
     default:
@@ -550,6 +580,7 @@ export const translateWord = (word: string) => {
         remainingGames: 'Remaining games',
         focusTeam: 'Follow a team',
         calendars: 'Agenda',
+        connection: 'Connection',
         noResults: 'No results',
         inProgress: 'In progress',
         noOptionsAvailable: 'No options available',
@@ -585,6 +616,8 @@ export const translateWord = (word: string) => {
         currentScore: 'Current Score',
         showHidePreviousScores: 'Show/Hide Previous Scores',
         postponedGame: 'Postponed Game',
+        signInWithGoogle: 'Sign in with Google',
+        signOut: 'Sign out with Google',
       };
       break;
   }
