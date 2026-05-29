@@ -133,7 +133,7 @@ export const translateWord = (word: string) => {
         leagueSurveilled: 'Ligue(s) à afficher',
         score: 'Résultat final',
         favorites: 'FAVORIS',
-        followLive: ' Suivre le direct',
+        followLive: 'Suivre le direct',
         scoreView: 'Afficher les scores',
         localizeArena: "Localiser l'arène",
         downloadICS: 'Fichier .ics',
@@ -142,6 +142,8 @@ export const translateWord = (word: string) => {
         final: 'Finalisation',
         standings: 'Classement',
         currentScore: 'Score actuel',
+        showHidePreviousScores: 'Afficher/Masquer les scores précédents',
+        postponedGame: 'Match reporté',
       };
       break;
     case 'de':
@@ -184,6 +186,8 @@ export const translateWord = (word: string) => {
         final: 'Ergebnis',
         standings: 'Standings',
         currentScore: 'Aktueller Spielstand',
+        showHidePreviousScores: 'Vorherige Scores anzeigen/verstecken',
+        postponedGame: 'Spiel verschoben',
       };
       break;
     case 'es':
@@ -191,13 +195,13 @@ export const translateWord = (word: string) => {
         all: 'TODOS',
         gamesOfDay: 'Juegos del día',
         remainingGames: 'Juegos restantes',
+        focusTeam: 'Seguir a un equipo',
         calendars: 'Agenda',
         noResults: 'Sin resultados',
         inProgress: 'En progreso',
         noOptionsAvailable: 'No hay opciones disponibles',
         wrongPage: 'Esta página no existe.',
         homeScreen: 'Ir a la pantalla de inicio!',
-        focusTeam: 'Seguir a un equipo',
         selectAll: 'Seleccionar todo',
         Filter: 'Filtrar',
         ended: 'Finalizado',
@@ -226,6 +230,8 @@ export const translateWord = (word: string) => {
         final: 'Final',
         standings: 'Clasificaciones',
         currentScore: 'Marcador actual',
+        showHidePreviousScores: 'Mostrar/Ocultar marcadores anteriores',
+        postponedGame: 'Juego pospuesto',
       };
       break;
 
@@ -254,7 +260,7 @@ export const translateWord = (word: string) => {
         selectMultiple: 'Seleziona le tue scelte',
         nothing: 'Niente',
         filterTeams: 'Filtrare squadre',
-        filterLeagues: 'Filtrare liuge',
+        filterLeagues: 'Filtrare leghe',
         filterMonths: 'Filtrare mesi',
         findTeam: 'Trova una squadra',
         leagueSurveilled: 'Lega/Leghe da visualizzare',
@@ -269,6 +275,8 @@ export const translateWord = (word: string) => {
         final: 'Finale',
         standings: 'Classifica',
         currentScore: 'Punteggio attuale',
+        showHidePreviousScores: 'Mostra/Nascondi punteggi precedenti',
+        postponedGame: 'Gioco posticipato',
       };
       break;
     case 'ja':
@@ -311,6 +319,8 @@ export const translateWord = (word: string) => {
         final: '最終',
         standings: 'スタンディング',
         currentScore: '現在のスコア',
+        showHidePreviousScores: '前のスコアを表示/非表示',
+        postponedGame: '試合が延期されました',
       };
       break;
     case 'ko':
@@ -351,15 +361,17 @@ export const translateWord = (word: string) => {
         gameDetails: '게임 세부 정보',
         events: '이벤트',
         final: '최종',
-        standings: '표준',
+        standings: '순위',
         currentScore: '현재 점수',
+        showHidePreviousScores: '이전 점수 표시/숨기기',
+        postponedGame: '경기 연기됨',
       };
       break;
     case 'nl':
       translation = {
         all: 'ALLE',
         gamesOfDay: 'Spelkalender',
-        remainingGames: 'Resterende spellen',
+        remainingGames: 'Resterende wedstrijden',
         focusTeam: 'Volg een team',
         calendars: 'Agenda',
         noResults: 'Geen resultaten',
@@ -380,8 +392,8 @@ export const translateWord = (word: string) => {
         selectMultiple: 'Selecteer uw keuzes',
         nothing: 'Niets',
         filterTeams: 'Teams filteren',
-        filterLeagues: 'Leagues filteren',
-        filterMonths: 'Months filteren',
+        filterLeagues: 'Competities filteren',
+        filterMonths: 'Maanden filteren',
         findTeam: 'Zoek een team',
         leagueSurveilled: 'Weer te geven competitie(s)',
         score: 'Eindstand',
@@ -395,6 +407,8 @@ export const translateWord = (word: string) => {
         final: 'Eind',
         standings: 'Standings',
         currentScore: 'Huidige score',
+        showHidePreviousScores: 'Vorige scores tonen/verbergen',
+        postponedGame: 'Spiel verschoben',
       };
       break;
     case 'pt':
@@ -437,6 +451,8 @@ export const translateWord = (word: string) => {
         final: 'Final',
         standings: 'Classificação',
         currentScore: 'Placar atual',
+        showHidePreviousScores: 'Mostrar/Ocultar placar anterior',
+        postponedGame: 'Jogo adiado',
       };
       break;
     case 'ru':
@@ -479,6 +495,8 @@ export const translateWord = (word: string) => {
         final: 'Финал',
         standings: 'Таблица',
         currentScore: 'Текущий счет',
+        showHidePreviousScores: 'Показать/скрыть предыдущие счета',
+        postponedGame: 'Игра отложена',
       };
       break;
     case 'zh':
@@ -490,7 +508,7 @@ export const translateWord = (word: string) => {
         calendars: '议程',
         noResults: '没有结果',
         inProgress: '进行中',
-        noOptionsAvailable: '沒有可用選項',
+        noOptionsAvailable: '没有可用选项',
         wrongPage: '此页面不存在。',
         homeScreen: '前往首页！',
         selectAll: '全选',
@@ -521,6 +539,8 @@ export const translateWord = (word: string) => {
         final: '最终',
         standings: '排名',
         currentScore: '当前得分',
+        showHidePreviousScores: '显示/隐藏之前的比分',
+        postponedGame: '比赛推迟',
       };
       break;
     default:
@@ -529,7 +549,6 @@ export const translateWord = (word: string) => {
         gamesOfDay: 'Games of the day',
         remainingGames: 'Remaining games',
         focusTeam: 'Follow a team',
-
         calendars: 'Agenda',
         noResults: 'No results',
         inProgress: 'In progress',
@@ -564,6 +583,8 @@ export const translateWord = (word: string) => {
         final: 'Final',
         standings: 'Standings',
         currentScore: 'Current Score',
+        showHidePreviousScores: 'Show/Hide Previous Scores',
+        postponedGame: 'Postponed Game',
       };
       break;
   }
