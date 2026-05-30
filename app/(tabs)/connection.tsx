@@ -93,13 +93,13 @@ export default function ConnectionScreen() {
       }
     } catch (loginError) {
       console.log('Login failed:', loginError.code);
-      // Gestion affinée des erreurs de connexion
+      // Fine-tuned connection error handling
       if (loginError.code === 'auth/user-not-found') {
         setErrorMessage(translateWord('userNotFound'));
       } else if (loginError.code === 'auth/wrong-password') {
         setErrorMessage(translateWord('incorrectPassword'));
       } else if (loginError.code === 'auth/invalid-credential') {
-        // Message générique recommandé pour la sécurité (évite l'énumération d'e-mails)
+        // Recommended generic security message (prevents email enumeration)
         setErrorMessage(translateWord('invalidCredentials'));
       } else {
         setErrorMessage(translateWord('loginError') + (loginError.message || ''));
@@ -233,7 +233,7 @@ export default function ConnectionScreen() {
           <h3>{!user ? translateWord('authentication') : translateWord('loggedInAs')}</h3>
         </ThemedText>
 
-        {/* MODIFIED: Conditional Rendering block based on connection status */}
+        {/* Conditional Rendering block based on connection status */}
         {!user ? (
           // IF DISCONNECTED: Show inputs and login options
           <View style={styles.innerContent}>
@@ -277,7 +277,7 @@ export default function ConnectionScreen() {
               )}
             </View>
 
-            {/* Affichage élégant de l'erreur */}
+            {/* Elegant error display */}
             {errorMessage ? (
               <View style={styles.errorContainer}>
                 <Icon name="exclamation-circle" type="font-awesome" size={16} color="#DB4437" />
@@ -285,7 +285,7 @@ export default function ConnectionScreen() {
               </View>
             ) : null}
 
-            {/* Affichage élégant du succès (pour le reset de mot de passe) */}
+            {/* Elegant success display (for password reset) */}
             {successMessage ? (
               <View style={styles.successContainer}>
                 <Icon name="check-circle" type="font-awesome" size={16} color="#0F9D58" />
@@ -334,7 +334,7 @@ export default function ConnectionScreen() {
               <span style={styles.emailHighlight}>{user.email}</span>
             </ThemedText>
 
-            {/* Affichage élégant de l'erreur */}
+            {/* Elegant error display */}
             {errorMessage ? (
               <View style={styles.errorContainer}>
                 <Icon name="exclamation-circle" type="font-awesome" size={16} color="#DB4437" />
@@ -342,7 +342,7 @@ export default function ConnectionScreen() {
               </View>
             ) : null}
 
-            {/* Affichage élégant du succès */}
+            {/* Elegant success display */}
             {successMessage ? (
               <View style={styles.successContainer}>
                 <Icon name="check-circle" type="font-awesome" size={16} color="#0F9D58" />

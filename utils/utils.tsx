@@ -168,7 +168,7 @@ export const translateWord = (word: string) => {
         deleteAccount: 'Supprimer le compte',
         emailPlaceholder: 'Adresse e-mail',
         passwordPlaceholder: 'Mot de passe',
-        signIn: 'Se connecter',
+        signIn: 'Connectez-vous',
         signUp: "S'inscrire",
         noAccount: 'Pas encore de compte ?',
         alreadyHaveAccount: 'Déjà un compte ?',
@@ -177,6 +177,7 @@ export const translateWord = (word: string) => {
         userNotFound: 'Aucun compte trouvé pour cet e-mail.',
         emailAlreadyInUse: 'Cet e-mail est déjà utilisé par un autre compte.',
         invalidCredentials: 'E-mail ou mot de passe incorrect.',
+        or: 'ou',
       };
       break;
     case 'de':
@@ -254,6 +255,7 @@ export const translateWord = (word: string) => {
         userNotFound: 'Kein Konto für diese E-Mail gefunden.',
         emailAlreadyInUse: 'Diese E-Mail wird bereits verwendet.',
         invalidCredentials: 'E-Mail oder Passwort falsch.',
+        or: 'oder',
       };
       break;
     case 'es':
@@ -331,6 +333,7 @@ export const translateWord = (word: string) => {
         userNotFound: 'No se encontró ninguna cuenta para este correo.',
         emailAlreadyInUse: 'Este correo ya está en uso.',
         invalidCredentials: 'Correo o contraseña incorrectos.',
+        or: 'o',
       };
       break;
 
@@ -407,6 +410,7 @@ export const translateWord = (word: string) => {
         userNotFound: 'Nessun account trovato per questa email.',
         emailAlreadyInUse: 'Questa email è già in uso.',
         invalidCredentials: 'Email o password errati.',
+        or: 'o',
       };
       break;
     case 'ja':
@@ -483,6 +487,7 @@ export const translateWord = (word: string) => {
         userNotFound: 'アカウントが見つかりません。',
         emailAlreadyInUse: 'このメールは既に使用されています。',
         invalidCredentials: 'メールアドレスまたはパスワードが正しくありません。',
+        or: 'または',
       };
       break;
     case 'ko':
@@ -558,6 +563,7 @@ export const translateWord = (word: string) => {
         userNotFound: '계정을 찾을 수 없습니다.',
         emailAlreadyInUse: '이미 사용 중인 이메일입니다.',
         invalidCredentials: '이메일 또는 비밀번호가 올바르지 않습니다.',
+        or: '또는',
       };
       break;
     case 'nl':
@@ -634,6 +640,7 @@ export const translateWord = (word: string) => {
         userNotFound: 'Geen account gevonden voor dit e-mailadres.',
         emailAlreadyInUse: 'Dit e-mailadres is al in gebruik.',
         invalidCredentials: 'E-mail of wachtwoord onjuist.',
+        or: 'of',
       };
       break;
     case 'pt':
@@ -710,6 +717,7 @@ export const translateWord = (word: string) => {
         userNotFound: 'Conta não encontrada.',
         emailAlreadyInUse: 'Este e-mail já está em uso.',
         invalidCredentials: 'E-mail ou senha incorretos.',
+        or: 'ou',
       };
       break;
     case 'ru':
@@ -786,6 +794,7 @@ export const translateWord = (word: string) => {
         userNotFound: 'Аккаунт не найден.',
         emailAlreadyInUse: 'Этот email уже используется.',
         invalidCredentials: 'Неверный email или пароль.',
+        or: 'или',
       };
       break;
     case 'zh':
@@ -861,6 +870,7 @@ export const translateWord = (word: string) => {
         userNotFound: '找不到帐户。',
         emailAlreadyInUse: '此电子邮件已被使用。',
         invalidCredentials: '电子邮件或密码错误。',
+        or: '或',
       };
       break;
     default:
@@ -936,6 +946,7 @@ export const translateWord = (word: string) => {
         userNotFound: 'No account found for this email.',
         emailAlreadyInUse: 'This email is already in use.',
         invalidCredentials: 'Incorrect email or password.',
+        or: 'or',
       };
       break;
   }
