@@ -146,7 +146,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: 'Afficher/Masquer les scores précédents',
         postponedGame: 'Match reporté',
         signInWithGoogle: 'Se connecter avec Google',
-        signOut: 'Se déconnecter de Google',
+        signOut: 'Se déconnecter',
+        authentication: 'Identifiez vous',
+        continueWithEmail: 'Continuer avec un e-mail',
+        forgotPassword: 'Mot de passe oublié ?',
+        loggedInAs: 'Vous êtes connecté avec :',
       };
       break;
     case 'de':
@@ -193,7 +197,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: 'Vorherige Scores anzeigen/verstecken',
         postponedGame: 'Spiel verschoben',
         signInWithGoogle: 'Mit Google anmelden',
-        signOut: 'Mit Google abmelden',
+        signOut: 'Abmelden',
+        authentication: 'Identifizieren Sie sich',
+        continueWithEmail: 'Mit E-Mail fortfahren',
+        forgotPassword: 'Passwort vergessen?',
+        loggedInAs: 'Angemeldet als:',
       };
       break;
     case 'es':
@@ -240,7 +248,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: 'Mostrar/Ocultar marcadores anteriores',
         postponedGame: 'Juego pospuesto',
         signInWithGoogle: 'Iniciar sesión con Google',
-        signOut: 'Cerrar sesión con Google',
+        signOut: 'Cerrar sesión',
+        authentication: 'Identificarse',
+        continueWithEmail: 'Continuar con el correo electrónico',
+        forgotPassword: '¿Has olvidado tu contraseña?',
+        loggedInAs: 'Conectado como:',
       };
       break;
 
@@ -288,7 +300,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: 'Mostra/Nascondi punteggi precedenti',
         postponedGame: 'Gioco posticipato',
         signInWithGoogle: 'Accedi con Google',
-        signOut: 'Esci da Google',
+        signOut: 'Esci',
+        authentication: 'Identificarsi',
+        continueWithEmail: "Continua con l'e-mail",
+        forgotPassword: 'Password dimenticata?',
+        loggedInAs: 'Connesso come:',
       };
       break;
     case 'ja':
@@ -335,7 +351,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: '前のスコアを表示/非表示',
         postponedGame: '試合が延期されました',
         signInWithGoogle: 'Googleでサインイン',
-        signOut: 'Googleでサインアウト',
+        signOut: 'サインアウト',
+        authentication: '本人確認を行ってください',
+        continueWithEmail: 'メールで続ける',
+        forgotPassword: 'パスワードをお忘れですか？',
+        loggedInAs: 'ログイン：',
       };
       break;
     case 'ko':
@@ -382,7 +402,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: '이전 점수 표시/숨기기',
         postponedGame: '경기 연기됨',
         signInWithGoogle: 'Google로 로그인',
-        signOut: 'Google로 로그아웃',
+        signOut: '로그아웃',
+        authentication: '본인 확인',
+        continueWithEmail: '이메일로 계속하기',
+        forgotPassword: '비밀번호를 잊으셨나요?',
+        loggedInAs: '로그인 계정:',
       };
       break;
     case 'nl':
@@ -429,7 +453,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: 'Vorige scores tonen/verbergen',
         postponedGame: 'Spiel verschoben',
         signInWithGoogle: 'Iniciar sesión con Google',
-        signOut: 'Cerrar sesión con Google',
+        signOut: 'Uitloggen',
+        authentication: 'Identificeer uzelf',
+        continueWithEmail: 'Doorgaan met e-mail',
+        forgotPassword: 'Wachtwoord vergeten?',
+        loggedInAs: 'Ingelogd als:',
       };
       break;
     case 'pt':
@@ -476,7 +504,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: 'Mostrar/Ocultar placar anterior',
         postponedGame: 'Jogo adiado',
         signInWithGoogle: 'Iniciar sesión con Google',
-        signOut: 'Cerrar sesión con Google',
+        signOut: 'Sair',
+        authentication: 'Identifique-se',
+        continueWithEmail: 'Continuar com e-mail',
+        forgotPassword: 'Esqueceu a senha?',
+        loggedInAs: 'Conectado como:',
       };
       break;
     case 'ru':
@@ -523,7 +555,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: 'Показать/скрыть предыдущие счета',
         postponedGame: 'Игра отложена',
         signInWithGoogle: 'Войти с помощью Google',
-        signOut: 'Выйти с помощью Google',
+        signOut: 'Выйти',
+        authentication: 'Идентифицируйте себя',
+        continueWithEmail: 'Продолжить через электронную почту',
+        forgotPassword: 'Забыли пароль?',
+        loggedInAs: 'Вы вошли как:',
       };
       break;
     case 'zh':
@@ -570,7 +606,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: '显示/隐藏之前的比分',
         postponedGame: '比赛推迟',
         signInWithGoogle: '使用Google登录',
-        signOut: '使用Google退出登录',
+        signOut: '退出登录',
+        authentication: '身份验证',
+        continueWithEmail: '使用电子邮件继续',
+        forgotPassword: '忘记密码？',
+        loggedInAs: '登录身份：',
       };
       break;
     default:
@@ -617,7 +657,11 @@ export const translateWord = (word: string) => {
         showHidePreviousScores: 'Show/Hide Previous Scores',
         postponedGame: 'Postponed Game',
         signInWithGoogle: 'Sign in with Google',
-        signOut: 'Sign out with Google',
+        signOut: 'Sign out',
+        authentication: 'Please sign in',
+        continueWithEmail: 'Continue with Email',
+        forgotPassword: 'Forgot Password?',
+        loggedInAs: 'Logged in as:',
       };
       break;
   }
