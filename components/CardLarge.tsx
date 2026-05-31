@@ -1,4 +1,5 @@
 import { ThemedText } from '@/components/ThemedText';
+import { maxFavoritesNumber } from '@/constants/Constants';
 import { GameStatus, leagueLogos } from '@/constants/enum';
 import { getGamesStatus } from '@/utils/date';
 import { getCache } from '@/utils/fetchData';
@@ -679,17 +680,19 @@ export default function CardLarge({
                       >
                         {awayTeamShort || '\u00A0'}
                       </ThemedText>
-                      <Icon
-                        onPress={(e) => {
-                          e?.stopPropagation();
-                          addFavoriteTeam(favoriteTeams, awayTeamId);
-                        }}
-                        name={favoriteTeams.includes(awayTeamId) ? 'star' : 'star-o'}
-                        type="font-awesome"
-                        size={14}
-                        color={favoriteTeams.includes(awayTeamId) ? '#FFD700' : '#94a3b8'}
-                        style={{ marginLeft: 5 }}
-                      />
+                      {(favoriteTeams.includes(awayTeamId) || favoriteTeams.length < maxFavoritesNumber) && (
+                        <Icon
+                          onPress={(e) => {
+                            e?.stopPropagation();
+                            addFavoriteTeam(favoriteTeams, awayTeamId);
+                          }}
+                          name={favoriteTeams.includes(awayTeamId) ? 'star' : 'star-o'}
+                          type="font-awesome"
+                          size={14}
+                          color={favoriteTeams.includes(awayTeamId) ? '#FFD700' : '#94a3b8'}
+                          style={{ marginLeft: 5 }}
+                        />
+                      )}
                     </View>
                   )}
                   {!isSmallCard && (
@@ -755,17 +758,19 @@ export default function CardLarge({
                       >
                         {homeTeamShort || '\u00A0'}
                       </ThemedText>
-                      <Icon
-                        onPress={(e) => {
-                          e?.stopPropagation();
-                          addFavoriteTeam(favoriteTeams, homeTeamId);
-                        }}
-                        name={favoriteTeams.includes(homeTeamId) ? 'star' : 'star-o'}
-                        type="font-awesome"
-                        size={14}
-                        color={favoriteTeams.includes(homeTeamId) ? '#FFD700' : '#94a3b8'}
-                        style={{ marginLeft: 5 }}
-                      />
+                      {(favoriteTeams.includes(homeTeamId) || favoriteTeams.length < maxFavoritesNumber) && (
+                        <Icon
+                          onPress={(e) => {
+                            e?.stopPropagation();
+                            addFavoriteTeam(favoriteTeams, homeTeamId);
+                          }}
+                          name={favoriteTeams.includes(homeTeamId) ? 'star' : 'star-o'}
+                          type="font-awesome"
+                          size={14}
+                          color={favoriteTeams.includes(homeTeamId) ? '#FFD700' : '#94a3b8'}
+                          style={{ marginLeft: 5 }}
+                        />
+                      )}
                     </View>
                   )}
                   {!isSmallCard && (
