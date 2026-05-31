@@ -6,7 +6,6 @@ import Separator from '@/components/Separator';
 import SliderDatePicker from '@/components/SliderDatePicker';
 import TeamFilter from '@/components/TeamFilter';
 import { ThemedElements } from '@/components/ThemedElements';
-import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { HorizontalScrollProvider, useHorizontalScroll } from '@/context/HorizontalScrollContext';
@@ -592,11 +591,6 @@ const GameofTheDayContent = () => {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <AppLogo />
-          {user && (
-            <ThemedText style={{ fontSize: 14, color: '#007AFF', fontWeight: '600' }}>
-              Hi, {user.displayName || user.email?.split('@')[0]}
-            </ThemedText>
-          )}
         </View>
         <ScoreToggle value={showScores} onValueChange={handleScoreToggle} />
       </div>

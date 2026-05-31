@@ -68,6 +68,21 @@ export default function Calendar() {
     }
   }, []);
 
+  useEffect(() => {
+    const updateDateRange = () => {
+      const start = localStorage.getItem('startDate');
+      const end = localStorage.getItem('endDate');
+      if (start && end) {
+        setDateRange({ startDate: new Date(start), endDate: new Date(end) });
+        getGamesFromApi(start, end);
+      }
+    };
+    if (globalThis.window !== undefined) {
+      globalThis.window.addEventListener('dateRangeUpdated', updateDateRange);
+      return () => globalThis.window.removeEventListener('dateRangeUpdated', updateDateRange);
+    }
+  }, []);
+
   const filteredTeamsSelected = useMemo(() => {
     if (allowedLeagues.length === 0) return teamsSelected;
     return teamsSelected.filter((teamId) => {
@@ -147,6 +162,8 @@ export default function Calendar() {
         await setDoc(
           userRef,
           {
+            startDate: start,
+            endDate: end,
             gameSelected: newGamesSelection,
             lastUpdate: serverTimestamp(),
           },

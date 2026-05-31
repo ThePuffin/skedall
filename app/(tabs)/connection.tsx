@@ -56,6 +56,8 @@ export default function ConnectionScreen() {
             saveCache('showScores', data.showScores ?? false);
             saveCache('showPreviousScores', data.showPreviousScores ?? false);
             saveCache('gameSelected', data.gameSelected || []);
+            if (data.startDate) localStorage.setItem('startDate', data.startDate);
+            if (data.endDate) localStorage.setItem('endDate', data.endDate);
 
             // Reconstruct teamsSelected objects from IDs stored in DB
             const allTeams = getCache<Team[]>('teams') || [];
@@ -72,6 +74,7 @@ export default function ConnectionScreen() {
               globalThis.window.dispatchEvent(new Event('leaguesUpdated'));
               globalThis.window.dispatchEvent(new Event('scoresUpdated'));
               globalThis.window.dispatchEvent(new Event('gamesSelectedUpdated'));
+              globalThis.window.dispatchEvent(new Event('dateRangeUpdated'));
             }
           }
         } catch (err: unknown) {
@@ -118,6 +121,8 @@ export default function ConnectionScreen() {
           const showPreviousScores = getCache<boolean>('showPreviousScores') ?? false;
           const gameSelected = getCache<any[]>('gameSelected') || [];
           const teamsSelectedRaw = getCache<any[]>('teamsSelected') || [];
+          const startDate = localStorage.getItem('startDate');
+          const endDate = localStorage.getItem('endDate');
           const teamsSelected = teamsSelectedRaw.map((t) => t.uniqueId).filter(Boolean);
 
           const userRef = doc(db, 'users', newUser.uid);
@@ -135,6 +140,8 @@ export default function ConnectionScreen() {
               showPreviousScores,
               gameSelected,
               teamsSelected,
+              startDate,
+              endDate,
             },
             { merge: true },
           );

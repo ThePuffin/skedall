@@ -199,6 +199,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: 'Cet e-mail est déjà utilisé par un autre compte.',
         invalidCredentials: 'E-mail ou mot de passe incorrect.',
         or: 'ou',
+        profile: 'Mon Profil',
       };
       break;
     case 'de':
@@ -277,6 +278,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: 'Diese E-Mail wird bereits verwendet.',
         invalidCredentials: 'E-Mail oder Passwort falsch.',
         or: 'oder',
+        profile: 'Mein Profil',
       };
       break;
     case 'es':
@@ -355,6 +357,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: 'Este correo ya está en uso.',
         invalidCredentials: 'Correo o contraseña incorrectos.',
         or: 'o',
+        profile: 'Mi Perfil',
       };
       break;
 
@@ -432,6 +435,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: 'Questa email è già in uso.',
         invalidCredentials: 'Email o password errati.',
         or: 'o',
+        profile: 'Il mio Profilo',
       };
       break;
     case 'ja':
@@ -509,6 +513,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: 'このメールは既に使用されています。',
         invalidCredentials: 'メールアドレスまたはパスワードが正しくありません。',
         or: 'または',
+        profile: 'マイプロフィール',
       };
       break;
     case 'ko':
@@ -585,6 +590,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: '이미 사용 중인 이메일입니다.',
         invalidCredentials: '이메일 또는 비밀번호가 올바르지 않습니다.',
         or: '또는',
+        profile: '내 프로필',
       };
       break;
     case 'nl':
@@ -662,6 +668,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: 'Dit e-mailadres is al in gebruik.',
         invalidCredentials: 'E-mail of wachtwoord onjuist.',
         or: 'of',
+        profile: 'Mijn Profiel',
       };
       break;
     case 'pt':
@@ -739,6 +746,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: 'Este e-mail já está em uso.',
         invalidCredentials: 'E-mail ou senha incorretos.',
         or: 'ou',
+        profile: 'Meu Perfil',
       };
       break;
     case 'ru':
@@ -816,6 +824,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: 'Этот email уже используется.',
         invalidCredentials: 'Неверный email или пароль.',
         or: 'или',
+        profile: 'Мой профиль',
       };
       break;
     case 'zh':
@@ -892,6 +901,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: '此电子邮件已被使用。',
         invalidCredentials: '电子邮件或密码错误。',
         or: '或',
+        profile: '我的资料',
       };
       break;
     default:
@@ -968,6 +978,7 @@ export const translateWord = (word: string) => {
         emailAlreadyInUse: 'This email is already in use.',
         invalidCredentials: 'Incorrect email or password.',
         or: 'or',
+        profile: 'My Profile',
       };
       break;
   }
