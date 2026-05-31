@@ -94,7 +94,6 @@ const GameofTheDayContent = () => {
   const [showScores, setShowScores] = useState<boolean>(false);
 
   const [leaguesAvailable, setLeaguesAvailable] = useState<string[]>([]);
-  const [noVisibleGames, setNoVisibleGames] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   const retryIntervals = useMemo(() => [1000, 10000, 20000, 30000], []);
   const [isLoading, setIsLoading] = useState(true);
@@ -168,7 +167,7 @@ const GameofTheDayContent = () => {
           return g.isActive;
         });
       return newGames;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error fetching live scores:', error);
     }
     return null;
@@ -235,6 +234,16 @@ const GameofTheDayContent = () => {
     if (globalThis.window !== undefined) {
       globalThis.window.addEventListener('favoritesUpdated', updateFavorites);
       return () => globalThis.window.removeEventListener('favoritesUpdated', updateFavorites);
+    }
+  }, []);
+
+  useEffect(() => {
+    const updateSelected = () => {
+      setGamesSelected(getCache<GameFormatted[]>('gameSelected') || []);
+    };
+    if (globalThis.window !== undefined) {
+      globalThis.window.addEventListener('gamesSelectedUpdated', updateSelected);
+      return () => globalThis.window.removeEventListener('gamesSelectedUpdated', updateSelected);
     }
   }, []);
 
@@ -370,7 +379,7 @@ const GameofTheDayContent = () => {
           const gamesByHourData = await fetchGamesByHour(YYYYMMDD, 1000);
           const gamesOfTheDay = Object.values(gamesByHourData).flat();
           setGames(gamesOfTheDay);
-        } catch (error) {
+        } catch (error: unknown) {
           console.error(error);
           setGames([]);
         }
@@ -435,10 +444,10 @@ const GameofTheDayContent = () => {
             saveCache('gamesDay', gamesDayCache.current);
           });
         } else {
-          // Pour les autres jours, on sauvegarde le cache qui a été mis à jour dans le if/else
+          // For other days, save the cache that was updated in the if/else block
           saveCache('gamesDay', gamesDayCache.current);
         }
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(error);
         if (!cachedGames) {
           gamesDayCache.current[YYYYMMDD] = [];
@@ -541,7 +550,7 @@ const GameofTheDayContent = () => {
   const teamsOfTheDay = useMemo(() => {
     const teamsMap = new Map<string, Team>();
 
-    games.forEach(async (game) => {
+    games.forEach((game) => {
       if (!selectLeagues.includes(game.league as League)) return;
 
       if (!teamsMap.has(game.homeTeamId)) {
