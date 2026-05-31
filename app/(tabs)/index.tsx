@@ -542,7 +542,7 @@ const GameofTheDayContent = () => {
   const teamsOfTheDay = useMemo(() => {
     const teamsMap = new Map<string, Team>();
 
-    games.forEach((game) => {
+    games.forEach(async (game) => {
       if (!selectLeagues.includes(game.league as League)) return;
 
       if (!teamsMap.has(game.homeTeamId)) {
