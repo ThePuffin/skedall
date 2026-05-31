@@ -146,9 +146,12 @@ export default function Calendar() {
     localStorage.setItem('endDate', end);
     await getGamesFromApi(start, end);
     setDateRange({ startDate, endDate });
+
+    const startStr = readableDate(startDate);
+    const endStr = readableDate(endDate);
+
     const newGamesSelection = gamesSelected.filter((gameSelected) => {
-      const gameDate = new Date(gameSelected.gameDate);
-      return gameDate >= startDate && gameDate <= endDate;
+      return gameSelected.gameDate >= startStr && gameSelected.gameDate <= endStr;
     });
     setGamesSelected(newGamesSelection);
     saveCache('gameSelected', newGamesSelection);
@@ -401,15 +404,10 @@ export default function Calendar() {
     const sortedDates = Object.keys(games).sort();
 
     return sortedDates.map((date, index) => {
-      const [year, month, day] = date.split('-').map(Number);
-      const gameDate = new Date(year, month - 1, day);
-      if (Number.isNaN(gameDate.getTime())) return null;
-      const startDate = new Date(dateRange.startDate);
-      startDate.setHours(0, 0, 0, 0);
-      const endDate = new Date(dateRange.endDate);
-      endDate.setHours(23, 59, 59, 999);
+      const startStr = readableDate(dateRange.startDate);
+      const endStr = readableDate(dateRange.endDate);
 
-      if (gameDate < startDate || gameDate > endDate) return null;
+      if (date < startStr || date > endStr) return null;
 
       const gamesForDate = games[date].filter(
         (g) =>
@@ -419,6 +417,9 @@ export default function Calendar() {
       );
 
       if (gamesForDate.length === 0) return null;
+
+      const [year, month, day] = date.split('-').map(Number);
+      const gameDate = new Date(year, month - 1, day);
 
       const formattedDate = gameDate.toLocaleDateString(undefined, {
         weekday: 'long',

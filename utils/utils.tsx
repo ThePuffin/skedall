@@ -200,6 +200,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: 'E-mail ou mot de passe incorrect.',
         or: 'ou',
         profile: 'Mon Profil',
+        changePreferences: 'Changer mes préférences',
       };
       break;
     case 'de':
@@ -279,6 +280,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: 'E-Mail oder Passwort falsch.',
         or: 'oder',
         profile: 'Mein Profil',
+        changePreferences: 'Präferenzen ändern',
       };
       break;
     case 'es':
@@ -358,6 +360,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: 'Correo o contraseña incorrectos.',
         or: 'o',
         profile: 'Mi Perfil',
+        changePreferences: 'Cambiar mis preferencias',
       };
       break;
 
@@ -436,6 +439,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: 'Email o password errati.',
         or: 'o',
         profile: 'Il mio Profilo',
+        changePreferences: 'Cambia le mie preferenze',
       };
       break;
     case 'ja':
@@ -514,6 +518,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: 'メールアドレスまたはパスワードが正しくありません。',
         or: 'または',
         profile: 'マイプロフィール',
+        changePreferences: '設定を変更する',
       };
       break;
     case 'ko':
@@ -591,6 +596,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: '이메일 또는 비밀번호가 올바르지 않습니다.',
         or: '또는',
         profile: '내 프로필',
+        changePreferences: '기본 설정 변경',
       };
       break;
     case 'nl':
@@ -669,6 +675,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: 'E-mail of wachtwoord onjuist.',
         or: 'of',
         profile: 'Mijn Profiel',
+        changePreferences: 'Voorkeuren wijzigen',
       };
       break;
     case 'pt':
@@ -747,6 +754,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: 'E-mail ou senha incorretos.',
         or: 'ou',
         profile: 'Meu Perfil',
+        changePreferences: 'Alterar preferências',
       };
       break;
     case 'ru':
@@ -825,6 +833,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: 'Неверный email или пароль.',
         or: 'или',
         profile: 'Мой профиль',
+        changePreferences: 'Изменить настройки',
       };
       break;
     case 'zh':
@@ -902,6 +911,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: '电子邮件或密码错误。',
         or: '或',
         profile: '我的资料',
+        changePreferences: '更改偏好',
       };
       break;
     default:
@@ -979,6 +989,7 @@ export const translateWord = (word: string) => {
         invalidCredentials: 'Incorrect email or password.',
         or: 'or',
         profile: 'My Profile',
+        changePreferences: 'Change my preferences',
       };
       break;
   }

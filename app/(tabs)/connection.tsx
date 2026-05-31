@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import FavModal from '@/components/FavModal';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { getCache, saveCache } from '@/utils/fetchData';
@@ -37,6 +38,9 @@ export default function ConnectionScreen() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [user, setUser] = useState(null);
 
+  const [isFavModalOpen, setIsFavModalOpen] = useState(false);
+  const [favoriteTeams, setFavoriteTeams] = useState<string[]>([]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser); // Sets user object if logged in, or null if logged out
@@ -56,8 +60,14 @@ export default function ConnectionScreen() {
             saveCache('showScores', data.showScores ?? false);
             saveCache('showPreviousScores', data.showPreviousScores ?? false);
             saveCache('gameSelected', data.gameSelected || []);
-            if (data.startDate) localStorage.setItem('startDate', data.startDate);
-            if (data.endDate) localStorage.setItem('endDate', data.endDate);
+
+            // Overwrite local dates with DB values to ensure DB is the source of truth
+            if (data.startDate) {
+              localStorage.setItem('startDate', data.startDate);
+            }
+            if (data.endDate) {
+              localStorage.setItem('endDate', data.endDate);
+            }
 
             // Reconstruct teamsSelected objects from IDs stored in DB
             const allTeams = getCache<Team[]>('teams') || [];
@@ -283,6 +293,13 @@ export default function ConnectionScreen() {
     if (!newMode) setConfirmPassword('');
   };
 
+  // Function to open preferences modal
+  const handleOpenFavModal = () => {
+    const cached = getCache<string[]>('favoriteTeams');
+    setFavoriteTeams(cached || []);
+    setIsFavModalOpen(true);
+  };
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <div
@@ -419,6 +436,14 @@ export default function ConnectionScreen() {
 
             <br />
 
+            {/* Change Preferences Button */}
+            <TouchableOpacity style={[styles.button, styles.prefButton]} onPress={handleOpenFavModal}>
+              <Icon name="cog" type="font-awesome" size={20} color="#fff" style={styles.iconStyle} />
+              <ThemedText style={styles.buttonText}>{translateWord('changePreferences')}</ThemedText>
+            </TouchableOpacity>
+
+            <br />
+
             {/* Sign Out Button */}
             <TouchableOpacity style={[styles.button, styles.disconnectButton]} onPress={handleGoogleLogout}>
               <Icon name="sign-out" type="font-awesome" size={20} color="#fff" style={styles.iconStyle} />
@@ -435,6 +460,15 @@ export default function ConnectionScreen() {
           </View>
         )}
       </View>
+
+      <FavModal
+        isOpen={isFavModalOpen}
+        favoriteTeams={favoriteTeams}
+        onClose={() => setIsFavModalOpen(false)}
+        onSave={(teams) => {
+          setFavoriteTeams(teams);
+        }}
+      />
     </ThemedView>
   );
 }
@@ -491,6 +525,9 @@ const styles = StyleSheet.create({
   },
   emailButton: {
     backgroundColor: '#007AFF', // iOS blue color
+  },
+  prefButton: {
+    backgroundColor: '#5856D6', // A purple color for preferences
   },
   toggleContainer: {
     marginTop: 15,
