@@ -6,9 +6,11 @@ import { TeamsEnum } from '@/constants/Teams';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { fetchLeagues, getCache, saveCache } from '@/utils/fetchData';
+import { db } from '@/utils/firebaseConfig';
 import { Team } from '@/utils/types';
 import { translateWord } from '@/utils/utils';
 import { useRouter } from 'expo-router';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   Dimensions,
@@ -101,15 +103,35 @@ const FavModal = ({
     updateDate: '',
   }));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!hasSelection) {
       setForceOpenTeamSelector(true);
       return;
     }
 
-    onSave(localFavorites.filter((team) => team !== '' && localLeagues.includes(team.split('-')[0])));
+    const filteredFavorites = localFavorites.filter((team) => team !== '' && localLeagues.includes(team.split('-')[0]));
+    onSave(filteredFavorites);
     saveCache('leaguesSelected', localLeagues);
     saveCache('showScores', showScores);
+
+    if (user) {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(
+          userRef,
+          {
+            favoriteTeams: filteredFavorites,
+            leaguesSelected: localLeagues,
+            showScores: showScores,
+            lastUpdate: serverTimestamp(),
+          },
+          { merge: true },
+        );
+      } catch (error: unknown) {
+        console.error('Error syncing user preferences to Firestore:', error);
+      }
+    }
+
     if (globalThis.window !== undefined) {
       globalThis.window.dispatchEvent(new Event('favoritesUpdated'));
       globalThis.window.dispatchEvent(new Event('leaguesUpdated'));

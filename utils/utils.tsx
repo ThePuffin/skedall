@@ -1,5 +1,7 @@
 import { maxFavoritesNumber } from '@/constants/Constants';
 import { saveCache } from '@/utils/fetchData';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { auth, db } from './firebaseConfig';
 import { Team } from './types';
 
 export const randomNumber = (max) => {
@@ -23,17 +25,36 @@ export const removeLastTeamId = (selection: string[]) => {
   return selection;
 };
 
-export const addFavoriteTeam = (favoriteTeams: string[], teamId: string) => {
+export const addFavoriteTeam = async (favoriteTeams: string[], teamId: string) => {
   const isIncluded = favoriteTeams.includes(teamId);
+  let updatedFavorites = [...favoriteTeams];
 
   if (isIncluded && favoriteTeams.length > 1) {
     // Only remove team if at least one remains after
-    const updatedFavorites = favoriteTeams.filter((id) => id !== teamId);
+    updatedFavorites = favoriteTeams.filter((id) => id !== teamId);
     saveCache('favoriteTeams', updatedFavorites);
   } else if (!isIncluded && favoriteTeams.length < maxFavoritesNumber) {
-    const updatedFavorites = [...favoriteTeams, teamId];
+    updatedFavorites = [...favoriteTeams, teamId];
     saveCache('favoriteTeams', updatedFavorites);
   }
+
+  const currentUser = auth.currentUser;
+  if (currentUser) {
+    try {
+      const userRef = doc(db, 'users', currentUser.uid);
+      await setDoc(
+        userRef,
+        {
+          favoriteTeams: updatedFavorites,
+          lastUpdate: serverTimestamp(),
+        },
+        { merge: true },
+      );
+    } catch (e: unknown) {
+      console.error('Error syncing favorite team to Firestore:', e);
+    }
+  }
+
   if (globalThis.window !== undefined) {
     globalThis.window.dispatchEvent(new Event('favoritesUpdated'));
   }
@@ -92,7 +113,7 @@ export const generateICSFile = ({ homeTeam, awayTeam, startTimeUTC, arenaName, p
     link.click();
 
     setTimeout(() => URL.revokeObjectURL(url), 100);
-  } catch (e) {
+  } catch (e: unknown) {
     console.error('Error generating or downloading ICS file:', e);
     return;
   }

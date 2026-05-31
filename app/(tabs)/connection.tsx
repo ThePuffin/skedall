@@ -83,15 +83,17 @@ export default function ConnectionScreen() {
             },
             { merge: true },
           );
-        } catch (registerError) {
+        } catch (err: unknown) {
+          const registerError = err as { code?: string; message?: string };
           if (registerError.code === 'auth/email-already-in-use') {
             setErrorMessage(translateWord('emailAlreadyInUse'));
           } else {
-            setErrorMessage(translateWord('authError') + registerError.message);
+            setErrorMessage(translateWord('authError') + (registerError.message ?? ''));
           }
         }
       }
-    } catch (loginError) {
+    } catch (err: unknown) {
+      const loginError = err as { code?: string; message?: string };
       console.log('Login failed:', loginError.code);
       // Fine-tuned connection error handling
       if (loginError.code === 'auth/user-not-found') {
@@ -119,7 +121,7 @@ export default function ConnectionScreen() {
       console.log('Attempting to send password reset email to:', email);
       await sendPasswordResetEmail(auth, email);
       setSuccessMessage(translateWord('passwordResetSent'));
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error during password reset request:', error);
       setErrorMessage(translateWord('resetError'));
     }
@@ -151,7 +153,7 @@ export default function ConnectionScreen() {
       );
 
       console.log('User data successfully synced with Firestore');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error during Google login:', error);
       setErrorMessage(translateWord('connectionError'));
     }
@@ -162,7 +164,7 @@ export default function ConnectionScreen() {
     try {
       await signOut(auth);
       console.log('User logged out');
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error during logout:', error);
     }
   };
@@ -195,7 +197,8 @@ export default function ConnectionScreen() {
       console.log('User authentication account permanently deleted');
 
       setSuccessMessage(translateWord('accountDeleted'));
-    } catch (error) {
+    } catch (err: unknown) {
+      const error = err as { code?: string; message?: string };
       console.error('Error during account deletion:', error);
 
       if (error.code === 'auth/requires-recent-login') {

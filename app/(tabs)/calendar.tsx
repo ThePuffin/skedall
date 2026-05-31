@@ -6,8 +6,10 @@ import { maxTeamsNumber } from '@/constants/Constants';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { fetchTeams, getCache, saveCache } from '@/utils/fetchData';
+import { db } from '@/utils/firebaseConfig';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
@@ -121,13 +123,13 @@ export default function Calendar() {
     endDate: new Date(localStorage.getItem('endDate') ?? endDate),
   });
 
-  const handleDateChange = (startDate: Date, endDate: Date) => {
+  const handleDateChange = async (startDate: Date, endDate: Date) => {
     setGames({});
     const start = startDate.toISOString();
     const end = endDate.toISOString();
     localStorage.setItem('startDate', start);
     localStorage.setItem('endDate', end);
-    getGamesFromApi(start, end);
+    await getGamesFromApi(start, end);
     setDateRange({ startDate, endDate });
     const newGamesSelection = gamesSelected.filter((gameSelected) => {
       const gameDate = new Date(gameSelected.gameDate);
@@ -135,6 +137,25 @@ export default function Calendar() {
     });
     setGamesSelected(newGamesSelection);
     saveCache('gameSelected', newGamesSelection);
+    if (globalThis.window !== undefined) {
+      globalThis.window.dispatchEvent(new Event('gamesSelectedUpdated'));
+    }
+
+    if (user) {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(
+          userRef,
+          {
+            gameSelected: newGamesSelection,
+            lastUpdate: serverTimestamp(),
+          },
+          { merge: true },
+        );
+      } catch (error: unknown) {
+        console.error('Error syncing gameSelected to Firestore:', error);
+      }
+    }
   };
 
   const getSelectedTeams = (allTeams: Team[]) => {
@@ -183,6 +204,9 @@ export default function Calendar() {
       const gamesSelectedFromStorage = storedGamesSelected.filter((game) => game.gameDate >= today);
       setGamesSelected(gamesSelectedFromStorage);
       saveCache('gameSelected', gamesSelectedFromStorage);
+      if (globalThis.window !== undefined) {
+        globalThis.window.dispatchEvent(new Event('gamesSelectedUpdated'));
+      }
       if (cachedTeams) {
         setTeams(cachedTeams);
       }
@@ -196,7 +220,7 @@ export default function Calendar() {
       const allTeams = await fetchTeams();
       getSelectedTeams(allTeams);
       return allTeams;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error(error);
       return [];
     }
@@ -223,16 +247,16 @@ export default function Calendar() {
         const gamesData = await response.json();
         saveCache('gamesData', gamesData);
         setGames(gamesData);
-      } catch (error) {
+      } catch (error: unknown) {
         console.error(error);
       }
     }
   };
 
-  const storeTeamsSelected = (teamsSelected: string[]) => {
-    teamsSelected = teamsSelected.filter((teamId, i) => teamId && i < maxTeamsNumber);
-    setTeamsSelected(teamsSelected);
-    const selectedTeams = teamsSelected
+  const storeTeamsSelected = async (teamsSelectedIds: string[]) => {
+    const filteredTeams = teamsSelectedIds.filter((teamId, i) => teamId && i < maxTeamsNumber);
+    setTeamsSelected(filteredTeams);
+    const selectedTeams = filteredTeams
       .map((teamId) => {
         const team = teams.find((team) => team.uniqueId === teamId);
         return team;
@@ -241,6 +265,34 @@ export default function Calendar() {
 
     if (selectedTeams.length !== 0) {
       saveCache('teamsSelected', selectedTeams);
+    }
+
+    const newGamesSelection = gamesSelected.filter((game) => filteredTeams.includes(game.teamSelectedId));
+    const selectionPruned = newGamesSelection.length !== gamesSelected.length;
+
+    if (selectionPruned) {
+      setGamesSelected(newGamesSelection);
+      saveCache('gameSelected', newGamesSelection);
+      if (globalThis.window !== undefined) {
+        globalThis.window.dispatchEvent(new Event('gamesSelectedUpdated'));
+      }
+    }
+
+    if (user) {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(
+          userRef,
+          {
+            teamsSelected: filteredTeams,
+            ...(selectionPruned && { gameSelected: newGamesSelection }),
+            lastUpdate: serverTimestamp(),
+          },
+          { merge: true },
+        );
+      } catch (error: unknown) {
+        console.error('Error syncing teamsSelected to Firestore:', error);
+      }
     }
   };
 
@@ -252,6 +304,9 @@ export default function Calendar() {
     if (wasAdded) {
       newSelection = newSelection.filter((gameSelect) => gameSelect._id !== game._id);
     } else {
+      if (gamesSelected.length >= 10) {
+        return;
+      }
       newSelection.push(game);
       newSelection = newSelection.sort((a: GameFormatted, b: GameFormatted) => {
         return new Date(a.startTimeUTC).getTime() - new Date(b.startTimeUTC).getTime();
@@ -260,6 +315,25 @@ export default function Calendar() {
 
     setGamesSelected(newSelection);
     saveCache('gameSelected', newSelection);
+    if (globalThis.window !== undefined) {
+      globalThis.window.dispatchEvent(new Event('gamesSelectedUpdated'));
+    }
+
+    if (user) {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(
+          userRef,
+          {
+            gameSelected: newSelection,
+            lastUpdate: serverTimestamp(),
+          },
+          { merge: true },
+        );
+      } catch (error: unknown) {
+        console.error('Error syncing gameSelected to Firestore:', error);
+      }
+    }
   };
 
   const handleOpenReorder = () => {
@@ -274,9 +348,28 @@ export default function Calendar() {
     setReorderModalVisible(false);
   };
 
-  const handleClearGamesSelection = () => {
+  const handleClearGamesSelection = async () => {
     setGamesSelected([]);
     saveCache('gameSelected', []);
+    if (globalThis.window !== undefined) {
+      globalThis.window.dispatchEvent(new Event('gamesSelectedUpdated'));
+    }
+
+    if (user) {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(
+          userRef,
+          {
+            gameSelected: [],
+            lastUpdate: serverTimestamp(),
+          },
+          { merge: true },
+        );
+      } catch (error: unknown) {
+        console.error('Error clearing gameSelected in Firestore:', error);
+      }
+    }
   };
 
   useEffect(() => {
