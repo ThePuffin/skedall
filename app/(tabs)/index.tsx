@@ -261,6 +261,11 @@ const GameofTheDayContent = () => {
 
   const { width: windowWidth } = useWindowDimensions();
 
+  const disabledLeagues = useMemo(() => {
+    const activeLeaguesInGames = new Set(games.map((game) => game.league));
+    return userLeagues.filter((league) => !activeLeaguesInGames.has(league));
+  }, [games, userLeagues]);
+
   const visibleGamesByHour = useMemo(() => {
     const sortGamesByFavorites = (gamesToSort: GameFormatted[]) => {
       return gamesToSort.sort((a, b) => {
@@ -819,6 +824,7 @@ const GameofTheDayContent = () => {
                         { label: translateWord('all'), value: 'ALL' },
                         ...userLeagues.filter((l) => l !== 'ALL').map((l) => ({ label: l, value: l })),
                       ]}
+                      disabledValues={disabledLeagues}
                     />
                   </ThemedElements>
                   <Separator />

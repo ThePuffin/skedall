@@ -27,6 +27,7 @@ interface FilterSliderProps {
   textStyle?: StyleProp<TextStyle>;
   selectedTextStyle?: StyleProp<TextStyle>;
   multipleSelection?: boolean;
+  disabledValues?: string[];
 }
 
 export default function FilterSlider(props: FilterSliderProps) {
@@ -43,6 +44,7 @@ export default function FilterSlider(props: FilterSliderProps) {
     selectedTextStyle,
     multipleSelection = false,
     favoriteValues,
+    disabledValues,
   } = props;
 
   const themeTextColor = useThemeColor({}, 'text');
@@ -114,6 +116,10 @@ export default function FilterSlider(props: FilterSliderProps) {
       items = availableLeagues.map((l) => ({ label: l, value: l }));
     }
 
+    if (multipleSelection) {
+      return [...items].sort((a, b) => a.label.localeCompare(b.label));
+    }
+
     if (!multipleSelection) {
       const selectedItem = items.find((item) => item.value === selectedFilter);
       const allItem = items.find(
@@ -124,8 +130,12 @@ export default function FilterSlider(props: FilterSliderProps) {
         (item) => item.value !== selectedFilter && item.value !== 'ALL' && item.value !== 'all' && item.value !== '',
       );
 
-      const favoriteItems = remainingItems.filter((item) => favoriteValues?.includes(item.value));
-      const otherItems = remainingItems.filter((item) => !favoriteValues?.includes(item.value));
+      const favoriteItems = remainingItems
+        .filter((item) => favoriteValues?.includes(item.value))
+        .sort((a, b) => a.label.localeCompare(b.label));
+      const otherItems = remainingItems
+        .filter((item) => !favoriteValues?.includes(item.value))
+        .sort((a, b) => a.label.localeCompare(b.label));
 
       items = [...(selectedItem ? [selectedItem] : []), ...(allItem ? [allItem] : []), ...favoriteItems, ...otherItems];
     }
@@ -142,6 +152,7 @@ export default function FilterSlider(props: FilterSliderProps) {
       >
         {sortedItems.map((item, index) => {
           const isSelected = selectedFilters ? selectedFilters.includes(item.value) : selectedFilter === item.value;
+          const isDisabled = disabledValues?.includes(item.value);
           return (
             <React.Fragment key={item.value}>
               <TouchableOpacity
@@ -151,6 +162,7 @@ export default function FilterSlider(props: FilterSliderProps) {
                   itemStyle,
                   isSelected ? { backgroundColor: selectedBackgroundColor } : {},
                   isSelected ? selectedItemStyle : {},
+                  isDisabled && styles.disabledChip,
                 ]}
                 onPress={() => onFilterChange?.(item.value)}
               >
@@ -161,6 +173,7 @@ export default function FilterSlider(props: FilterSliderProps) {
                     textStyle,
                     isSelected ? { color: selectedTextColor } : {},
                     isSelected ? selectedTextStyle : {},
+                    isDisabled && styles.disabledChipText,
                   ]}
                 >
                   {item.label}
@@ -206,5 +219,11 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: 14,
     fontWeight: '500',
+  },
+  disabledChip: {
+    opacity: 0.4,
+  },
+  disabledChipText: {
+    opacity: 0.7,
   },
 });
