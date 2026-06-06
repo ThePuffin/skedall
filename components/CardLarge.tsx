@@ -173,7 +173,19 @@ export default function CardLarge({
   const isFavorite = favoriteTeams.includes(homeTeamId) || favoriteTeams.includes(awayTeamId);
   const isSelected =
     propIsSelected ??
-    gamesSelected.some((g) => g.homeTeamId === data.homeTeamId && g.startTimeUTC === data.startTimeUTC);
+    gamesSelected.some((g) => {
+      const sameTeams = g.homeTeamId === data.homeTeamId && g.awayTeamId === data.awayTeamId;
+      if (!sameTeams) return false;
+
+      const d1 = new Date(g.startTimeUTC);
+      const d2 = new Date(data.startTimeUTC);
+      return (
+        d1.getUTCFullYear() === d2.getUTCFullYear() &&
+        d1.getUTCMonth() === d2.getUTCMonth() &&
+        d1.getUTCDate() === d2.getUTCDate() &&
+        d1.getUTCHours() === d2.getUTCHours()
+      );
+    });
 
   const isFirstRender = useRef(true);
   useEffect(() => {

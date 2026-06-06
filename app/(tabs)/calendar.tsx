@@ -318,10 +318,24 @@ export default function Calendar() {
     async (game: GameFormatted) => {
       let newSelection = [...gamesSelected];
 
-      const wasAdded = gamesSelected.some((gameSelect) => game._id === gameSelect._id);
+      const isMatch = (g: GameFormatted) => {
+        const sameTeams = g.homeTeamId === game.homeTeamId && g.awayTeamId === game.awayTeamId;
+        if (!sameTeams) return false;
+
+        const d1 = new Date(g.startTimeUTC);
+        const d2 = new Date(game.startTimeUTC);
+        return (
+          d1.getUTCFullYear() === d2.getUTCFullYear() &&
+          d1.getUTCMonth() === d2.getUTCMonth() &&
+          d1.getUTCDate() === d2.getUTCDate() &&
+          d1.getUTCHours() === d2.getUTCHours()
+        );
+      };
+
+      const wasAdded = gamesSelected.some(isMatch);
 
       if (wasAdded) {
-        newSelection = newSelection.filter((gameSelect) => gameSelect._id !== game._id);
+        newSelection = newSelection.filter((g) => !isMatch(g));
       } else {
         if (gamesSelected.length >= 10) {
           return;
