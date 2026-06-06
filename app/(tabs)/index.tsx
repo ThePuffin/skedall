@@ -9,11 +9,13 @@ import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { HorizontalScrollProvider, useHorizontalScroll } from '@/context/HorizontalScrollContext';
+import { useFavoriteColor } from '@/hooks/useFavoriteColor';
 import { getGamesStatus } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
+import { Icon } from '@rneui/themed';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PanResponder, ScrollView, useWindowDimensions, View } from 'react-native';
+import { PanResponder, ScrollView, useColorScheme, useWindowDimensions, View } from 'react-native';
 import Accordion from '../../components/Accordion';
 import { ActionButton, ActionButtonRef } from '../../components/ActionButton';
 import LoadingView from '../../components/LoadingView';
@@ -117,6 +119,18 @@ const GameofTheDayContent = () => {
   const scrollViewRef = useRef<ScrollView>(null);
   const ActionButtonRef = useRef<ActionButtonRef>(null);
   const gamesRef = useRef<GameFormatted[]>([]);
+
+  const theme = useColorScheme() ?? 'light';
+  const isDark = theme === 'dark';
+  const { textColor: selectedTextColor } = useFavoriteColor('#3b82f6');
+
+  const isAnyGameSelectedToday = useMemo(() => {
+    const todayStr = formatDateLocal(selectDate);
+    return gamesSelected.some((g) => {
+      const gDate = g.gameDate || (g.startTimeUTC ? formatDateLocal(new Date(g.startTimeUTC)) : '');
+      return gDate === todayStr;
+    });
+  }, [gamesSelected, selectDate]);
 
   useEffect(() => {
     gamesRef.current = games;
@@ -300,7 +314,9 @@ const GameofTheDayContent = () => {
           game.homeTeamLogo &&
           (activeFilter !== 'FAVORITES' ||
             favoriteTeams.includes(game.homeTeamId) ||
-            favoriteTeams.includes(game.awayTeamId)),
+            favoriteTeams.includes(game.awayTeamId)) &&
+          (activeFilter !== 'BOOKMARKS' ||
+            gamesSelected.some((g) => g.uniqueId === game.uniqueId || g._id === game._id)),
       )
       .sort((a, b) => new Date(a.startTimeUTC).getTime() - new Date(b.startTimeUTC).getTime());
 
@@ -503,6 +519,9 @@ const GameofTheDayContent = () => {
         setSelectLeagues(userLeagues);
         setTeamSelectedId('');
       } else if (filter === 'FAVORITES') {
+        setSelectLeagues(allLeaguesList);
+        setTeamSelectedId('');
+      } else if (filter === 'BOOKMARKS') {
         setSelectLeagues(allLeaguesList);
         setTeamSelectedId('');
       } else {
@@ -823,6 +842,18 @@ const GameofTheDayContent = () => {
                       data={[
                         { label: translateWord('all'), value: 'ALL' },
                         ...userLeagues.filter((l) => l !== 'ALL').map((l) => ({ label: l, value: l })),
+                        {
+                          label: '',
+                          value: 'BOOKMARKS',
+                          icon: (
+                            <Icon
+                              name={isAnyGameSelectedToday ? 'bookmark' : 'bookmark-o'}
+                              type="font-awesome"
+                              size={18}
+                              color={activeFilter === 'BOOKMARKS' ? selectedTextColor : isDark ? '#ffffff' : '#0f172a'}
+                            />
+                          ),
+                        },
                       ]}
                       disabledValues={disabledLeagues}
                     />
