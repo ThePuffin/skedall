@@ -592,24 +592,15 @@ export default function Calendar() {
                   >
                     <FilterSlider
                       multipleSelection={true}
-                      data={[
-                        { label: translateWord('all'), value: 'ALL' },
-                        ...filteredTeamsSelected
-                          .map((id) => teams.find((t) => t.uniqueId === id))
-                          .filter((t): t is Team => !!t)
-                          .map((t) => ({ label: t.label, value: t.uniqueId })),
-                      ]}
-                      selectedFilters={
-                        hiddenTeams.length === 0
-                          ? ['ALL', ...filteredTeamsSelected]
-                          : filteredTeamsSelected.filter((id) => !hiddenTeams.includes(id))
-                      }
+                      data={filteredTeamsSelected
+                        .map((id) => teams.find((t) => t.uniqueId === id))
+                        .filter((t): t is Team => !!t)
+                        .map((t) => ({ label: t.label, value: t.uniqueId }))}
+                      selectedFilters={filteredTeamsSelected.filter((id) => !hiddenTeams.includes(id))}
                       onFilterChange={(val) => {
-                        if (val === 'ALL') setHiddenTeams([]);
-                        else
-                          setHiddenTeams((prev) =>
-                            prev.includes(val) ? prev.filter((id) => id !== val) : [...prev, val],
-                          );
+                        setHiddenTeams((prev) =>
+                          prev.includes(val) ? prev.filter((id) => id !== val) : [...prev, val],
+                        );
                       }}
                     />
                   </View>
