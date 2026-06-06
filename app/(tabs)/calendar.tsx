@@ -52,6 +52,7 @@ export default function Calendar() {
   const ActionButtonRef = useRef<ActionButtonRef>(null);
   const [allowedLeagues, setAllowedLeagues] = useState<string[]>([]);
   const [reorderModalVisible, setReorderModalVisible] = useState(false);
+  const isInternalChange = useRef(false);
   const [tempTeams, setTempTeams] = useState<string[]>([]);
   const [hiddenTeams, setHiddenTeams] = useState<string[]>([]);
   const [gamesModalVisible, setGamesModalVisible] = useState(false);
@@ -139,10 +140,13 @@ export default function Calendar() {
         saveCache('teamsSelected', selectedTeams);
       }
 
-      const newGamesSelection = gamesSelected.filter((game) => filteredTeams.includes(game.teamSelectedId));
+      const newGamesSelection = gamesSelected.filter(
+        (game) => filteredTeams.includes(game.homeTeamId) || filteredTeams.includes(game.awayTeamId),
+      );
       const selectionPruned = newGamesSelection.length !== gamesSelected.length;
 
       if (selectionPruned) {
+        isInternalChange.current = true;
         setGamesSelected(newGamesSelection);
         saveCache('gameSelected', newGamesSelection);
         if (globalThis.window !== undefined) {
@@ -409,6 +413,10 @@ export default function Calendar() {
 
   useEffect(() => {
     const refreshData = () => {
+      if (isInternalChange.current) {
+        isInternalChange.current = false;
+        return;
+      }
       getStoredTeams();
     };
     if (globalThis.window !== undefined) {
