@@ -4747,15 +4747,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#f05023',
     backgroundColor: '#0a2240',
   },
-  'WNBA-CONNECTICU': {
-    color: '#f05023',
-    backgroundColor: '#0a2240',
-  },
   'WNBA-DAL': {
-    color: '#c4d600',
-    backgroundColor: '#002b5c',
-  },
-  'WNBA-DALLAS': {
     color: '#c4d600',
     backgroundColor: '#002b5c',
   },
