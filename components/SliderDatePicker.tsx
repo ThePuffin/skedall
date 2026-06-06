@@ -267,7 +267,7 @@ export default function SliderDatePicker({
     >
       <TouchableOpacity
         onPress={() => !disabled && onDateChange(new Date())}
-        disabled={disabled}
+        disabled={disabled || isSelected(today)}
         style={[
           styles.todayButton,
           {
@@ -277,9 +277,16 @@ export default function SliderDatePicker({
             borderRadius: 12,
             marginRight: 15,
           },
+          Platform.OS === 'web'
+            ? ({ cursor: disabled || isSelected(today) ? 'default' : 'pointer' } as any)
+            : undefined,
         ]}
       >
-        <MaterialCommunityIcons name="calendar-refresh" size={20} color={theme === 'dark' ? '#ffffff' : '#0f172a'} />
+        <MaterialCommunityIcons
+          name={isSelected(today) ? 'calendar-today' : 'calendar-arrow-left'}
+          size={20}
+          color={theme === 'dark' ? '#ffffff' : '#0f172a'}
+        />
         <Text style={[styles.todayWeekdayText, { color: theme === 'dark' ? '#ffffff' : '#0f172a' }]}>
           {new Date().toLocaleDateString(locale, { weekday: 'short' })}
         </Text>
@@ -323,6 +330,7 @@ export default function SliderDatePicker({
                       borderColor: isCurrentMonth ? selectedBackgroundColor : 'transparent',
                       borderRadius: 15,
                     },
+                    Platform.OS === 'web' ? { cursor: disabled ? 'default' : 'pointer' } : undefined,
                   ]}
                   onPress={() => onMonthSelect(date)}
                 >
@@ -369,6 +377,7 @@ export default function SliderDatePicker({
                     borderWidth: isToday ? 1 : 0,
                     borderColor: isToday ? selectedBackgroundColor : 'transparent',
                   },
+                  Platform.OS === 'web' && ({ cursor: disabled ? 'default' : 'pointer' } as any),
                 ]}
                 onPress={() => onDateChange(date)}
               >

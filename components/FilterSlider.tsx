@@ -175,6 +175,7 @@ export default function FilterSlider(props: Readonly<FilterSliderProps>) {
                   isSelected ? { backgroundColor: selectedBackgroundColor } : {},
                   isSelected ? selectedItemStyle : {},
                   isDisabled && styles.disabledChip,
+                  Platform.OS === 'web' && ({ cursor: isDisabled ? 'default' : 'pointer' } as any),
                 ]}
                 onPress={() => !isDisabled && onFilterChange?.(item.value)}
                 disabled={isDisabled}
