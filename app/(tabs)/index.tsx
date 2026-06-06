@@ -861,13 +861,15 @@ const GameofTheDayContent = () => {
                   <Separator />
                   {displayFilters()}
                   <Separator />
-                  <SliderDatePicker
-                    onDateChange={(date) => handleDateChange(date, date)}
-                    selectDate={selectDate}
-                    disabled={isLoading}
-                    minDate={minDate}
-                    maxDate={maxDate}
-                  />
+                  <div style={{ paddingLeft: 15, paddingRight: 15 }}>
+                    <SliderDatePicker
+                      onDateChange={(date) => handleDateChange(date, date)}
+                      selectDate={selectDate}
+                      disabled={isLoading}
+                      minDate={minDate}
+                      maxDate={maxDate}
+                    />
+                  </div>
                 </div>
               </div>
             </ThemedView>
