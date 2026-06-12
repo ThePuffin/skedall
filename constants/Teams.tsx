@@ -46,7 +46,6 @@ export const TeamsEnum: Record<string, string> = {
   'MLS-MTL': 'Cf Montréal',
   'MLS-NE': 'New England Revolution',
   'MLS-NSH': 'Nashville Sc',
-  'MLS-NY': 'New York Red Bulls',
   'MLS-NYC': 'New York City Fc',
   'MLS-ORL': 'Orlando City Sc',
   'MLS-PHI': 'Philadelphia Union',
