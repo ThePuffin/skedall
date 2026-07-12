@@ -30,7 +30,7 @@ import Separator from '../../components/Separator';
 import TeamReorderSelector from '../../components/TeamReorderSelector';
 import { addDays, readableDate } from '../../utils/date';
 import { FilterGames, GameFormatted, Team } from '../../utils/types';
-import { addNewTeamId, translateWord } from '../../utils/utils';
+import { addNewTeamId, translateFilterLabel, translateWord } from '../../utils/utils';
 const EXPO_PUBLIC_API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://sportschedule2025backend.onrender.com';
 
@@ -547,6 +547,7 @@ export default function Calendar() {
           <ThemedView>
             <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
               <ThemedElements>
+                <Separator label={translateFilterLabel('team')} />
                 <div
                   style={{
                     display: 'flex',
@@ -631,12 +632,15 @@ export default function Calendar() {
                   </TouchableOpacity>
                 </div>
               </ThemedElements>
-              <Separator />
+              <Separator label={'Sélectionner vos dates'} />
               <ThemedElements style={{ zIndex: 20 }}>
                 <div style={{ position: 'relative' }}>
                   <DateRangePicker dateRange={dateRange} onDateChange={handleDateChange} />
                 </div>
               </ThemedElements>
+              <div style={{ paddingTop: 6, paddingBottom: 6 }}>
+                <Separator />
+              </div>
             </div>
           </ThemedView>
         </div>

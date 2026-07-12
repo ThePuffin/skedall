@@ -8,7 +8,7 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useFavoriteColor } from '@/hooks/useFavoriteColor';
 import { db } from '@/utils/firebaseConfig';
-import { getRandomTeamId, randomNumber, translateWord } from '@/utils/utils';
+import { getRandomTeamId, randomNumber, translateFilterLabel, translateWord } from '@/utils/utils';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
@@ -661,6 +661,7 @@ export default function Schedule() {
                 <PreviousScoreToggle value={showPreviousScores} onValueChange={handlePreviousScoreToggle} />
               </div>
               <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
+                <Separator label={translateFilterLabel('league')} />
                 <ThemedElements style={{ width: '100%' }}>
                   <FilterSlider
                     selectedFilter={leagueOfSelectedTeam}
@@ -668,7 +669,7 @@ export default function Schedule() {
                     availableLeagues={leagues}
                   />
                 </ThemedElements>
-                <Separator />
+                <Separator label={translateFilterLabel('team')} />
                 <div
                   style={
                     isSmallDevice
@@ -720,7 +721,7 @@ export default function Schedule() {
                 </div>
                 {visibleGamesByMonth.length > 1 && (
                   <>
-                    <Separator />
+                    <Separator label={translateFilterLabel('date')} />
                     <FilterSlider
                       selectedFilter={monthFilter.length > 0 ? monthFilter[0] : 'ALL'}
                       onFilterChange={(value) => setMonthFilter(value === 'ALL' ? [] : [value])}
@@ -731,7 +732,7 @@ export default function Schedule() {
                       style={{ backgroundImage: 'none', backgroundColor: 'transparent' } as any}
                       itemStyle={{ borderWidth: 1, borderColor: 'transparent' }}
                       selectedItemStyle={{
-                        backgroundColor: 'transparent',
+                        backgroundColor: selectedBackgroundColor,
                         borderWidth: 1,
                         borderColor: selectedBackgroundColor,
                       }}
@@ -742,10 +743,13 @@ export default function Schedule() {
                         textTransform: 'capitalize',
                       }}
                       selectedTextStyle={{
-                        color: colorScheme === 'light' ? selectedBackgroundColor : '#ecedee',
+                        color: colorScheme === 'light' ? '#ffffff' : '#ecedee',
                         fontWeight: 'bold',
                       }}
                     />
+                    <div style={{ paddingTop: 6, paddingBottom: 6 }}>
+                      <Separator />
+                    </div>
                   </>
                 )}
               </div>

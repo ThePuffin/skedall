@@ -23,7 +23,7 @@ import { GameStatus, League } from '../../constants/enum';
 import { fetchDateRangeLimits, getDateRangeLimits } from '../../utils/dateRange';
 import { fetchGamesByHour, fetchLeagues, fetchLiveScores, getCache, saveCache } from '../../utils/fetchData';
 import { GameFormatted } from '../../utils/types';
-import { randomNumber, translateWord } from '../../utils/utils';
+import { randomNumber, translateFilterLabel, translateWord } from '../../utils/utils';
 
 const formatDateLocal = (date: Date) => {
   const year = date.getFullYear();
@@ -862,6 +862,7 @@ const GameofTheDayContent = () => {
                   }
                 >
                   <ThemedElements>
+                    <Separator label={translateFilterLabel('league')} />
                     <FilterSlider
                       selectedFilter={activeFilter}
                       onFilterChange={handleFilterChange}
@@ -884,9 +885,9 @@ const GameofTheDayContent = () => {
                       disabledValues={disabledLeagues}
                     />
                   </ThemedElements>
-                  <Separator />
+                  <Separator label={translateFilterLabel('team')} />
                   {displayFilters()}
-                  <Separator />
+                  <Separator label={translateFilterLabel('date')} />
                   <div style={{ paddingLeft: 15, paddingRight: 15 }}>
                     <SliderDatePicker
                       onDateChange={(date) => handleDateChange(date, date)}
@@ -895,6 +896,9 @@ const GameofTheDayContent = () => {
                       minDate={minDate}
                       maxDate={maxDate}
                     />
+                  </div>
+                  <div style={{ paddingTop: 6, paddingBottom: 6 }}>
+                    <Separator />
                   </div>
                 </div>
               </div>
