@@ -1234,7 +1234,7 @@ export const TeamsEnum: Record<string, string> = {
   'WNCAAB-GW': 'George Washington Revolutionaries',
   'WNCAAB-HALL': 'Seton Hall Pirates',
   'WNCAAB-HARV': 'Harvard Crimson',
-  'WNCAAB-HAW': 'Hawai\'i Rainbow Wahine',
+  'WNCAAB-HAW': 'Hawai\'i Rainbow Warriors',
   'WNCAAB-HOU': 'Houston Cougars',
   'WNCAAB-HOW': 'Howard Bison',
   'WNCAAB-IDHO': 'Idaho Vandals',
