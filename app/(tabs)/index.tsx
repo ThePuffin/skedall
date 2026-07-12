@@ -1,4 +1,5 @@
 import AppLogo from '@/components/AppLogo';
+import FilterAccordion from '@/components/FilterAccordion';
 import FilterSlider from '@/components/FilterSlider';
 import NoResults from '@/components/NoResults';
 import ScoreToggle from '@/components/ScoreToggle';
@@ -862,44 +863,61 @@ const GameofTheDayContent = () => {
                   }
                 >
                   <ThemedElements>
-                    <Separator label={translateFilterLabel('league')} />
-                    <FilterSlider
-                      selectedFilter={activeFilter}
-                      onFilterChange={handleFilterChange}
-                      data={[
-                        { label: translateWord('all'), value: 'ALL' },
-                        ...userLeagues.filter((l) => l !== 'ALL').map((l) => ({ label: l, value: l })),
-                        {
-                          label: '',
-                          value: 'BOOKMARKS',
-                          icon: (
-                            <Icon
-                              name={isAnyGameSelectedToday ? 'bookmark' : 'bookmark-o'}
-                              type="font-awesome"
-                              size={18}
-                              color={activeFilter === 'BOOKMARKS' ? selectedTextColor : isDark ? '#ffffff' : '#0f172a'}
-                            />
-                          ),
-                        },
-                      ]}
-                      disabledValues={disabledLeagues}
-                    />
+                    <FilterAccordion
+                      label={translateFilterLabel('league')}
+                      defaultOpen={true}
+                      isSmallDevice={windowWidth <= 768}
+                    >
+                      <FilterSlider
+                        selectedFilter={activeFilter}
+                        onFilterChange={handleFilterChange}
+                        data={[
+                          { label: translateWord('all'), value: 'ALL' },
+                          ...userLeagues.filter((l) => l !== 'ALL').map((l) => ({ label: l, value: l })),
+                          {
+                            label: '',
+                            value: 'BOOKMARKS',
+                            icon: (
+                              <Icon
+                                name={isAnyGameSelectedToday ? 'bookmark' : 'bookmark-o'}
+                                type="font-awesome"
+                                size={18}
+                                color={
+                                  activeFilter === 'BOOKMARKS' ? selectedTextColor : isDark ? '#ffffff' : '#0f172a'
+                                }
+                              />
+                            ),
+                          },
+                        ]}
+                        disabledValues={disabledLeagues}
+                      />
+                    </FilterAccordion>
                   </ThemedElements>
-                  <Separator label={translateFilterLabel('team')} />
-                  {displayFilters()}
-                  <Separator label={translateFilterLabel('date')} />
-                  <div style={{ paddingLeft: 15, paddingRight: 15 }}>
-                    <SliderDatePicker
-                      onDateChange={(date) => handleDateChange(date, date)}
-                      selectDate={selectDate}
-                      disabled={isLoading}
-                      minDate={minDate}
-                      maxDate={maxDate}
-                    />
-                  </div>
-                  <div style={{ paddingTop: 6, paddingBottom: 6 }}>
-                    <Separator />
-                  </div>
+                  <FilterAccordion
+                    label={translateFilterLabel('team')}
+                    defaultOpen={true}
+                    isSmallDevice={windowWidth <= 768}
+                  >
+                    {displayFilters()}
+                  </FilterAccordion>
+                  <FilterAccordion
+                    label={translateFilterLabel('date')}
+                    defaultOpen={true}
+                    isSmallDevice={windowWidth <= 768}
+                  >
+                    <div style={{ paddingLeft: 15, paddingRight: 15 }}>
+                      <SliderDatePicker
+                        onDateChange={(date) => handleDateChange(date, date)}
+                        selectDate={selectDate}
+                        disabled={isLoading}
+                        minDate={minDate}
+                        maxDate={maxDate}
+                      />
+                    </div>
+                    <div style={{ paddingTop: 10, paddingBottom: 10 }}>
+                      <Separator />
+                    </div>
+                  </FilterAccordion>
                 </div>
               </div>
             </ThemedView>
