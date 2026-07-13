@@ -683,33 +683,24 @@ export default function Schedule() {
                 <PreviousScoreToggle value={showPreviousScores} onValueChange={handlePreviousScoreToggle} />
               </div>
               <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
-                <FilterAccordion
-                  label={translateFilterLabel('league')}
-                  defaultOpen={true}
-                  isSmallDevice={isSmallDevice}
-                >
-                  <ThemedElements style={{ width: '100%' }}>
-                    <FilterSlider
-                      selectedFilter={leagueOfSelectedTeam}
-                      onFilterChange={handleLeagueSelectionChange}
-                      availableLeagues={leagues}
-                    />
-                  </ThemedElements>
-                </FilterAccordion>
-                <FilterAccordion
-                  label={translateFilterLabel('team')}
-                  defaultOpen={true}
-                  isSmallDevice={isSmallDevice}
-                  onExpandedChange={setIsTeamAccordionOpen}
-                >
-                  <div
-                    style={
-                      isSmallDevice
-                        ? { width: '100%' }
-                        : { display: 'flex', flexDirection: 'row', alignItems: 'stretch', width: '100%' }
-                    }
+                {isSmallDevice ? (
+                  <FilterAccordion
+                    label={translateFilterLabel('league_team')}
+                    defaultOpen={true}
+                    isSmallDevice={true}
+                    onExpandedChange={setIsTeamAccordionOpen}
                   >
-                    <div style={{ width: isSmallDevice || !showTeamFilter ? '100%' : '50%' }}>
+                    <ThemedElements style={{ width: '100%' }}>
+                      <FilterSlider
+                        selectedFilter={leagueOfSelectedTeam}
+                        onFilterChange={handleLeagueSelectionChange}
+                        availableLeagues={leagues}
+                      />
+                    </ThemedElements>
+                    <div style={{ marginTop: 10, marginBottom: 10 }}>
+                      <Separator />
+                    </div>
+                    <div style={{ width: '100%' }}>
                       <TeamFilter
                         icon={<Ionicons name="search" size={24} color="white" />}
                         selectorData={dataTeams}
@@ -727,7 +718,7 @@ export default function Schedule() {
                     </div>
 
                     {showTeamFilter && (
-                      <div style={{ width: isSmallDevice ? '100%' : '50%' }}>
+                      <div style={{ width: '100%' }}>
                         <TeamFilter
                           icon={
                             <span
@@ -750,8 +741,80 @@ export default function Schedule() {
                         />
                       </div>
                     )}
-                  </div>
-                </FilterAccordion>
+                  </FilterAccordion>
+                ) : (
+                  <>
+                    <FilterAccordion label={translateFilterLabel('league')} defaultOpen={true} isSmallDevice={false}>
+                      <ThemedElements style={{ width: '100%' }}>
+                        <FilterSlider
+                          selectedFilter={leagueOfSelectedTeam}
+                          onFilterChange={handleLeagueSelectionChange}
+                          availableLeagues={leagues}
+                        />
+                      </ThemedElements>
+                    </FilterAccordion>
+                    <FilterAccordion
+                      label={translateFilterLabel('team')}
+                      defaultOpen={true}
+                      isSmallDevice={false}
+                      onExpandedChange={setIsTeamAccordionOpen}
+                    >
+                      <div
+                        style={
+                          isSmallDevice
+                            ? { width: '100%' }
+                            : { display: 'flex', flexDirection: 'row', alignItems: 'stretch', width: '100%' }
+                        }
+                      >
+                        <div style={{ width: isSmallDevice || !showTeamFilter ? '100%' : '50%' }}>
+                          <TeamFilter
+                            icon={<Ionicons name="search" size={24} color="white" />}
+                            selectorData={dataTeams}
+                            onSelectorChange={handleTeamSelectionChange}
+                            selectorPlaceholder={translateWord('filterTeams')}
+                            isClearable={false}
+                            filterData={teamsForSelector.map((t) => ({
+                              label: t.label === 'All' ? translateWord('all') : t.label,
+                              value: t.uniqueId,
+                            }))}
+                            selectedFilter={teamSelected}
+                            onFilterChange={handleTeamSelectionChange}
+                            favoriteValues={favoriteTeams}
+                          />
+                        </div>
+
+                        {showTeamFilter && (
+                          <div style={{ width: isSmallDevice ? '100%' : '50%' }}>
+                            <TeamFilter
+                              icon={
+                                <span
+                                  style={{
+                                    color: Colors[colorScheme ?? 'light'].text,
+                                    fontWeight: 'bold',
+                                    fontSize: 18,
+                                  }}
+                                >
+                                  VS
+                                </span>
+                              }
+                              selectorData={dataTeamsFilter}
+                              onSelectorChange={handleTeamFilterChange}
+                              selectorPlaceholder={translateWord('filterTeams')}
+                              isClearable={false}
+                              filterData={[
+                                { label: translateWord('all'), value: '' },
+                                ...uniqueTeamsFromGames.map((t) => ({ label: t.label, value: t.uniqueId })),
+                              ]}
+                              selectedFilter={teamFilter}
+                              onFilterChange={handleTeamFilterChange}
+                              favoriteValues={favoriteTeams}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </FilterAccordion>
+                  </>
+                )}
                 {visibleGamesByMonth.length > 1 && (
                   <FilterAccordion
                     label={translateFilterLabel('date')}

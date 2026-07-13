@@ -72,6 +72,8 @@ const pruneOldGamesCache = (cache: { [key: string]: GameFormatted[] }) => {
 };
 
 const GameofTheDayContent = () => {
+  const { width } = useWindowDimensions();
+  const isSmallDevice = width < 768;
   const { user } = useAuth();
   const router = useRouter();
   const { date: dateParam } = useLocalSearchParams<{ date: string }>();
@@ -852,7 +854,7 @@ const GameofTheDayContent = () => {
                 {displayScoreToggle()}
                 <div
                   style={
-                    windowWidth > 768
+                    !isSmallDevice
                       ? {
                           width: windowWidth < 1200 ? '95%' : '100%',
                           margin: '0 auto',
@@ -864,9 +866,9 @@ const GameofTheDayContent = () => {
                 >
                   <ThemedElements>
                     <FilterAccordion
-                      label={translateFilterLabel('league')}
+                      label={translateFilterLabel(isSmallDevice ? 'league_team' : 'league')}
                       defaultOpen={true}
-                      isSmallDevice={windowWidth <= 768}
+                      isSmallDevice={isSmallDevice}
                     >
                       <FilterSlider
                         selectedFilter={activeFilter}
@@ -891,19 +893,28 @@ const GameofTheDayContent = () => {
                         ]}
                         disabledValues={disabledLeagues}
                       />
+                      {isSmallDevice && (
+                        <div style={{ marginTop: 10, marginBottom: 10 }}>
+                          <Separator />
+                        </div>
+                      )}
+
+                      {isSmallDevice && displayFilters()}
                     </FilterAccordion>
                   </ThemedElements>
-                  <FilterAccordion
-                    label={translateFilterLabel('team')}
-                    defaultOpen={true}
-                    isSmallDevice={windowWidth <= 768}
-                  >
-                    {displayFilters()}
-                  </FilterAccordion>
+
+                  {!isSmallDevice && (
+                    <ThemedElements>
+                      <FilterAccordion label={translateFilterLabel('team')} defaultOpen={true} isSmallDevice={false}>
+                        {displayFilters()}
+                      </FilterAccordion>
+                    </ThemedElements>
+                  )}
+
                   <FilterAccordion
                     label={translateFilterLabel('date')}
                     defaultOpen={true}
-                    isSmallDevice={windowWidth <= 768}
+                    isSmallDevice={isSmallDevice}
                   >
                     <div style={{ paddingLeft: 15, paddingRight: 15 }}>
                       <SliderDatePicker
