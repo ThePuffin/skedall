@@ -823,6 +823,7 @@ export default function Schedule() {
                     onExpandedChange={setIsDateAccordionOpen}
                   >
                     <FilterSlider
+                      disableSort={true}
                       selectedFilter={monthFilter.length > 0 ? monthFilter[0] : 'ALL'}
                       onFilterChange={(value) => {
                         setMonthFilter(value === 'ALL' ? [] : [value]);

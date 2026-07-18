@@ -623,6 +623,7 @@ export default function Calendar() {
                     </View>
 
                     <TouchableOpacity
+                      disabled={filteredGamesSelected.length === 0}
                       onPress={() => filteredGamesSelected.length > 0 && setGamesModalVisible(true)}
                       style={{
                         position: 'relative',

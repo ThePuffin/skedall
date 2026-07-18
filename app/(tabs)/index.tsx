@@ -283,6 +283,14 @@ const GameofTheDayContent = () => {
     return userLeagues.filter((league) => !activeLeaguesInGames.has(league));
   }, [games, userLeagues]);
 
+  const disabledFilters: string[] = useMemo(() => {
+    const disabled: string[] = [...disabledLeagues];
+    if (gamesSelected.length === 0) {
+      disabled.push('BOOKMARKS');
+    }
+    return disabled;
+  }, [disabledLeagues, gamesSelected]);
+
   const visibleGamesByHour = useMemo(() => {
     const sortGamesByFavorites = (gamesToSort: GameFormatted[]) => {
       return gamesToSort.sort((a, b) => {
@@ -891,7 +899,7 @@ const GameofTheDayContent = () => {
                             ),
                           },
                         ]}
-                        disabledValues={disabledLeagues}
+                        disabledValues={disabledFilters}
                       />
                       {isSmallDevice && (
                         <div style={{ marginTop: 10, marginBottom: 10 }}>
