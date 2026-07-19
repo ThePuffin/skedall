@@ -1,6 +1,7 @@
 import AppLogo from '@/components/AppLogo';
 import DateRangePicker from '@/components/DatePicker';
 import FilterAccordion from '@/components/FilterAccordion';
+import HomeGameToggle from '@/components/HomeGameToggle';
 import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
 import { maxTeamsNumber } from '@/constants/Constants';
@@ -47,6 +48,7 @@ export default function Calendar() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsSelected, setTeamsSelected] = useState<string[]>([]);
   const [gamesSelected, setGamesSelected] = useState<GameFormatted[]>([]);
+  const [homeGameVisibility, setHomeGameVisibility] = useState<boolean>(false);
 
   const scrollViewRef = useRef<ScrollView>(null);
   const ActionButtonRef = useRef<ActionButtonRef>(null);
@@ -508,6 +510,7 @@ export default function Calendar() {
             showDate={false}
             gamesSelected={gamesSelected}
             onSelection={handleGamesSelection}
+            homeGameVisibility={homeGameVisibility}
           />
         </div>
       );
@@ -533,6 +536,10 @@ export default function Calendar() {
     fetchTeams();
   }, []);
 
+  const handleHomeGameToggle = (value: boolean) => {
+    setHomeGameVisibility(value);
+  };
+
   useEffect(() => {
     if (teamsSelected.length > 0) {
       async function fetchGames() {
@@ -552,7 +559,10 @@ export default function Calendar() {
           padding: '5px 15px 5px 15px',
         }}
       >
-        <AppLogo />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <AppLogo />
+        </View>
+        <HomeGameToggle value={homeGameVisibility} onValueChange={handleHomeGameToggle} />
       </div>
       <ScrollView
         ref={scrollViewRef}

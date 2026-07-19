@@ -24,6 +24,7 @@ export default function Accordion({
   showTime = false,
   forceShowScores = false,
   filtersHeaderHeight = 0,
+  homeGameVisibility = false,
 }: Readonly<
   AccordionProps & {
     onRetry?: () => void;
@@ -94,6 +95,7 @@ export default function Accordion({
             showTime={showTime}
             animateEntry={true}
             delay={index * 15}
+            homeGameVisibility={homeGameVisibility}
           />
         </div>
       );
@@ -156,7 +158,6 @@ export default function Accordion({
           borderBottomWidth: 0,
           paddingTop: 20, // Space above the line
         }}
-        underlayColor="transparent"
       >
         <div
           style={{

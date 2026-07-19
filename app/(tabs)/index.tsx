@@ -530,10 +530,7 @@ const GameofTheDayContent = () => {
         // Reset to all leagues and clear team selection
         setSelectLeagues(userLeagues);
         setTeamSelectedId('');
-      } else if (filter === 'FAVORITES') {
-        setSelectLeagues(allLeaguesList);
-        setTeamSelectedId('');
-      } else if (filter === 'BOOKMARKS') {
+      } else if (filter === 'FAVORITES' || filter === 'BOOKMARKS') {
         setSelectLeagues(allLeaguesList);
         setTeamSelectedId('');
       } else {

@@ -88,6 +88,7 @@ export type AccordionProps = {
   readonly showTime?: boolean;
   readonly onSelection?: (game: GameFormatted) => void;
   readonly filtersHeaderHeight?: number;
+  readonly homeGameVisibility?: boolean;
 };
 
 export interface ButtonsProps {
@@ -144,4 +145,5 @@ export interface CardsProps {
   verticalMode?: boolean;
   showTime?: boolean;
   forceShowScores?: boolean;
+  homeGameVisibility?: boolean;
 }

@@ -36,6 +36,7 @@ export default function CardLarge({
   verticalMode = false,
   showTime = false,
   delay = 0,
+  homeGameVisibility = false,
 }: Readonly<CardsProps & { showTime?: boolean; showScores?: boolean; delay?: number }>) {
   const { user } = useAuth();
   let { homeTeamShort, awayTeamShort } = data;
@@ -439,6 +440,8 @@ export default function CardLarge({
   const leagueLogo = leagueLogos[leagueKey] || leagueLogos.DEFAULT;
 
   const isSelectedTeam = teamSelectedId === homeTeamId;
+  const isAwayGame = homeGameVisibility && teamSelectedId !== homeTeamId;
+  const isEmptyCard = emptyCard || isAwayGame;
   const isDark = theme === 'dark';
   const baseColor = isDark ? (isSelectedTeam ? '#0f172a' : '#1e293b') : isSelectedTeam ? '#e2e8f0' : '#f1f5f9';
   const revertColor = isDark ? (isSelectedTeam ? '#1e293b' : '#0f172a') : isSelectedTeam ? '#cbd5e1' : '#e2e8f0';
@@ -493,7 +496,7 @@ export default function CardLarge({
     backgroundImage: `linear-gradient(90deg, ${awayColorHex} 0%, ${baseColor} 1%, ${baseColor} 99%, ${homeColorHex} 100%)`,
   };
 
-  if (emptyCard) {
+  if (isEmptyCard) {
     gradientStyle = {
       backgroundColor: baseColor,
       borderLeftWidth: 2,
@@ -502,7 +505,7 @@ export default function CardLarge({
       borderBottomWidth: 0,
       borderColor: revertColor,
       cursor: 'default',
-    };
+    } as any;
   }
 
   const displayHomeLogo = isDark && homeTeamLogoDark ? homeTeamLogoDark : homeTeamLogo;
@@ -697,7 +700,7 @@ export default function CardLarge({
           }}
         >
           <View style={[{ padding: isSmallCard ? 5 : 15, borderRadius: 20 }, gradientStyle]}>
-            <div style={emptyCard ? styles.invisible : {}}>
+            <div style={isEmptyCard ? styles.invisible : {}}>
               {/* Header: League Logo & Live Badge */}
               <View style={[styles.headerRow, isSmallCard && { justifyContent: 'flex-end' }]}>
                 {!isSmallCard && (
