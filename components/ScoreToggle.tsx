@@ -9,7 +9,7 @@ interface ScoreToggleProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export default function ScoreToggle({ value, onValueChange, style }: ScoreToggleProps) {
+export default function ScoreToggle({ value, onValueChange, style }: Readonly<ScoreToggleProps>) {
   const helperText = translateWord('scoreView');
 
   return (

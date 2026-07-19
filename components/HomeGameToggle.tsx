@@ -9,7 +9,7 @@ interface HomeGameToggleProps {
   style?: StyleProp<ViewStyle>;
 }
 
-export default function HomeGameToggle({ value, onValueChange, style }: HomeGameToggleProps) {
+export default function HomeGameToggle({ value, onValueChange, style }: Readonly<HomeGameToggleProps>) {
   const helperText = translateWord('scoreView');
 
   return (
