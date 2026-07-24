@@ -462,7 +462,7 @@ export default function Schedule() {
     let subFilteredGames = Object.fromEntries(
       Object.entries(allGames).map(([date, dayGames]) => [
         date,
-        dayGames.filter((g) => g && (g.isActive || g.homeTeamScore !== null)),
+        Array.isArray(dayGames) ? dayGames.filter((g) => g && (g.isActive || g.homeTeamScore !== null)) : [],
       ]),
     ) as FilterGames;
 
@@ -472,7 +472,9 @@ export default function Schedule() {
         Object.entries(subFilteredGames)
           .map(([date, dayGames]) => [
             date,
-            dayGames.filter((g) => g && (g.homeTeamId === filterNameGame || g.awayTeamId === filterNameGame)),
+            Array.isArray(dayGames)
+              ? dayGames.filter((g) => g && (g.homeTeamId === filterNameGame || g.awayTeamId === filterNameGame))
+              : [],
           ])
           .filter(([_, filteredDayGames]) => (filteredDayGames as GameFormatted[]).length > 0),
       ) as FilterGames;
