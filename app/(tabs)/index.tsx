@@ -1,7 +1,7 @@
-import AppLogo from '@/components/AppLogo';
 import FilterAccordion from '@/components/FilterAccordion';
 import FilterSlider from '@/components/FilterSlider';
 import NoResults from '@/components/NoResults';
+import PageHeader from '@/components/PageHeader';
 import ScoreToggle from '@/components/ScoreToggle';
 import Separator from '@/components/Separator';
 import SliderDatePicker from '@/components/SliderDatePicker';
@@ -623,21 +623,7 @@ const GameofTheDayContent = () => {
   }, [games, selectLeagues]);
 
   const displayScoreToggle = useCallback(() => {
-    return (
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '5px 15px 5px 15px',
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <AppLogo />
-        </View>
-        <ScoreToggle value={showScores} onValueChange={handleScoreToggle} />
-      </div>
-    );
+    return <PageHeader rightElement={<ScoreToggle value={showScores} onValueChange={handleScoreToggle} />} />;
   }, [showScores, handleScoreToggle, user]);
 
   const displayFilters = useCallback(() => {

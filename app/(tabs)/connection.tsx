@@ -1,5 +1,5 @@
-import AppLogo from '@/components/AppLogo';
 import FavModal from '@/components/FavModal';
+import PageHeader from '@/components/PageHeader';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { getCache } from '@/utils/fetchData';
@@ -258,16 +258,7 @@ export default function ConnectionScreen() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '5px 15px 5px 15px',
-        }}
-      >
-        <AppLogo />
-      </div>
+      <PageHeader />
       <View style={styles.content}>
         <ThemedText>
           <h3>{!user ? translateWord('authentication') : translateWord('loggedInAs')}</h3>

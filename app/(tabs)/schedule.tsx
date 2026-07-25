@@ -1,7 +1,7 @@
-import AppLogo from '@/components/AppLogo';
 import FilterAccordion from '@/components/FilterAccordion';
 import FilterSlider from '@/components/FilterSlider';
 import NoResults from '@/components/NoResults';
+import PageHeader from '@/components/PageHeader';
 import TeamFilter from '@/components/TeamFilter';
 import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
@@ -673,17 +673,11 @@ export default function Schedule() {
             }}
           >
             <ThemedView>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '5px 15px 5px 15px',
-                }}
-              >
-                <AppLogo />
-                <PreviousScoreToggle value={showPreviousScores} onValueChange={handlePreviousScoreToggle} />
-              </div>
+              <PageHeader
+                rightElement={
+                  <PreviousScoreToggle value={showPreviousScores} onValueChange={handlePreviousScoreToggle} />
+                }
+              />
               <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
                 {isSmallDevice ? (
                   <FilterAccordion

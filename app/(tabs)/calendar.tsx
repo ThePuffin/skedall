@@ -1,7 +1,7 @@
-import AppLogo from '@/components/AppLogo';
 import DateRangePicker from '@/components/DatePicker';
 import FilterAccordion from '@/components/FilterAccordion';
 import HomeGameToggle, { HomeGameFilter } from '@/components/HomeGameToggle';
+import PageHeader from '@/components/PageHeader';
 import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
 import { maxTeamsNumber } from '@/constants/Constants';
@@ -551,19 +551,7 @@ export default function Calendar() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '5px 15px 5px 15px',
-        }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <AppLogo />
-        </View>
-        <HomeGameToggle value={homeGameVisibility} onValueChange={handleHomeGameToggle} />
-      </div>
+      <PageHeader rightElement={<HomeGameToggle value={homeGameVisibility} onValueChange={handleHomeGameToggle} />} />
       <ScrollView
         ref={scrollViewRef}
         onScroll={(event) => ActionButtonRef.current?.handleScroll(event)}
