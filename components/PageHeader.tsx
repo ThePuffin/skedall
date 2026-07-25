@@ -1,6 +1,6 @@
 import AppLogo from '@/components/AppLogo';
 import React from 'react';
-import { StyleProp, View, ViewStyle } from 'react-native';
+import { StyleProp, ViewStyle, useWindowDimensions } from 'react-native';
 
 interface PageHeaderProps {
   rightElement?: React.ReactNode;
@@ -8,6 +8,9 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ rightElement, style }: Readonly<PageHeaderProps>) {
+  const { width } = useWindowDimensions();
+  const isSmallDevice = width < 768;
+
   return (
     <div
       style={{
@@ -18,9 +21,7 @@ export default function PageHeader({ rightElement, style }: Readonly<PageHeaderP
         ...(style as Record<string, unknown>),
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        <AppLogo />
-      </View>
+      <AppLogo compact={isSmallDevice && !!rightElement} />
       {rightElement}
     </div>
   );
