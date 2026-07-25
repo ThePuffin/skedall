@@ -36,7 +36,7 @@ export default function CardLarge({
   verticalMode = false,
   showTime = false,
   delay = 0,
-  homeGameVisibility = false,
+  homeGameVisibility = 'all',
 }: Readonly<CardsProps & { showTime?: boolean; showScores?: boolean; delay?: number }>) {
   const { user } = useAuth();
   let { homeTeamShort, awayTeamShort } = data;
@@ -440,8 +440,10 @@ export default function CardLarge({
   const leagueLogo = leagueLogos[leagueKey] || leagueLogos.DEFAULT;
 
   const isSelectedTeam = teamSelectedId === homeTeamId;
-  const isAwayGame = homeGameVisibility && teamSelectedId !== homeTeamId;
-  const isEmptyCard = emptyCard || isAwayGame;
+  const isHomeGame = teamSelectedId === homeTeamId;
+  const isAwayGame = teamSelectedId !== homeTeamId;
+  const shouldHide = (homeGameVisibility === 'home' && !isHomeGame) || (homeGameVisibility === 'away' && !isAwayGame);
+  const isEmptyCard = emptyCard || shouldHide;
   const isDark = theme === 'dark';
   const baseColor = isDark ? (isSelectedTeam ? '#0f172a' : '#1e293b') : isSelectedTeam ? '#e2e8f0' : '#f1f5f9';
   const revertColor = isDark ? (isSelectedTeam ? '#1e293b' : '#0f172a') : isSelectedTeam ? '#cbd5e1' : '#e2e8f0';

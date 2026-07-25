@@ -1,40 +1,85 @@
-import { translateWord } from '@/utils/utils';
+import { useFavoriteColor } from '@/hooks/useFavoriteColor';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleProp, StyleSheet, Switch, View, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+
+export type HomeGameFilter = 'all' | 'home' | 'away';
 
 interface HomeGameToggleProps {
-  value: boolean;
-  onValueChange: (value: boolean) => void;
+  value: HomeGameFilter;
+  onValueChange: (value: HomeGameFilter) => void;
   style?: StyleProp<ViewStyle>;
 }
 
 export default function HomeGameToggle({ value, onValueChange, style }: Readonly<HomeGameToggleProps>) {
-  const helperText = translateWord('scoreView');
+  const unselectedBackgroundColor = useThemeColor({ light: '#e0e0e0', dark: '#333333' }, 'background');
+  const { backgroundColor: selectedBackgroundColor, textColor: selectedTextColor } = useFavoriteColor('#3b82f6');
+  const themeTextColor = useThemeColor({}, 'text');
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        ...StyleSheet.flatten(style),
-      }}
-      title={helperText}
+    <View
+      style={[
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: unselectedBackgroundColor,
+          borderRadius: 20,
+          overflow: 'hidden',
+        },
+        StyleSheet.flatten(style),
+      ]}
     >
-      <View style={{ opacity: value ? 0.3 : 1 }}>
-        <p style={{ fontSize: 20, color: 'gray' }}>{translateWord('all')}</p>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onValueChange}
-        trackColor={{ false: '#767577', true: '#81b0ff' }}
-        thumbColor={value ? '#f5dd4b' : '#f4f3f4'}
-        style={{ marginHorizontal: 10 }}
-      />
-      <View style={{ opacity: value ? 1 : 0.3 }}>
-        <Ionicons name="home" size={20} color="gray" />
-      </View>
-    </div>
+      {/* Home (left rounded) */}
+      <Pressable
+        onPress={() => onValueChange('home')}
+        style={{
+          paddingVertical: 8,
+          paddingHorizontal: 16,
+          borderTopLeftRadius: 20,
+          borderBottomLeftRadius: 20,
+          backgroundColor: value === 'home' ? selectedBackgroundColor : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 50,
+        }}
+      >
+        <Ionicons name="home" size={18} color={value === 'home' ? selectedTextColor : themeTextColor} />
+      </Pressable>
+
+      {/* All (no radius) */}
+      <Pressable
+        onPress={() => onValueChange('all')}
+        style={{
+          paddingVertical: 8,
+          paddingHorizontal: 16,
+          backgroundColor: value === 'all' ? selectedBackgroundColor : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 50,
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+          <Ionicons name="swap-horizontal" size={18} color={value === 'all' ? selectedTextColor : themeTextColor} />
+        </View>
+      </Pressable>
+
+      {/* Away (right rounded) */}
+      <Pressable
+        onPress={() => onValueChange('away')}
+        style={{
+          paddingVertical: 8,
+          paddingHorizontal: 16,
+          borderTopRightRadius: 20,
+          borderBottomRightRadius: 20,
+          backgroundColor: value === 'away' ? selectedBackgroundColor : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minWidth: 50,
+        }}
+      >
+        <Ionicons name="airplane" size={18} color={value === 'away' ? selectedTextColor : themeTextColor} />
+      </Pressable>
+    </View>
   );
 }

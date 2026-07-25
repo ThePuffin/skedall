@@ -872,7 +872,7 @@ const GameofTheDayContent = () => {
                   <ThemedElements>
                     <FilterAccordion
                       label={translateFilterLabel(isSmallDevice ? 'league_team' : 'league')}
-                      defaultOpen={true}
+                      defaultOpen={false}
                       isSmallDevice={isSmallDevice}
                     >
                       <FilterSlider

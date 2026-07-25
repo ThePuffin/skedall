@@ -1,7 +1,7 @@
 import AppLogo from '@/components/AppLogo';
 import DateRangePicker from '@/components/DatePicker';
 import FilterAccordion from '@/components/FilterAccordion';
-import HomeGameToggle from '@/components/HomeGameToggle';
+import HomeGameToggle, { HomeGameFilter } from '@/components/HomeGameToggle';
 import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
 import { maxTeamsNumber } from '@/constants/Constants';
@@ -48,7 +48,7 @@ export default function Calendar() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsSelected, setTeamsSelected] = useState<string[]>([]);
   const [gamesSelected, setGamesSelected] = useState<GameFormatted[]>([]);
-  const [homeGameVisibility, setHomeGameVisibility] = useState<boolean>(false);
+  const [homeGameVisibility, setHomeGameVisibility] = useState<HomeGameFilter>('all');
 
   const scrollViewRef = useRef<ScrollView>(null);
   const ActionButtonRef = useRef<ActionButtonRef>(null);
@@ -536,7 +536,7 @@ export default function Calendar() {
     fetchTeams();
   }, []);
 
-  const handleHomeGameToggle = (value: boolean) => {
+  const handleHomeGameToggle = (value: HomeGameFilter) => {
     setHomeGameVisibility(value);
   };
 
