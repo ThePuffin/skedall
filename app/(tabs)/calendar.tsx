@@ -607,6 +607,7 @@ export default function Calendar() {
                     >
                       <FilterSlider
                         multipleSelection={true}
+                        disableSort={true}
                         data={filteredTeamsSelected
                           .map((id) => teams.find((t) => t.uniqueId === id))
                           .filter((t): t is Team => !!t)
