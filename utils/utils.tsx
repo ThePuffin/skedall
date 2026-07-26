@@ -1101,3 +1101,20 @@ export const translateWord = (word: string) => {
   }
   return translation[word] ?? '';
 };
+
+export const brightenColor = (color, amount = 100) => {
+  if (!color || !color.startsWith('#')) return color;
+
+  let hex = color.replace('#', '');
+  if (hex.length === 3)
+    hex = hex
+      .split('')
+      .map((c) => c + c)
+      .join('');
+
+  const r = Math.min(255, Math.max(0, parseInt(hex.substring(0, 2), 16) + amount));
+  const g = Math.min(255, Math.max(0, parseInt(hex.substring(2, 4), 16) + amount));
+  const b = Math.min(255, Math.max(0, parseInt(hex.substring(4, 6), 16) + amount));
+
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+};

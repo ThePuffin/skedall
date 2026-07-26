@@ -3,6 +3,7 @@ import { useFavoriteColor } from '@/hooks/useFavoriteColor';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getDateRangeLimits } from '@/utils/dateRange';
 import { DateRangePickerProps } from '@/utils/types';
+import { brightenColor } from '@/utils/utils';
 import { Icon } from '@rneui/themed';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -36,6 +37,7 @@ export default function DateRangePicker({
   const borderColor = useThemeColor({}, 'text');
   const textDisabledColor = useThemeColor({ light: '#d9e1e8', dark: '#444444' }, 'text');
   const { backgroundColor: selectedBackgroundColor, textColor: selectedTextColor } = useFavoriteColor('#3b82f6');
+  const todayBrightColor = useMemo(() => brightenColor(selectedBackgroundColor, 90), [selectedBackgroundColor]);
 
   // Use date limits from the API/cache instead of hardcoded today
   const dateLimits = useMemo(() => getDateRangeLimits(), []);
@@ -219,7 +221,7 @@ export default function DateRangePicker({
                 selectedDayBackgroundColor: selectedBackgroundColor,
                 selectedDayTextColor: selectedTextColor,
                 todayTextColor: textColor,
-                todayBackgroundColor: '#90D5FF',
+                todayBackgroundColor: todayBrightColor,
                 dayTextColor: textColor,
                 textDisabledColor,
                 monthTextColor: textColor,
