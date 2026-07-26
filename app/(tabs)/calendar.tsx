@@ -649,7 +649,7 @@ export default function Calendar() {
                 </ThemedElements>
               </FilterAccordion>
               <FilterAccordion
-                label={'Sélectionner vos dates'}
+                label={translateWord('selectYourDates')}
                 defaultOpen={true}
                 isSmallDevice={isSmallDevice}
                 onExpandedChange={setIsDateAccordionOpen}

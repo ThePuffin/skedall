@@ -313,10 +313,19 @@ export default function Schedule() {
     }
   }, [teams]);
 
-  const persistTeamForLeague = (league: string, teamSelectedId: string) => {
+  const persistTeamForLeague = async (league: string, teamSelectedId: string) => {
     const leaguesTeams = getCache<{ [key: string]: string }>('teamsSelectedLeagues') || {};
     leaguesTeams[league] = teamSelectedId;
     saveCache('teamsSelectedLeagues', leaguesTeams);
+
+    if (user) {
+      try {
+        const userRef = doc(db, 'users', user.uid);
+        await setDoc(userRef, { teamsSelectedLeagues: leaguesTeams, lastUpdate: serverTimestamp() }, { merge: true });
+      } catch (error: unknown) {
+        console.error('Error syncing teamsSelectedLeagues to Firestore:', error);
+      }
+    }
   };
 
   const scrollToTopIfNeeded = useCallback(() => {
