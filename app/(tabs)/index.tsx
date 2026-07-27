@@ -125,7 +125,7 @@ const GameofTheDayContent = () => {
 
   const theme = useColorScheme() ?? 'light';
   const isDark = theme === 'dark';
-  const { textColor: selectedTextColor } = useFavoriteColor('#3b82f6');
+  const { textColor: selectedTextColor } = useFavoriteColor('#000');
 
   const isAnyGameSelectedToday = useMemo(() => {
     const todayStr = formatDateLocal(selectDate);

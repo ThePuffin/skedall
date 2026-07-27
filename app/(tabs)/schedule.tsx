@@ -65,7 +65,7 @@ export default function Schedule() {
   const [leagueTeams, setLeagueTeams] = useState<Team[]>([]);
   const { width } = useWindowDimensions();
   const colorScheme = useColorScheme();
-  const { backgroundColor: selectedBackgroundColor } = useFavoriteColor('#3b82f6');
+  const { backgroundColor: selectedBackgroundColor } = useFavoriteColor('#000');
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>(() => getCache<string[]>('favoriteTeams') || []);
   const isSmallDevice = width <= 768;
   const [leaguesAvailable, setLeaguesAvailable] = useState<string[]>([]);
@@ -823,7 +823,7 @@ export default function Schedule() {
                 {visibleGamesByMonth.length > 1 && (
                   <FilterAccordion
                     label={translateFilterLabel('date')}
-                    defaultOpen={true}
+                    defaultOpen={false}
                     isSmallDevice={isSmallDevice}
                     onExpandedChange={setIsDateAccordionOpen}
                   >

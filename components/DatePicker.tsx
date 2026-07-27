@@ -36,7 +36,7 @@ export default function DateRangePicker({
   const backgroundColor = useThemeColor({}, 'background');
   const borderColor = useThemeColor({}, 'text');
   const textDisabledColor = useThemeColor({ light: '#d9e1e8', dark: '#444444' }, 'text');
-  const { backgroundColor: selectedBackgroundColor, textColor: selectedTextColor } = useFavoriteColor('#3b82f6');
+  const { backgroundColor: selectedBackgroundColor, textColor: selectedTextColor } = useFavoriteColor('#000
   const todayBrightColor = useMemo(() => brightenColor(selectedBackgroundColor, 90), [selectedBackgroundColor]);
 
   // Use date limits from the API/cache instead of hardcoded today
