@@ -16,7 +16,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 
 function TabLayoutContent() {
   const colorScheme = useColorScheme();
-  const { user } = useAuth();
+  const { user, setFirestoreReady } = useAuth();
 
   // Helper to apply Firestore data to local cache
   const applyFirestoreData = async (data: any) => {
@@ -103,7 +103,11 @@ function TabLayoutContent() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // No user logged in → mark Firestore as ready immediately (nothing to sync)
+      setFirestoreReady(true);
+      return;
+    }
 
     const userRef = doc(db, 'users', user.uid);
 
@@ -115,9 +119,13 @@ function TabLayoutContent() {
           const data = docSnap.data();
           applyFirestoreData(data);
         }
+        // Mark Firestore as ready after the first snapshot (initial sync)
+        setFirestoreReady(true);
       },
       (err) => {
         console.error('Firestore snapshot error:', err);
+        // Even on error, mark as ready so the app can still work with local data
+        setFirestoreReady(true);
       },
     );
 

@@ -52,7 +52,7 @@ const mergeGames = (initial: FilterGames, remaining: FilterGames): FilterGames =
 };
 
 export default function Schedule() {
-  const { user } = useAuth();
+  const { user, firestoreReady } = useAuth();
   const router = useRouter();
   const { league: leagueParam, team: teamParam } = useLocalSearchParams<{ league: string; team: string }>();
   const [games, setGames] = useState<FilterGames>({});
@@ -149,6 +149,11 @@ export default function Schedule() {
   }, []);
 
   useEffect(() => {
+    // Wait for Firestore sync to complete before initializing from local cache.
+    // When a user is logged in, _layout.tsx's onSnapshot will overwrite local cache
+    // with Firestore data. We must wait for that to happen before reading the cache.
+    if (!firestoreReady) return;
+
     async function fetchTeamsAndRestore() {
       // try cached teams first
       const cachedTeams = getCache<Team[]>('teams');
@@ -225,7 +230,7 @@ export default function Schedule() {
       }
     }
     fetchTeamsAndRestore();
-  }, [leagueParam, teamParam]);
+  }, [leagueParam, teamParam, firestoreReady]);
 
   useFocusEffect(
     useCallback(() => {
