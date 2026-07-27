@@ -1,4 +1,5 @@
 import { Colors } from '@/constants/Colors';
+import { useAuth } from '@/context/AuthContext';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { getCache } from '@/utils/fetchData';
 import { useCallback, useEffect, useState } from 'react';
@@ -53,18 +54,40 @@ function computeFavoriteColor(
   return { backgroundColor: defaultColor, textColor: getTextColorForBackground(defaultColor) };
 }
 
+// Module-level cache: computed once, reused across all hook instances and tab remounts.
+// This prevents a flash of default color when switching tabs.
+let cachedColors: { backgroundColor: string; textColor: string } | null = null;
+
 export function useFavoriteColor(defaultColor: string = '#3b82f6') {
+  const { firestoreReady } = useAuth();
   const theme = useColorScheme() ?? 'light';
 
-  // Compute initial color synchronously from cache — no flash of default color
-  const [colors, setColors] = useState(() => computeFavoriteColor(theme, defaultColor));
+  // Track if the color has been finalized (Firestore-synced data).
+  // On initial mount with a logged-in user, we wait for firestoreReady before computing
+  // the final color, so we never show the wrong color first.
+  const [colors, setColors] = useState(() => {
+    // If firestore is already ready (or no user), compute from cache directly.
+    // If firestore is still syncing, use the module-level cache or compute from cache
+    // (it will be updated via favoritesUpdated event after sync).
+    if (!cachedColors) {
+      cachedColors = computeFavoriteColor(theme, defaultColor);
+    }
+    return cachedColors;
+  });
 
   const updateColor = useCallback(() => {
-    setColors(computeFavoriteColor(theme, defaultColor));
+    cachedColors = computeFavoriteColor(theme, defaultColor);
+    setColors(cachedColors);
   }, [theme, defaultColor]);
 
+  // When firestoreReady becomes true, recompute the color from the now-synced cache.
   useEffect(() => {
-    updateColor();
+    if (firestoreReady) {
+      updateColor();
+    }
+  }, [firestoreReady, updateColor]);
+
+  useEffect(() => {
     if (globalThis.window !== undefined) {
       globalThis.window.addEventListener('favoritesUpdated', updateColor);
       return () => globalThis.window.removeEventListener('favoritesUpdated', updateColor);
