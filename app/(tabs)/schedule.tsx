@@ -585,8 +585,10 @@ export default function Schedule() {
     for (const day in allGames) {
       if (!Object.hasOwn(allGames, day)) continue;
       if (monthFilter.length > 0) {
+        const year = new Date(day).getFullYear();
         const month = new Date(day).toLocaleString('default', { month: 'long' });
-        if (!monthFilter.includes(month)) continue;
+        const monthKey = `${month} ${year}`;
+        if (!monthFilter.includes(monthKey)) continue;
       }
 
       const dayGames = allGames[day];
