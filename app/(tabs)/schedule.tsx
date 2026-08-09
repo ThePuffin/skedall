@@ -870,6 +870,10 @@ export default function Schedule() {
     if (visibleGamesByMonth.length === 0) {
       const today = new Date().toISOString().split('T')[0];
       const gameKeys2 = Object.keys(games);
+      // If the user has filtered to a specific team (not "All"), offer a way to
+      // switch back to the "All" option when the retry cooldown is active.
+      const isFiltered = teamSelected !== 'all' && teamSelected !== '';
+      const showAllHandler = isFiltered ? () => handleTeamSelectionChange('all') : undefined;
       if (
         !games ||
         (gameKeys2.length === 1 && gameKeys2[0] === today && (games[today]?.[0]?.updateDate ?? '') === '')
@@ -877,14 +881,14 @@ export default function Schedule() {
         return (
           <div style={{ opacity: isLoading ? 0.5 : 1, transition: 'opacity 0.3s' }}>
             <br />
-            <NoResults />
+            <NoResults onShowAll={showAllHandler} />
           </div>
         );
       }
       return (
         <div style={{ opacity: isLoading ? 0.5 : 1, transition: 'opacity 0.3s' }}>
           <br />
-          <NoResults />
+          <NoResults onShowAll={showAllHandler} />
         </div>
       );
     }

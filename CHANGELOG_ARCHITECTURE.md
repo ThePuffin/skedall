@@ -4,6 +4,43 @@
 
 ---
 
+## Feature: "Show all results" option in NoResults when filters hide results
+
+### Overview
+
+When the `NoResults` component is displayed on the **index** (Games of the Day) and **schedule** (Focus Team) screens with an active filter and the manual retry is in cooldown, the user is now offered a "Show all results" button to switch back to the "All" option.
+
+### Problem
+
+- When a user filtered games (e.g., by a specific league/team or a specific team in Schedule) and no games matched, `NoResults` was displayed.
+- During the 60s retry cooldown, the refresh button was hidden, leaving the user with no actionable option.
+- The user could only wait for the cooldown to expire or manually change filters.
+
+### Solution
+
+- Extended `NoResults` with a new optional `onShowAll` prop.
+- When the retry cooldown is active **and** `onShowAll` is provided, a "Show all results" button is rendered instead of the refresh icon.
+- Clicking the button calls the provided handler, which resets the filter to "ALL".
+
+### Behavior per screen
+
+| Screen                       | Condition to show button                                                                    | Action                                   |
+| ---------------------------- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| **Index** (Games of the Day) | `activeFilter !== 'ALL'` OR a team is selected OR fewer leagues selected than all available | Calls `handleFilterChange('ALL')`        |
+| **Schedule** (Focus Team)    | `teamSelected` is not `'all'` and not `''`                                                  | Calls `handleTeamSelectionChange('all')` |
+
+### Modified files
+
+| File                                        | Change                                                                           |
+| ------------------------------------------- | -------------------------------------------------------------------------------- |
+| `frontend/components/NoResults.tsx`         | Added `onShowAll` prop and "Show all results" button shown during retry cooldown |
+| `frontend/app/(tabs)/index.tsx`             | Passes `onShowAll` when a filter is active                                       |
+| `frontend/app/(tabs)/schedule.tsx`          | Passes `onShowAll` when a specific team is selected                              |
+| `frontend/utils/utils.tsx`                  | Added `showAllResults` translation key to all 11 languages                       |
+| `frontend/docs/components/NoResults.tsx.md` | Updated documentation                                                            |
+
+---
+
 ## Feature: Data synchronization between localStorage and Firestore
 
 ### Overview

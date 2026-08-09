@@ -286,6 +286,7 @@ export const translateWord = (word: string) => {
         profile: 'Mon Profil',
         changePreferences: 'Changer mes préférences',
         selectYourDates: 'Filtrer par période',
+        showAllResults: 'Afficher tous les résultats',
       };
       break;
     case 'de':
@@ -367,6 +368,7 @@ export const translateWord = (word: string) => {
         profile: 'Mein Profil',
         changePreferences: 'Präferenzen ändern',
         selectYourDates: 'Nach Zeitraum filtern',
+        showAllResults: 'Alle Ergebnisse anzeigen',
       };
       break;
     case 'es':
@@ -448,6 +450,7 @@ export const translateWord = (word: string) => {
         profile: 'Mi Perfil',
         changePreferences: 'Cambiar mis preferencias',
         selectYourDates: 'Filtrar por período',
+        showAllResults: 'Mostrar todos los resultados',
       };
       break;
 
@@ -528,6 +531,7 @@ export const translateWord = (word: string) => {
         profile: 'Il mio Profilo',
         changePreferences: 'Cambia le mie preferenze',
         selectYourDates: 'Filtrar por período',
+        showAllResults: 'Mostra tutti i risultati',
       };
       break;
     case 'ja':
@@ -608,6 +612,7 @@ export const translateWord = (word: string) => {
         profile: 'マイプロフィール',
         changePreferences: '設定を変更する',
         selectYourDates: '期間でフィルター',
+        showAllResults: 'すべての結果を表示',
       };
       break;
     case 'ko':
@@ -687,6 +692,7 @@ export const translateWord = (word: string) => {
         profile: '내 프로필',
         changePreferences: '기본 설정 변경',
         selectYourDates: '기간별 필터링',
+        showAllResults: '모든 결과 표시',
       };
       break;
     case 'nl':
@@ -767,6 +773,7 @@ export const translateWord = (word: string) => {
         profile: 'Mijn Profiel',
         changePreferences: 'Voorkeuren wijzigen',
         selectYourDates: 'Filteren op periode',
+        showAllResults: 'Alle resultaten tonen',
       };
       break;
     case 'pt':
@@ -847,6 +854,7 @@ export const translateWord = (word: string) => {
         profile: 'Meu Perfil',
         changePreferences: 'Alterar preferências',
         selectYourDates: 'Filtrar por período',
+        showAllResults: 'Mostrar todos os resultados',
       };
       break;
     case 'ru':
@@ -927,6 +935,7 @@ export const translateWord = (word: string) => {
         profile: 'Мой профиль',
         changePreferences: 'Изменить настройки',
         selectYourDates: 'Filtrar por período',
+        showAllResults: 'Показать все результаты',
       };
       break;
     case 'zh':
@@ -1006,6 +1015,7 @@ export const translateWord = (word: string) => {
         profile: '我的资料',
         changePreferences: '更改偏好',
         selectYourDates: '按时间段筛选',
+        showAllResults: '显示所有结果',
       };
       break;
     default:
@@ -1085,6 +1095,7 @@ export const translateWord = (word: string) => {
         profile: 'My Profile',
         changePreferences: 'Change my preferences',
         selectYourDates: 'Filter by period',
+        showAllResults: 'Show all results',
       };
       break;
   }
