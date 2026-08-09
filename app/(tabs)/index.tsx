@@ -688,9 +688,11 @@ const GameofTheDayContent = () => {
     if (isLoading) {
       return <LoadingView />;
     } else {
-      return <NoResults />;
+      // Re-fetch games for the current date while preserving the current filters
+      // (leagues, team, active filter) instead of reloading the whole page.
+      return <NoResults onRetry={() => getGamesFromApi(selectDate)} />;
     }
-  }, [isLoading]);
+  }, [isLoading, getGamesFromApi, selectDate]);
 
   const displayContent = useCallback(() => {
     if (!games || games.length === 0) {
@@ -703,9 +705,9 @@ const GameofTheDayContent = () => {
       const isFiltered =
         activeFilter !== 'ALL' || teamSelectedId !== '' || selectLeagues.length !== allLeaguesList.length;
       if (isFiltered) {
-        return <NoResults onShowAll={() => handleFilterChange('ALL')} />;
+        return <NoResults onRetry={() => getGamesFromApi(selectDate)} onShowAll={() => handleFilterChange('ALL')} />;
       }
-      return <NoResults />;
+      return <NoResults onRetry={() => getGamesFromApi(selectDate)} />;
     }
 
     return (
