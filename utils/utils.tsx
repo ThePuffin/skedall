@@ -1,7 +1,7 @@
 import { maxFavoritesNumber } from '@/constants/Constants';
 import { saveCache } from '@/utils/fetchData';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, db } from './firebaseConfig';
+import { auth } from './firebaseConfig';
+import { syncToFirestore } from './syncService';
 import { Team } from './types';
 
 export const randomNumber = (max) => {
@@ -40,19 +40,8 @@ export const addFavoriteTeam = async (favoriteTeams: string[], teamId: string) =
 
   const currentUser = auth.currentUser;
   if (currentUser) {
-    try {
-      const userRef = doc(db, 'users', currentUser.uid);
-      await setDoc(
-        userRef,
-        {
-          favoriteTeams: updatedFavorites,
-          lastUpdate: serverTimestamp(),
-        },
-        { merge: true },
-      );
-    } catch (e: unknown) {
-      console.error('Error syncing favorite team to Firestore:', e);
-    }
+    // Debounced replication to Firestore; errors are handled gracefully inside syncService
+    syncToFirestore(currentUser.uid, { favoriteTeams: updatedFavorites });
   }
 
   if (globalThis.window !== undefined) {

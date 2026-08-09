@@ -4,6 +4,46 @@
 
 ---
 
+## Feature: Data synchronization between localStorage and Firestore
+
+### Overview
+
+Implemented a centralized sync service (`frontend/utils/syncService.ts`) that handles all data synchronization between localStorage and Firebase Firestore, with a React hook wrapper (`frontend/hooks/useSync.ts`).
+
+### Behavior
+
+| Scenario                            | Behavior                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------ |
+| **Guest mode** (unauthenticated)    | All data read/written to localStorage only. No Firestore calls.          |
+| **Login — Firestore has data**      | Firestore takes priority. Overwrites localStorage and updates app state. |
+| **Login — no Firestore data**       | Current localStorage data is pushed to Firestore for this user.          |
+| **Login — Firestore error/offline** | Falls back seamlessly to localStorage without blocking the user.         |
+| **Authenticated writes**            | Every local change is replicated to Firestore with 800ms debounce.       |
+| **Firestore write failure**         | Error is logged and swallowed; app continues on localStorage.            |
+| **Logout / user switch**            | Pending debounced writes are flushed immediately via `flushSync()`.      |
+
+### Key implementation details
+
+- **Timeout guard** — all Firestore operations wrapped in `executeFirestoreWithTimeout` (10s default) using `Promise.race`.
+- **Debounce** — `syncToFirestore()` merges rapid successive writes into a single Firestore call after 800ms of inactivity.
+- **Module-level state** — debounce timer and pending data survive component unmounts.
+- **`hasFirestoreData()`** — treats empty/profile-only documents as "no data" so local data is pushed instead of overwritten.
+- **`flushSync()`** — called on logout (`connection.tsx`) and user switch (`_layout.tsx`) to avoid losing pending changes.
+
+### Modified files
+
+| File                                 | Change                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `frontend/utils/syncService.ts`      | Central sync service (read/write local, pull/push Firestore, debounced writes, timeout, fallback) |
+| `frontend/utils/syncService.test.ts` | 23 unit tests covering all scenarios including offline/error states                               |
+| `frontend/hooks/useSync.ts`          | React hook wrapper exposing `syncData`, `syncOnLogin`, `flushSync`                                |
+| `frontend/app/(tabs)/connection.tsx` | Added `flushSync()` before `signOut()` on logout                                                  |
+| `frontend/app/(tabs)/_layout.tsx`    | Added `flushSync()` on user switch before starting new user's sync                                |
+| `frontend/docs/syncService.ts.md`    | New documentation for syncService                                                                 |
+| `frontend/docs/useSync.ts.md`        | New documentation for useSync hook                                                                |
+
+---
+
 ## Problem: Opponent (VS) filter not recalculated when filtering by month
 
 ### Symptom
