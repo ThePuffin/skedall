@@ -4,6 +4,277 @@
 
 ---
 
+## Fix: theme briefly flashes light on web (color flicker)
+
+### Symptom
+
+On web, filter elements (e.g. `PillToggle` in `rightElement`) flashed red → black → red when arriving on a page. The browser theme appeared to briefly switch to light before settling on dark.
+
+### Root cause
+
+`useColorScheme.web.ts` returned `'light'` before hydration (to support static rendering), then the real theme (`'dark'`) after. This artificial `light → dark` transition:
+
+- Bright the whole theme (and derived accent colors) to light on first paint.
+- Triggered a spurious recompute in `useFavoriteColor` (with `NHL-NJ`: `backgroundColor: '#000'` wins in light mode → black).
+
+### Solution
+
+Two files changed.
+
+#### `frontend/hooks/useColorScheme.web.ts` — return the real theme immediately
+
+Replaced the `hasHydrated` state with `useSyncExternalStore` backed by `matchMedia('(prefers-color-scheme: dark)')`. The bundle hydrates with the actual browser theme, so there is no artificial `'light'` first paint.
+
+```typescript
+export function useColorScheme() {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+```
+
+#### `frontend/hooks/useFavoriteColor.ts` — initial computation uses the real browser theme
+
+For the initial `useState` computation, read the browser's actual theme directly via `getBrowserTheme()`, so the first calculation can never run with the SSR `'light'` snapshot when the browser is actually dark.
+
+### Modified files
+
+| File                                   | Change                                                         |
+| -------------------------------------- | -------------------------------------------------------------- |
+| `frontend/hooks/useColorScheme.web.ts` | `useSyncExternalStore` + `matchMedia` → real theme immediately |
+| `frontend/hooks/useFavoriteColor.ts`   | Initial compute uses `getBrowserTheme()`                       |
+| `frontend/docs/useFavoriteColor.ts.md` | Updated documentation                                          |
+
+---
+
+## Fix: `useFavoriteColor` — red → black → red flicker on web
+
+### Symptom
+
+On the Calendar tab (and other screens), the filter elements (e.g. `PillToggle` in `rightElement`) flashed red → black → red when arriving on the page, with the favorite team `NHL-NJ` selected.
+
+### Root cause
+
+- `NHL-NJ` has `color: '#e30b2b'` (red, brightness ≈ 84) and `backgroundColor: '#000000'` (black, brightness 0).
+- In `computeFavoriteColor`:
+  - **dark mode** (real theme): "lightest" → `84 > 0` → red.
+  - **light mode**: "darkest" → `84 < 0` is false → `teamBg` (black).
+- `useColorScheme.web` returns `'light'` before hydration, then the real theme (`'dark'`) afterwards. The `prevTheme` effect detected this artificial `light → dark` transition and triggered an immediate recompute in **light** mode → black color, before switching back to red.
+
+### Solution
+
+Modified file: `frontend/hooks/useFavoriteColor.ts`
+
+1. **Ignore first hydration transition** — `prevTheme` starts as `null`; the first render only records the theme without recomputing:
+
+```typescript
+const prevTheme = useRef<string | null>(null);
+useEffect(() => {
+  if (prevTheme.current === null) {
+    prevTheme.current = theme;
+    return;
+  }
+  if (prevTheme.current !== theme) {
+    prevTheme.current = theme;
+    updateColor();
+  }
+}, [theme, updateColor]);
+```
+
+2. **Robustness fallback** — `finalColor = finalColor || color || defaultColor` prefers the team's own `color` before the default if `backgroundColor` is ever missing.
+
+### Modified files
+
+| File                                   | Change                                                  |
+| -------------------------------------- | ------------------------------------------------------- |
+| `frontend/hooks/useFavoriteColor.ts`   | Ignore hydration theme transition + robustness fallback |
+| `frontend/docs/useFavoriteColor.ts.md` | Updated documentation                                   |
+
+---
+
+## Fix: `useFavoriteColor` — async refresh updates session only (no re-render)
+
+### Problem
+
+The 2s async refresh called `updateColor()`, which updated the displayed color via `setColors`. This caused an unnecessary re-render of the component even though the displayed value was already correct.
+
+### Solution
+
+Modified file: `frontend/hooks/useFavoriteColor.ts`
+
+Split the logic into two functions:
+
+- `recomputeAndStore()` — recomputes the color and persists it to `sessionStorage` **without** calling `setColors` (no re-render). Used by the 2s async refresh.
+- `updateColor()` — calls `recomputeAndStore()` then `setColors()` to update the display. Used by theme change, `firestoreReady`, and `favoritesUpdated` events.
+
+```typescript
+const recomputeAndStore = useCallback(() => {
+  cachedColors = computeFavoriteColor(theme, defaultColor);
+  writeStoredColors(cachedColors);
+  return cachedColors;
+}, [theme, defaultColor]);
+
+const updateColor = useCallback(() => {
+  setColors(recomputeAndStore());
+}, [recomputeAndStore]);
+```
+
+The 2s async refresh now only refreshes the session for future mounts, without re-rendering the current component.
+
+### Modified files
+
+| File                                   | Change                                              |
+| -------------------------------------- | --------------------------------------------------- |
+| `frontend/hooks/useFavoriteColor.ts`   | Async refresh stores to session without `setColors` |
+| `frontend/docs/useFavoriteColor.ts.md` | Updated documentation                               |
+
+---
+
+## Feature: `useFavoriteColor` — immediate recompute on theme change
+
+### Problem
+
+When the browser theme changed (dark ↔ light), the accent color was only recomputed after the 2s async refresh, causing a visible delay before the color adapted to the new theme.
+
+### Solution
+
+Modified file: `frontend/hooks/useFavoriteColor.ts`
+
+Added a `prevTheme` ref that detects a theme change and recomputes the color **immediately**, without waiting for the 2s async refresh:
+
+```typescript
+const prevTheme = useRef(theme);
+useEffect(() => {
+  if (prevTheme.current !== theme) {
+    prevTheme.current = theme;
+    updateColor();
+  }
+}, [theme, updateColor]);
+```
+
+The 2s async refresh still runs on mount (stale-while-revalidate), but theme changes now update the color right away.
+
+### Modified files
+
+| File                                   | Change                                                  |
+| -------------------------------------- | ------------------------------------------------------- |
+| `frontend/hooks/useFavoriteColor.ts`   | Immediate recompute on theme change via `prevTheme` ref |
+| `frontend/docs/useFavoriteColor.ts.md` | Updated documentation                                   |
+
+---
+
+## Fix: `useFavoriteColor` — sync module cache when reading from sessionStorage
+
+### Problem
+
+When a value was read from `sessionStorage` on mount, the module-level `cachedColors` was **not** updated. If another hook instance mounted before the 2s async recompute, it would re-read `sessionStorage` (or recompute if storage was unavailable), risking inconsistency between instances.
+
+### Solution
+
+Modified file: `frontend/hooks/useFavoriteColor.ts`
+
+When the stored value is found, it is now also written into `cachedColors` so all hook instances share the same value immediately:
+
+```typescript
+const [colors, setColors] = useState(() => {
+  const stored = readStoredColors();
+  if (stored) {
+    cachedColors = stored; // sync module cache
+    return stored;
+  }
+  // ...
+});
+```
+
+### Final behavior (stale-while-revalidate)
+
+| Scenario            | Behavior                                                               |
+| ------------------- | ---------------------------------------------------------------------- |
+| No stored value     | Compute synchronously, persist to `sessionStorage`, return immediately |
+| Stored value exists | Return it immediately, then recompute asynchronously after 2s          |
+
+### Modified files
+
+| File                                   | Change                                                 |
+| -------------------------------------- | ------------------------------------------------------ |
+| `frontend/hooks/useFavoriteColor.ts`   | Sync `cachedColors` when reading from `sessionStorage` |
+| `frontend/docs/useFavoriteColor.ts.md` | Updated documentation                                  |
+
+---
+
+## Feature: `useFavoriteColor` — sessionStorage instant return + async refresh
+
+### Overview
+
+The `useFavoriteColor` hook now stores the computed accent color in `sessionStorage`. On mount, the stored value is returned **immediately** (no computation, no flash), then the color is **recomputed asynchronously 2 seconds** later to keep it up to date.
+
+### Problem
+
+- The color was computed synchronously on every mount, which could cause a brief flash or delay.
+- The module-level cache only lived for the lifetime of the JS context (tab session), but was not persisted across full page reloads.
+
+### Solution
+
+Modified file: `frontend/hooks/useFavoriteColor.ts`
+
+#### sessionStorage persistence
+
+```typescript
+const STORAGE_KEY = 'favoriteColor';
+```
+
+- `readStoredColors()` — reads and parses `{ backgroundColor, textColor }` from `sessionStorage`, returns `null` on missing/corrupted data.
+- `writeStoredColors(colors)` — serializes and writes the colors, silently ignoring storage errors (private mode, quota).
+
+#### Instant return
+
+```typescript
+const [colors, setColors] = useState(() => {
+  const stored = readStoredColors();
+  if (stored) return stored;
+  if (cachedColors) return cachedColors;
+  cachedColors = computeFavoriteColor(theme, defaultColor);
+  writeStoredColors(cachedColors);
+  return cachedColors;
+});
+```
+
+Priority order on first render:
+
+1. `sessionStorage` (no computation)
+2. Module-level `cachedColors`
+3. Synchronous computation, persisted to storage
+
+#### Async refresh after 2 seconds
+
+```typescript
+useEffect(() => {
+  const timeout = setTimeout(() => {
+    updateColor();
+  }, 2000);
+  return () => clearTimeout(timeout);
+}, [updateColor]);
+```
+
+Every mount (or theme change) schedules a background recomputation after 2 seconds. `updateColor()` recomputes, persists to `sessionStorage`, and updates state.
+
+### Final behavior
+
+| Scenario                   | First render                      | After 2s / event                        |
+| -------------------------- | --------------------------------- | --------------------------------------- |
+| First load (logged in)     | Stored value returned immediately | Recompute from synced cache             |
+| First load (not logged in) | Stored value returned immediately | Recompute from cache                    |
+| Tab switch                 | Stored value returned immediately | Recompute (same value → no re-render)   |
+| Add/remove a favorite      | Stored value returned immediately | `favoritesUpdated` event → clean update |
+| Theme change               | Stored value returned immediately | Recompute with new theme after 2s       |
+
+### Modified files
+
+| File                                   | Change                                                          |
+| -------------------------------------- | --------------------------------------------------------------- |
+| `frontend/hooks/useFavoriteColor.ts`   | sessionStorage read/write + instant return + 2s async recompute |
+| `frontend/docs/useFavoriteColor.ts.md` | Updated documentation                                           |
+
+---
+
 ## Feature: "Show all results" option in NoResults when filters hide results
 
 ### Overview
