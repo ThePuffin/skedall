@@ -928,8 +928,21 @@ const GameofTheDayContent = () => {
                   )}
 
                   <FilterAccordion
-                    label={translateFilterLabel('date')}
-                    defaultOpen={true}
+                    label={
+                      <span>
+                        {translateFilterLabel('date')} :{' '}
+                        <i>
+                          <b>
+                            {new Date(selectDate).toLocaleDateString(undefined, {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                            })}
+                          </b>
+                        </i>
+                      </span>
+                    }
+                    defaultOpen={false}
                     isSmallDevice={isSmallDevice}
                   >
                     <div style={{ paddingLeft: 15, paddingRight: 15 }}>

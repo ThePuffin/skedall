@@ -1,10 +1,10 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { ListItem } from '@rneui/themed';
-import React, { useEffect, useState } from 'react';
+import React, { ReactNode, useEffect, useState } from 'react';
 import Separator from './Separator';
 
 interface FilterAccordionProps {
-  readonly label: string;
+  readonly label: string | ReactNode;
   readonly children: React.ReactNode;
   readonly isSmallDevice: boolean;
   readonly defaultOpen?: boolean;
