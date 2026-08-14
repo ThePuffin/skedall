@@ -4,6 +4,49 @@
 
 ---
 
+## Feature: Swipe gesture to cycle home/away filter on Calendar
+
+### Overview
+
+Added a horizontal swipe gesture to the **Calendar** tab that lets users cycle through the home / all / away game filters without tapping the toggle.
+
+### Behavior
+
+| Gesture         | Action                                    |
+| --------------- | ----------------------------------------- |
+| **Swipe left**  | Next filter (`home` → `all` → `away`)     |
+| **Swipe right** | Previous filter (`away` → `all` → `home`) |
+
+### Implementation
+
+Modified file: `frontend/app/(tabs)/calendar.tsx`
+
+- Imported `PanResponder` from `react-native`.
+- Created a `swipePanResponder` via `useMemo` that:
+  - Only captures **horizontal** swipes (`|dx| > 20` and `|dx| > |dy| * 1.5`) so vertical scrolling is unaffected.
+  - On release, if `dx < -30` cycles to the next filter; if `dx > 30` cycles to the previous filter.
+- Attached `{...swipePanResponder.panHandlers}` to the root `ThemedView`.
+- Extracted the filter-cycling logic into pure helpers in `frontend/utils/homeGameFilter.ts` for testability.
+
+### Tests
+
+Added `frontend/utils/homeGameFilter.test.ts` with 8 unit tests covering:
+
+- `getNextHomeGameFilter` — cycles `home → all → away → home` and falls back to `all` for unknown values
+- `getPreviousHomeGameFilter` — cycles `away → all → home → away` and falls back to `all` for unknown values
+
+### Modified files
+
+| File                                    | Change                                                          |
+| --------------------------------------- | --------------------------------------------------------------- |
+| `frontend/app/(tabs)/calendar.tsx`      | Added `PanResponder` swipe gesture for home/away filter cycling |
+| `frontend/utils/homeGameFilter.ts`      | New pure helpers for filter cycling                             |
+| `frontend/utils/homeGameFilter.test.ts` | New unit tests (8 tests)                                        |
+| `frontend/docs/calendar.tsx.md`         | Updated documentation                                           |
+| `frontend/docs/homeGameFilter.ts.md`    | New documentation                                               |
+
+---
+
 ## Fix: theme briefly flashes light on web (color flicker)
 
 ### Symptom

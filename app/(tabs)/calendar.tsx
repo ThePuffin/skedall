@@ -14,6 +14,7 @@ import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -30,6 +31,7 @@ import LoadingView from '../../components/LoadingView';
 import Separator from '../../components/Separator';
 import TeamReorderSelector from '../../components/TeamReorderSelector';
 import { addDays, readableDate } from '../../utils/date';
+import { getNextHomeGameFilter, getPreviousHomeGameFilter } from '../../utils/homeGameFilter';
 import { FilterGames, GameFormatted, Team } from '../../utils/types';
 import { translateFilterLabel, translateWord } from '../../utils/utils';
 const EXPO_PUBLIC_API_BASE_URL =
@@ -510,8 +512,27 @@ export default function Calendar() {
     }
   }, [teamsSelected, teams]);
 
+  // Swipe gesture to cycle through home / all / away filters
+  const swipePanResponder = useMemo(() => {
+    return PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Only capture horizontal swipes (ignore vertical scroll)
+        return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx < -30) {
+          // Swipe left → next filter
+          handleHomeGameToggle(getNextHomeGameFilter(homeGameVisibility));
+        } else if (gestureState.dx > 30) {
+          // Swipe right → previous filter
+          handleHomeGameToggle(getPreviousHomeGameFilter(homeGameVisibility));
+        }
+      },
+    });
+  }, [homeGameVisibility, handleHomeGameToggle]);
+
   return (
-    <ThemedView style={{ flex: 1 }}>
+    <ThemedView style={{ flex: 1 }} {...swipePanResponder.panHandlers}>
       <PageHeader rightElement={<HomeGameToggle value={homeGameVisibility} onValueChange={handleHomeGameToggle} />} />
       <ScrollView
         ref={scrollViewRef}
