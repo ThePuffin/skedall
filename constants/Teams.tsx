@@ -751,6 +751,7 @@ export const TeamsEnum: Record<string, string> = {
   'NCCABB-MVSU': 'Mississippi Valley State Delta Devils',
   'NCCABB-NAVY': 'Navy Midshipmen',
   'NCCABB-NCAT': 'North Carolina A&t Aggies',
+  'NCCABB-NCST': 'Nc State Wolfpack',
   'NCCABB-NCSU': 'Nc State Wolfpack',
   'NCCABB-ND': 'Notre Dame Fighting Irish',
   'NCCABB-NDSU': 'North Dakota State Bison',

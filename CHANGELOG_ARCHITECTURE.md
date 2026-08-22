@@ -581,6 +581,63 @@ useEffect(() => {
 
 ---
 
+## Feature: Date span only visible when accordion is closed
+
+### Overview
+
+On mobile, the date filter accordion's label (the `<span>` containing the formatted date) is now only shown when the accordion is **closed**. When the accordion is open, only the plain "Date" label is displayed. On desktop (no accordion), the span is never shown.
+
+### Implementation
+
+Modified file: `frontend/app/(tabs)/index.tsx`
+
+- Added state `dateAccordionExpanded` (default `false`).
+- Passed `onExpandedChange={setDateAccordionExpanded}` to the date `FilterAccordion`.
+- The `label` prop now renders the `<span>` with the date only when `isSmallDevice && !dateAccordionExpanded`; otherwise it renders the plain translated "Date" label.
+
+### Modified files
+
+| File                            | Change type                       |
+| ------------------------------- | --------------------------------- |
+| `frontend/app/(tabs)/index.tsx` | Conditional date span + new state |
+
+---
+
+## Feature: Dynamic league accordion label
+
+### Overview
+
+The league filter accordion's label now dynamically reflects the current filter state, but **only when the accordion is closed**:
+
+- If a **team** is selected, the label shows `"Filter by league / team : <LEAGUE> / <team short name>"` (e.g. `MLB / CHC`).
+- If a **specific league** is selected (not `ALL`, `FAVORITES`, or `BOOKMARKS`), the label shows `"Filter by league / team : <league name>"`.
+- Otherwise, the default translated label ("League / Team" on mobile, "League" on desktop) is shown.
+
+### Implementation
+
+Modified file: `frontend/app/(tabs)/index.tsx`
+
+- Added state `leagueAccordionExpanded` (default `false`).
+- Passed `onExpandedChange={setLeagueAccordionExpanded}` to the league `FilterAccordion`.
+- Added `leagueAccordionLabel` useMemo that:
+  1. Only shows the dynamic label when `!leagueAccordionExpanded`.
+  2. Checks `teamSelectedId` first — if a team is selected, finds it in `teamsOfTheDay` and returns `{ prefix, value: "<league> / <abbrev>" }` using `translateFilterLabel('league_team')` as the prefix.
+  3. Otherwise, if `activeFilter` is a specific league, returns `{ prefix, value: "<league>" }`.
+  4. Falls back to the translated default label.
+- The value is rendered with the same styling as the date filter: `<span>{prefix} : <i><b>{value}</b></i></span>`.
+- The league `FilterAccordion` now uses `leagueAccordionLabel` as its `label` prop.
+- The same pattern is applied to `schedule.tsx` for the team/league and date/month accordions.
+
+### Modified files
+
+| File                               | Change type                               |
+| ---------------------------------- | ----------------------------------------- |
+| `frontend/app/(tabs)/index.tsx`    | Dynamic league/team label                 |
+| `frontend/app/(tabs)/schedule.tsx` | Dynamic team/league + date/month labels   |
+| `frontend/utils/utils.tsx`         | Exported `getFilterAccordionLabel` helper |
+
+---
+
 ## Summary of modified files
 
 | File                                 | Change type                                         |
