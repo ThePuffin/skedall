@@ -7,7 +7,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { maxTeamsNumber } from '@/constants/Constants';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { fetchTeams, getCache, saveCache } from '@/utils/fetchData';
+import { fetchDateRangeFromApi, fetchTeams, getCache, saveCache } from '@/utils/fetchData';
 import { syncToFirestore } from '@/utils/syncService';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
@@ -97,36 +97,58 @@ export default function Calendar() {
     return teams.filter((t) => allowedLeagues.includes(t.league));
   }, [teams, allowedLeagues]);
 
-  const beginDate = new Date();
-  beginDate.setHours(0, 0, 0, 0);
-  const endDate = new Date(addDays(beginDate, 15));
-  endDate.setHours(23, 59, 59, 999);
-  const initializeDateRange = () => {
+  const initializeDateRange = async () => {
+    const apiRange = await fetchDateRangeFromApi();
+    const apiMinDate = apiRange.minDate ? new Date(apiRange.minDate) : new Date();
+    const apiMaxDate = apiRange.maxDate ? new Date(apiRange.maxDate) : new Date(addDays(apiMinDate, 365));
+
+    apiMinDate.setHours(0, 0, 0, 0);
+    apiMaxDate.setHours(23, 59, 59, 999);
+
     const storedStartDate = localStorage.getItem('startDate');
     const storedEndDate = localStorage.getItem('endDate');
 
-    let start = storedStartDate;
-    let end = storedEndDate;
-    if (!storedStartDate || new Date(storedStartDate) < beginDate) {
-      start = beginDate.toISOString();
-      localStorage.setItem('startDate', start);
+    let beginDate = storedStartDate ? new Date(storedStartDate) : new Date();
+    let endDate = storedEndDate ? new Date(storedEndDate) : new Date(addDays(beginDate, 15));
+
+    if (beginDate < apiMinDate) {
+      beginDate = new Date(apiMinDate);
     }
-    if (!storedEndDate || new Date(storedEndDate) < beginDate) {
-      end = endDate.toISOString();
-      localStorage.setItem('endDate', end);
+
+    if (endDate > apiMaxDate) {
+      endDate = new Date(apiMaxDate);
     }
-    if (start !== storedStartDate || end !== storedEndDate) {
+
+    if (beginDate > endDate) {
+      endDate = new Date(addDays(beginDate, 15));
+      if (endDate > apiMaxDate) endDate = new Date(apiMaxDate);
+    }
+
+    beginDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    const startStr = beginDate.toISOString();
+    const endStr = endDate.toISOString();
+
+    if (startStr !== storedStartDate) {
+      localStorage.setItem('startDate', startStr);
+    }
+    if (endStr !== storedEndDate) {
+      localStorage.setItem('endDate', endStr);
+    }
+
+    if (startStr !== storedStartDate || endStr !== storedEndDate) {
       setDateRange({
-        startDate: new Date(start ?? beginDate.toISOString()),
-        endDate: new Date(end ?? endDate.toISOString()),
+        startDate: beginDate,
+        endDate: endDate,
       });
-      getGamesFromApi(start ?? beginDate.toISOString(), end ?? endDate.toISOString());
+      getGamesFromApi(startStr, endStr);
     }
   };
 
   const [dateRange, setDateRange] = useState({
-    startDate: new Date(localStorage.getItem('startDate') ?? beginDate),
-    endDate: new Date(localStorage.getItem('endDate') ?? endDate),
+    startDate: new Date(localStorage.getItem('startDate') || new Date().toISOString()),
+    endDate: new Date(localStorage.getItem('endDate') || new Date(addDays(new Date(), 15)).toISOString()),
   });
 
   const storeTeamsSelected = useCallback(
@@ -209,15 +231,14 @@ export default function Calendar() {
     const storedGamesDataRaw = getCache<FilterGames>('gamesData');
     if (!storedGamesDataRaw || !Object.keys(storedGamesDataRaw).length) return {};
 
-    const begindateStr = beginDate.toISOString().split('T')[0];
+    const begindateStr = dateRange.startDate.toISOString().split('T')[0];
 
-    // Keep only games whose date is today or in the future
     const filteredGamesData = Object.fromEntries(
       Object.entries(storedGamesDataRaw).filter(([date]) => date >= begindateStr),
     );
 
     return filteredGamesData;
-  }, [beginDate]);
+  }, [dateRange.startDate]);
 
   const getStoredTeams = useCallback(() => {
     isRestoringSelectionRef.current = true;
