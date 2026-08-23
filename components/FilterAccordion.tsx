@@ -60,7 +60,27 @@ export default function FilterAccordion({
                 textTransform: 'uppercase',
               }}
             >
-              {label}
+              <span
+                key={String(expanded)}
+                style={{
+                  display: 'inline-block',
+                  animation: 'filterLabelIn 0.25s ease-out',
+                }}
+              >
+                {label}
+              </span>
+              <style>{`
+                @keyframes filterLabelIn {
+                  from {
+                    opacity: 0;
+                    transform: translateY(-4px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+              `}</style>
             </ListItem.Title>
           </ListItem.Content>
         }

@@ -97,7 +97,7 @@ const GameofTheDayContent = () => {
   // Add state for the filter slider
   const [activeFilter, setActiveFilter] = useState<string>('ALL');
   const [showScores, setShowScores] = useState<boolean>(false);
-  const [dateAccordionExpanded, setDateAccordionExpanded] = useState<boolean>(false);
+  const [dateAccordionExpanded, setDateAccordionExpanded] = useState<boolean>(true);
   const [leagueAccordionExpanded, setLeagueAccordionExpanded] = useState<boolean>(false);
 
   const [leaguesAvailable, setLeaguesAvailable] = useState<string[]>([]);

@@ -80,7 +80,7 @@ export default function Schedule() {
     () => getCache<boolean>('showPreviousScores') || false,
   );
   const [isTeamAccordionOpen, setIsTeamAccordionOpen] = useState(true);
-  const [isDateAccordionOpen, setIsDateAccordionOpen] = useState(true);
+  const [isDateAccordionOpen, setIsDateAccordionOpen] = useState(false);
 
   const isInternalChange = useRef(false);
   const handlePreviousScoreToggle = useCallback(

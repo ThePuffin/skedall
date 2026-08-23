@@ -29,6 +29,8 @@ The **Calendar** tab (also called "Agenda") displays games for multiple selected
 | `dateRange`           | `{ startDate, endDate }` | Selected date range               |
 | `reorderModalVisible` | `boolean`                | Team reorder modal visibility     |
 | `gamesModalVisible`   | `boolean`                | Bookmarked games modal visibility |
+| `isTeamAccordionOpen` | `boolean`                | Team filter accordion state       |
+| `isDateAccordionOpen` | `boolean`                | Date range accordion state        |
 
 ## Key Functions
 
@@ -110,3 +112,12 @@ All teams filtered by allowed leagues.
 3. Fetches games for selected teams within the date range
 4. Displays accordions per date, filtered by hidden teams and home/away visibility
 5. Team changes, date changes, and game selections sync to Firestore
+
+## Accordion Label Behavior
+
+Like `index.tsx` and `schedule.tsx`, the Calendar accordions show dynamic filter labels **only when the accordion is closed**:
+
+- **Team accordion** (`teamAccordionLabel`): lists the selected teams by their **short name** (`abbrev`) joined by commas (e.g. `NJD, CHC, DEN, SEA`). Hidden teams are excluded.
+- **Date accordion** (`dateAccordionLabel`): shows the selected period as `start - end` (e.g. `Aug 22, 2026 - Sep 5, 2026`).
+
+When the text is too long for the screen width, it is truncated with ellipses (`...`) using CSS `text-overflow: ellipsis`.

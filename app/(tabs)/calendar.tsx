@@ -33,7 +33,7 @@ import TeamReorderSelector from '../../components/TeamReorderSelector';
 import { addDays, readableDate } from '../../utils/date';
 import { getNextHomeGameFilter, getPreviousHomeGameFilter } from '../../utils/homeGameFilter';
 import { FilterGames, GameFormatted, Team } from '../../utils/types';
-import { translateFilterLabel, translateWord } from '../../utils/utils';
+import { getFilterAccordionLabel, translateFilterLabel, translateWord } from '../../utils/utils';
 const EXPO_PUBLIC_API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://sportschedule2025backend.onrender.com';
 
@@ -60,7 +60,8 @@ export default function Calendar() {
   const [hiddenTeams, setHiddenTeams] = useState<string[]>([]);
   const [gamesModalVisible, setGamesModalVisible] = useState(false);
   const isRestoringSelectionRef = useRef(false);
-  const [isDateAccordionOpen, setIsDateAccordionOpen] = useState(true);
+  const [isTeamAccordionOpen, setIsTeamAccordionOpen] = useState(true);
+  const [isDateAccordionOpen, setIsDateAccordionOpen] = useState(false);
 
   useEffect(() => {
     const updateLeagues = () => {
@@ -96,6 +97,42 @@ export default function Calendar() {
     if (allowedLeagues.length === 0) return teams;
     return teams.filter((t) => allowedLeagues.includes(t.league));
   }, [teams, allowedLeagues]);
+
+  const teamAccordionLabel = useMemo(() => {
+    const labels =
+      filteredTeamsSelected
+        .filter((id) => !hiddenTeams.includes(id))
+        .map((id) => {
+          const team = teams.find((t) => t.uniqueId === id);
+          return team ? team.abbrev : id;
+        }) ?? [];
+    const { prefix, value } = getFilterAccordionLabel({
+      prefix: translateFilterLabel('team'),
+      fallbackLabel: translateFilterLabel('team'),
+      activeFilter: labels.join(', '),
+      selectedTeam: null,
+      expanded: isTeamAccordionOpen,
+    });
+    if (value) {
+      return (
+        <span
+          style={{
+            display: 'block',
+            maxWidth: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {prefix} :{' '}
+          <i>
+            <b>{value}</b>
+          </i>
+        </span>
+      );
+    }
+    return prefix;
+  }, [filteredTeamsSelected, hiddenTeams, teams, isTeamAccordionOpen]);
 
   const initializeDateRange = async () => {
     const apiRange = await fetchDateRangeFromApi();
@@ -150,6 +187,46 @@ export default function Calendar() {
     startDate: new Date(localStorage.getItem('startDate') || new Date().toISOString()),
     endDate: new Date(localStorage.getItem('endDate') || new Date(addDays(new Date(), 15)).toISOString()),
   });
+
+  const dateAccordionLabel = useMemo(() => {
+    const startLabel = dateRange.startDate.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+    const endLabel = dateRange.endDate.toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+    const period = `${startLabel} - ${endLabel}`;
+    const { prefix, value } = getFilterAccordionLabel({
+      prefix: translateWord('selectYourDates'),
+      fallbackLabel: translateWord('selectYourDates'),
+      activeFilter: period,
+      selectedTeam: null,
+      expanded: isDateAccordionOpen,
+    });
+    if (value) {
+      return (
+        <span
+          style={{
+            display: 'block',
+            maxWidth: '100%',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {prefix} :{' '}
+          <i>
+            <b>{value}</b>
+          </i>
+        </span>
+      );
+    }
+    return prefix;
+  }, [dateRange, isDateAccordionOpen]);
 
   const storeTeamsSelected = useCallback(
     async (teamsSelectedIds: string[], teamsList?: Team[], syncToDB: boolean = true) => {
@@ -563,7 +640,12 @@ export default function Calendar() {
         <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
           <ThemedView>
             <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
-              <FilterAccordion label={translateFilterLabel('team')} defaultOpen={true} isSmallDevice={isSmallDevice}>
+              <FilterAccordion
+                label={teamAccordionLabel}
+                defaultOpen={true}
+                isSmallDevice={isSmallDevice}
+                onExpandedChange={setIsTeamAccordionOpen}
+              >
                 <ThemedElements>
                   <div
                     style={{
@@ -653,7 +735,7 @@ export default function Calendar() {
                 </ThemedElements>
               </FilterAccordion>
               <FilterAccordion
-                label={translateWord('selectYourDates')}
+                label={dateAccordionLabel}
                 defaultOpen={true}
                 isSmallDevice={isSmallDevice}
                 onExpandedChange={setIsDateAccordionOpen}

@@ -581,6 +581,28 @@ useEffect(() => {
 
 ---
 
+## Feature: Animated filter label on accordion toggle
+
+### Overview
+
+The `FilterAccordion` label (including the dynamic filter value after the colon) now plays a subtle **fade-in + slide-down** CSS animation whenever the accordion is opened or closed. This makes the appearance/disappearance of the filter text feel smooth instead of abrupt.
+
+### Implementation
+
+Modified file: `frontend/components/FilterAccordion.tsx`
+
+- Wrapped the `label` in a `<span>` with `key={String(expanded)}` so React re-mounts the span on every expand/collapse, replaying the animation.
+- Added a `@keyframes filterLabelIn` animation: `opacity: 0 → 1` and `translateY(-4px) → 0`, with a `0.25s ease-out` duration.
+- Applied only on mobile (accordion mode); desktop is unaffected.
+
+### Modified files
+
+| File                                      | Change type                       |
+| ----------------------------------------- | --------------------------------- |
+| `frontend/components/FilterAccordion.tsx` | Animated label on expand/collapse |
+
+---
+
 ## Feature: Date span only visible when accordion is closed
 
 ### Overview
@@ -603,11 +625,24 @@ Modified file: `frontend/app/(tabs)/index.tsx`
 
 ---
 
+## Dynamic filter label for Calendar filters
+
+The Calendar tab's accordions now also show the selected filters in their labels when the accordion is **closed**:
+
+- **Teams**: lists selected teams by their **short name** (`abbrev`) joined by commas (e.g. `NJD, CHC, DEN, SEA`). Hidden teams are excluded.
+- **Date range**: shows the selected period as `start - end` (e.g. `Aug 22, 2026 - Sep 5, 2026`).
+
+Long text is truncated with ellipses via CSS `text-overflow: ellipsis`.
+
+Modified file: `frontend/app/(tabs)/calendar.tsx`
+
+---
+
 ## Feature: Dynamic league accordion label
 
 ### Overview
 
-The league filter accordion's label now dynamically reflects the current filter state, but **only when the accordion is closed**:
+The league filter accordion's label now dynamically reflects the current filter state, but only when the accordion is closed:
 
 - If a **team** is selected, the label shows `"Filter by league / team : <LEAGUE> / <team short name>"` (e.g. `MLB / CHC`).
 - If a **specific league** is selected (not `ALL`, `FAVORITES`, or `BOOKMARKS`), the label shows `"Filter by league / team : <league name>"`.
