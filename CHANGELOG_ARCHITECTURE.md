@@ -4,6 +4,50 @@
 
 ---
 
+## Change: Invert bottom logo and date/time position in stacked (vertical) game cards
+
+### Overview
+
+In narrow/restricted width configurations the card (`CardLarge`) stacks its content vertically (`verticalMode`, `flexDirection: 'column'`). The vertical layout originally was **away team -> center (`@`/score + date/time) -> home team**. The date/time block is now moved to the very bottom, while the score/`@` indicator stays between the two logos.
+
+### Resulting order (vertical mode)
+
+1. Away team (order 1)
+2. `@` / score (order 2) — centerScoreVs
+3. Home team (order 3)
+4. Date/time (order 4) — centerTime
+
+### Implementation
+
+Modified file: `frontend/components/CardLarge.tsx`
+
+- Split the former single `centerContent` into two variables:
+  - `centerScoreVs` — the score / `@` / reveal block
+  - `centerTime` — the date/time container
+- In `mainRow`, when `verticalMode` is enabled, applied CSS `order` to reorder the columns:
+  - Away team column: `order: 1`
+  - Center column (`centerScoreVs`): `order: 2`
+  - Home team column: `order: 3`
+  - `centerTime` appended at the end: `order: 4`
+- In horizontal (non-vertical) mode the center column renders both `centerScoreVs` and `centerTime` as before; the `@` and date/time stay together in the middle column.
+- Equal vertical spacing in vertical mode: the `centerTime` block uses `marginTop: 20` / `marginBottom: 0` so the gap below the bottom (home) logo equals the gap above the footer separator (`mainRow` bottom padding `10` + `footer` top margin `10`)
+
+### Behavior
+
+| `verticalMode` | Order shown in card                       |
+| -------------- | ----------------------------------------- |
+| `false`        | Left to right: away / center / home       |
+| `true`         | Top to bottom: away / `@` / home / time   |
+
+### Modified files
+
+| File                                       | Change                                      |
+| ------------------------------------------ | ------------------------------------------- |
+| `frontend/components/CardLarge.tsx`         | Reordered stacked rows via CSS `order`      |
+| `frontend/docs/components/CardLarge.tsx.md` | Documented the new vertical stacked ordering |
+
+---
+
 ## Feature: Swipe gesture to cycle home/away filter on Calendar
 
 ### Overview
