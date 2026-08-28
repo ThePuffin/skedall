@@ -2951,6 +2951,10 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#000000',
     backgroundColor: '#000000',
   },
+  'NCCABB-MIZZ': {
+    color: '#000000',
+    backgroundColor: '#000000',
+  },
   'NCCABB-MONM': {
     color: '#0D217B',
     backgroundColor: '#000000',
@@ -3195,6 +3199,10 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#000000',
     backgroundColor: '#000000',
   },
+  'NCCABB-S ALA': {
+    color: '#004A7B',
+    backgroundColor: '#000000',
+  },
   'NCCABB-SAC': {
     color: '#ffffff',
     backgroundColor: '#000000',
@@ -3388,6 +3396,10 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#000000',
   },
   'NCCABB-UCR': {
+    color: '#13214E',
+    backgroundColor: '#000000',
+  },
+  'NCCABB-UCRV': {
     color: '#13214E',
     backgroundColor: '#000000',
   },
