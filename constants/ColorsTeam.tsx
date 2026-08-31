@@ -280,7 +280,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#1d428a',
   },
   'NBA-HOU': {
-    color: '#ce1141',
+    color: '#ce0e2d',
     backgroundColor: '#000000',
   },
   'NBA-IND': {
