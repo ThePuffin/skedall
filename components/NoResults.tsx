@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { translateWord } from '@/utils/utils';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
 const REFRESH_COOLDOWN_MS = 60000;
@@ -15,14 +15,8 @@ interface NoResultsProps {
 
 export default function NoResults({ onRetry, onShowAll }: NoResultsProps) {
   const [isCooldownActive, setIsCooldownActive] = useState(false);
-  const hasRetried = useRef(false);
 
   useEffect(() => {
-    if (onRetry && !hasRetried.current) {
-      onRetry();
-      hasRetried.current = true;
-    }
-
     if (typeof window !== 'undefined') {
       const lastRetry = sessionStorage.getItem('lastManualRetry');
       if (lastRetry) {
@@ -37,7 +31,7 @@ export default function NoResults({ onRetry, onShowAll }: NoResultsProps) {
         }
       }
     }
-  }, [onRetry]);
+  }, []);
 
   const handleManualRetry = () => {
     if (typeof window !== 'undefined') {

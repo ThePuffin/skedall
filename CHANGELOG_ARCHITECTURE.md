@@ -2,6 +2,47 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fix: Infinite API call loop when no results (off-season with single league/team)
+
+### Symptom
+
+When selecting a single league in off-season with a single team selected, the site crashes with continuous `games/hour` API calls (7 calls per iteration: 1 for today + 6 for prefetch).
+
+### Root cause
+
+In `NoResults.tsx`, an auto-retry mechanism called `onRetry()` on mount. In `index.tsx` (Game of the Day), the `displayContent()` function shows `LoadingView` when `isLoading` is true, and `NoResults` when `isLoading` is false and there are no games. The sequence created an infinite loop:
+
+1. `getGamesFromApi()` → `isLoading = true` → renders `LoadingView`
+2. API returns empty (off-season) → `isLoading = false` → renders `NoResults`
+3. `NoResults` auto-retry → `getGamesFromApi()` → `isLoading = true` → `NoResults` is **unmounted**
+4. API returns empty → `isLoading = false` → `NoResults` is **remounted** (new instance, `hasRetried` ref reset to `false`)
+5. Back to step 3 → infinite loop with 7 `games/hour` calls per cycle
+
+The `hasRetried` ref was local to each component instance, so unmounting/remounting reset it.
+
+### Solution
+
+Modified file: `frontend/components/NoResults.tsx`
+
+Removed the auto-retry `useEffect` and the `hasRetried` ref. The retry mechanism in `index.tsx` already handles retries with proper intervals. The manual retry button remains available for users.
+
+```diff
+- const hasRetried = useRef(false);
+-
+- useEffect(() => {
+-   if (onRetry && !hasRetried.current) {
+-     onRetry();
+-     hasRetried.current = true;
+-   }
+-   ...
+- }, [onRetry]);
++ useEffect(() => {
++   ...
++ }, []);
+```
+
+---
+
 ## Fix: Mobile filter accordion background now matches desktop
 
 ### Symptom
