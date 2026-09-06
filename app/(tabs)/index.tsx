@@ -906,8 +906,9 @@ const GameofTheDayContent = () => {
                       ? {
                           width: windowWidth < 1200 ? '95%' : '100%',
                           margin: '0 auto',
-                          padding: 10,
+                          padding: '0 10 10 10',
                           boxSizing: 'border-box',
+                          backgroundColor: backgroundColor,
                         }
                       : {}
                   }
