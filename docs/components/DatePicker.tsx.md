@@ -16,6 +16,8 @@ The **DateRangePicker** component provides a dropdown calendar picker for select
 - **Theme aware** — colors adapt to light/dark theme and favorite team color
 - **Auto-invert range** — swaps start/end if end is before start
 - **End-of-day handling** — range end is set to 23:59:59, single date also set to end of day
+- **Imperative ref** — converted to `forwardRef`; parents can open/close the calendar via the exposed `DatePickerHandle` (`open()` / `close()`). Used by the `SliderDatePicker` magnifier button.
+- **"Aujourd'hui" button** — when the calendar is showing a month other than the current month, a button appears below the calendar to quickly jump back to today's date. In single-date mode, tapping it also selects today and closes the picker.
 
 ## Props
 
@@ -25,19 +27,28 @@ The **DateRangePicker** component provides a dropdown calendar picker for select
 | `dateRange`    | `{ startDate, endDate }` | `{ startDate: new Date(), endDate: new Date() }` | Current range (range mode)              |
 | `selectDate`   | `Date`                   | `undefined`                                      | When set, enables single-date mode      |
 | `readonly`     | `boolean`                | `false`                                          | Disables interaction                    |
+| `showInput`    | `boolean`                | `true`                                           | If `false`, hides the input box so the calendar can be opened imperatively via ref |
+
+## Imperative handle
+
+`DateRangePicker` is a `forwardRef` component exposing:
+- `open()` — opens the calendar dropdown.
+- `close()` — closes it.
 
 ## State Variables
 
-| Variable     | Type                  | Description                                  |
-| ------------ | --------------------- | -------------------------------------------- |
-| `isOpen`     | `boolean`             | Whether the calendar dropdown is visible     |
-| `locale`     | `string`              | Locale string from `navigator.language`      |
-| `tempRange`  | `{ start, end }`      | Temporary selection during a two-click range |
-| `wrapperRef` | `Ref<HTMLDivElement>` | Ref for click-outside detection              |
+| Variable             | Type                  | Description                                  |
+| -------------------- | --------------------- | -------------------------------------------- |
+| `isOpen`             | `boolean`             | Whether the calendar dropdown is visible     |
+| `locale`             | `string`              | Locale string from `navigator.language`      |
+| `currentVisibleDate` | `string` (YYYY-MM-DD) | Month currently displayed in the calendar    |
+| `tempRange`          | `{ start, end }`      | Temporary selection during a two-click range |
+| `wrapperRef`         | `Ref<HTMLDivElement>` | Ref for click-outside detection              |
 
 ## Key Memoized / Computed Values
 
 - `selectedBackgroundColor` / `selectedTextColor` — from `useFavoriteColor('#000')`
+- `backgroundColor` — `useThemeColor({ light: '#F0F0F0', dark: '#121212' }, 'background')` — same palette as `ThemedElements` so the picker matches the filter sections' background (previously used the default theme background `#ffffff`/`#151718`, which made the date filter visibly different from the team filter)
 - `todayBrightColor` — brightened favorite color for the "today" highlight
 - `dateLimits` — `{ minDate, maxDate }` from `getDateRangeLimits()`
 
@@ -71,6 +82,14 @@ Returns the localized display string:
 
 - Single mode: `selectDate.toLocaleDateString(locale, ...)`
 - Range mode: `"start - end"` formatted text
+
+### `handleVisibleMonthsChange(months: DateData[])`
+
+Updates `currentVisibleDate` as the user scrolls or navigates months. Used to show/hide the "Aujourd'hui" button.
+
+### `goToToday()`
+
+Jumps the calendar back to today's month. In single-date mode, also selects today's date (end-of-day) and closes the picker.
 
 ## Data Flow
 

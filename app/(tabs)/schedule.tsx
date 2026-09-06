@@ -738,9 +738,9 @@ export default function Schedule() {
                         availableLeagues={leagues}
                       />
                     </ThemedElements>
-                    <div style={{ marginTop: 10, marginBottom: 10 }}>
+                    <ThemedElements style={{ marginTop: 10, marginBottom: 10 }}>
                       <Separator />
-                    </div>
+                    </ThemedElements>
                     <div style={{ width: '100%' }}>
                       <TeamFilter
                         icon={<Ionicons name="search" size={24} color="white" />}
@@ -863,6 +863,7 @@ export default function Schedule() {
                     isSmallDevice={isSmallDevice}
                     onExpandedChange={setIsDateAccordionOpen}
                   >
+                    <ThemedElements style={{ width: '100%' }}>
                     <FilterSlider
                       disableSort={true}
                       selectedFilter={monthFilter.length > 0 ? monthFilter[0] : 'ALL'}
@@ -892,12 +893,13 @@ export default function Schedule() {
                         fontWeight: 'bold',
                       }}
                     />
+                    </ThemedElements>
                   </FilterAccordion>
                 )}
                 {!isSmallDevice || (visibleGamesByMonth.length > 1 ? isDateAccordionOpen : isTeamAccordionOpen) ? (
-                  <div style={{ paddingTop: 10, paddingBottom: 10 }}>
+                  <ThemedElements style={{ paddingTop: 10, paddingBottom: 10 }}>
                     <Separator />
-                  </div>
+                  </ThemedElements>
                 ) : null}
               </div>
             </ThemedView>
