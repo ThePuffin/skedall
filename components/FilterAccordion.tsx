@@ -41,7 +41,7 @@ export default function FilterAccordion({
   }
 
   return (
-    <div style={{ width: '100%' }}>
+    <ThemedElements style={{ width: '100%' }}>
       <ListItem.Accordion
         content={
           <ListItem.Content
@@ -101,6 +101,6 @@ export default function FilterAccordion({
       >
         <div style={{ width: '100%', paddingTop: 10, paddingBottom: 10 }}>{children}</div>
       </ListItem.Accordion>
-    </div>
+    </ThemedElements>
   );
 }

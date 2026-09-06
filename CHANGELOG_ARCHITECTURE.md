@@ -2,6 +2,36 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fix: Mobile filter accordion background now matches desktop
+
+### Symptom
+
+On mobile, the filter accordion (team/league and date/month) did not have the same background color as the filter content below it. On desktop, the separator band correctly used the `#F0F0F0` (light) / `#121212` (dark) background via `ThemedElements`, but on mobile the accordion wrapper was a plain `<div>` with no background, causing a visual inconsistency.
+
+### Root cause
+
+In `FilterAccordion.tsx`:
+- Desktop mode: the `Separator` was wrapped in `<ThemedElements>` (correct)
+- Mobile mode: the `ListItem.Accordion` was wrapped in a plain `<div style={{ width: '100%' }}>` (missing background)
+
+### Solution
+
+Modified file: `frontend/components/FilterAccordion.tsx`
+
+Wrapped the mobile accordion in `<ThemedElements>` so both mobile and desktop modes share the same background color:
+
+```tsx
+return (
+  <ThemedElements style={{ width: '100%' }}>
+    <ListItem.Accordion ...>
+      ...
+    </ListItem.Accordion>
+  </ThemedElements>
+);
+```
+
+---
+
 ## Change: Smoother drag-to-scroll on the filter sliders (teams bar on schedule)
 
 The drag listeners for `mousemove`/`mouseup` were attached to the slider element itself, so as soon as the cursor left the bar during a drag (very frequent on the teams bar, where chips fill the whole row) `mouseleave` cancelled the drag. `mousemove`/`mouseup` are now listened on `window` while dragging (drag continues outside the bar and ends wherever the button is released), text selection is disabled during the drag, and a click following a drag of more than 5px is swallowed so releasing over a chip no longer changes the filter. Applies to all `FilterSlider` instances (leagues, teams, VS, months).
