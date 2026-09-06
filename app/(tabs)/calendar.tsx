@@ -638,7 +638,7 @@ export default function Calendar() {
         scrollEventThrottle={16}
       >
         <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-          <ThemedView>
+          <ThemedView style={{ backgroundColor }}>
             <div style={{ width: '100%', padding: isSmallDevice ? 0 : 10, boxSizing: 'border-box' }}>
               <FilterAccordion
                 label={teamAccordionLabel}

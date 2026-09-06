@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useFavoriteColor } from '@/hooks/useFavoriteColor';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { syncToFirestore } from '@/utils/syncService';
 import {
   getFilterAccordionLabel,
@@ -71,6 +72,7 @@ export default function Schedule() {
   const { width } = useWindowDimensions();
   const colorScheme = useColorScheme();
   const { backgroundColor: selectedBackgroundColor } = useFavoriteColor('#000');
+  const backgroundColor = useThemeColor({ light: '#F0F0F0', dark: '#121212' }, 'background');
   const [favoriteTeams, setFavoriteTeams] = useState<string[]>(() => getCache<string[]>('favoriteTeams') || []);
   const isSmallDevice = width <= 768;
   const [leaguesAvailable, setLeaguesAvailable] = useState<string[]>([]);
@@ -717,7 +719,7 @@ export default function Schedule() {
               zIndex: 10,
             }}
           >
-            <ThemedView>
+            <ThemedView style={{ backgroundColor }}>
               <PageHeader
                 rightElement={
                   <PreviousScoreToggle value={showPreviousScores} onValueChange={handlePreviousScoreToggle} />

@@ -32,6 +32,22 @@ return (
 
 ---
 
+## Fix: Page background color now matches filter background
+
+### Symptom
+
+The page background had a visible color difference with the filter sections (`#F0F0F0`/`#121212`), creating a hard edge between the filter area and the rest of the page.
+
+### Solution
+
+Applied the filter background color (`#F0F0F0`/`#121212`) to the main container of each page:
+
+- `frontend/app/(tabs)/index.tsx` - Added `backgroundColor` to root `ThemedView`
+- `frontend/app/(tabs)/schedule.tsx` - Added `backgroundColor` to root `ThemedView`
+- `frontend/app/(tabs)/calendar.tsx` - Added `backgroundColor` to root `ThemedView`
+
+---
+
 ## Change: Smoother drag-to-scroll on the filter sliders (teams bar on schedule)
 
 The drag listeners for `mousemove`/`mouseup` were attached to the slider element itself, so as soon as the cursor left the bar during a drag (very frequent on the teams bar, where chips fill the whole row) `mouseleave` cancelled the drag. `mousemove`/`mouseup` are now listened on `window` while dragging (drag continues outside the bar and ends wherever the button is released), text selection is disabled during the drag, and a click following a drag of more than 5px is swallowed so releasing over a chip no longer changes the filter. Applies to all `FilterSlider` instances (leagues, teams, VS, months).

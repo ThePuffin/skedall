@@ -12,6 +12,7 @@ import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
 import { HorizontalScrollProvider, useHorizontalScroll } from '@/context/HorizontalScrollContext';
 import { useFavoriteColor } from '@/hooks/useFavoriteColor';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { getGamesStatus } from '@/utils/date';
 import { Ionicons } from '@expo/vector-icons';
 import { Icon } from '@rneui/themed';
@@ -885,6 +886,8 @@ const GameofTheDayContent = () => {
     }, []),
   );
 
+  const backgroundColor = useThemeColor({ light: '#F0F0F0', dark: '#121212' }, 'background');
+
   return (
     <ThemedView style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
@@ -894,7 +897,7 @@ const GameofTheDayContent = () => {
           scrollEventThrottle={16}
         >
           <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
-            <ThemedView>
+            <ThemedView style={{ backgroundColor }}>
               <div style={{ position: 'relative', zIndex: 20 }}>
                 {displayScoreToggle()}
                 <div
