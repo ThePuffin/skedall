@@ -53,6 +53,12 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
     ref,
   ) => {
     const [isOpen, setIsOpen] = useState(false);
+  // Month currently displayed in the calendar. `current` is a controlled prop on
+  // react-native-calendars: without tracking it here, tapping the month arrows
+  // snaps the calendar back to the initial month.
+  const [visibleMonth, setVisibleMonth] = useState<string>(
+    toDateString(selectDate ?? dateRange.startDate),
+  );
   const [locale, setLocale] = useState('en-US');
   const wrapperRef = useRef<HTMLDivElement>(null);
   const textColor = useThemeColor({}, 'text');
@@ -79,6 +85,14 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
   useEffect(() => {
     onOpenChange?.(isOpen);
   }, [isOpen, onOpenChange]);
+
+  // When the calendar opens, start on the month of the selected date / range start
+  useEffect(() => {
+    if (isOpen) {
+      setVisibleMonth(toDateString(selectDate ?? dateRange.startDate));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
   // Use date limits from the API/cache instead of hardcoded today
   const dateLimits = useMemo(() => getDateRangeLimits(), []);
 
@@ -236,7 +250,8 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
         onDayPress={handleDayPress}
         markingType={'period'}
         markedDates={getMarkedDates()}
-        current={selectDate ? toDateString(selectDate) : toDateString(dateRange.startDate)}
+        current={visibleMonth}
+        onMonthChange={(month: DateData) => setVisibleMonth(toDateString(new Date(month.year, month.month - 1, 1)))}
         minDate={toDateString(minDate)}
         maxDate={toDateString(maxDate)}
         theme={{

@@ -6,7 +6,18 @@
 
 In the FAVORIS modal (`frontend/app/(tabs)/calendar.tsx`), the mobile single-game branch renders an `Accordion` that now passes `hideEventCount={true}`, so the "1 EVENEMENTS" badge and the divider bar under the title are not shown. This is opt-in via a new `hideEventCount` prop on `Accordion` (`frontend/components/Accordion.tsx`, type added in `frontend/utils/types.tsx`); all other accordions (schedule, index, calendar page) keep the badge and bar in every breakpoint.
 
-## Fix: Opening the datepicker no longer collapses the league/team accordion
+## Fix: Month navigation in the datepicker modal (calendar page)
+
+The `Calendar`'s `current` prop is **controlled**: it was always recomputed from `selectDate` / `dateRange.startDate`, so tapping the month-navigation arrows snapped the calendar back to the initial month (visible on the calendar page in range mode, where no day is pressed to update the props). The component now keeps the visible month in internal state (`visibleMonth`), updates it via `onMonthChange`, and resets it to the selected date's month each time the dropdown opens.
+
+### Files
+
+- `frontend/components/DatePicker.tsx` — `visibleMonth` state + `onMonthChange` handler + reset on open.
+- `frontend/docs/components/DatePicker.tsx.md` — state documentation updated.
+
+---
+
+
 
 Since the datepicker now renders in a centered modal (outside the page layout), it no longer needs extra vertical space: `openCalendarDatepicker` in `frontend/app/(tabs)/index.tsx` only calls `dateRangePickerRef.current?.open()` and the league/team accordion keeps its current state (open or closed).
 

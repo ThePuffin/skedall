@@ -44,7 +44,7 @@ The **DateRangePicker** component provides a dropdown calendar picker for select
 | -------------------- | --------------------- | -------------------------------------------- |
 | `isOpen`             | `boolean`             | Whether the calendar dropdown is visible     |
 | `locale`             | `string`              | Locale string from `navigator.language`      |
-| `currentVisibleDate` | `string` (YYYY-MM-DD) | Month currently displayed in the calendar    |
+| `currentVisibleDate` | `string` (YYYY-MM-DD) | Month currently displayed in the calendar (`visibleMonth`, kept in sync via `onMonthChange` so the month arrows work even though `current` is a controlled prop; reset to the selected date's month each time the dropdown opens) |
 | `tempRange`          | `{ start, end }`      | Temporary selection during a two-click range |
 | `wrapperRef`         | `Ref<HTMLDivElement>` | Ref for click-outside detection              |
 
