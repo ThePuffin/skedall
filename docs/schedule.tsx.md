@@ -4,6 +4,11 @@
 
 The **Schedule** tab (also called "Focus Team" / "Suivre une équipe") displays the remaining games of a selected team, grouped by month. It allows filtering by league, team, opponent (VS), and month.
 
+## Selection stability
+
+Team selectors use stable callback identifiers (`teams` and `teamsFilter`). `Selector` compares incoming selected IDs by content, so a parent render after fetching teams or games does not reset an unvalidated selection when the committed selection is unchanged.
+
+
 ## Key Features
 
 - **League selection** via `FilterSlider` (horizontal chips)

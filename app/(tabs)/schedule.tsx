@@ -670,14 +670,14 @@ export default function Schedule() {
     const leagues = leaguesAvailable || [];
 
     const dataTeams = {
-      i: randomNumber(999999),
+      i: 'teams',
       items: teamsForSelector,
       itemsSelectedIds: [],
       itemSelectedId: teamSelected,
     };
 
     const dataTeamsFilter = {
-      i: randomNumber(999999),
+      i: 'teamsFilter',
       items: [{ ...allOption, label: translateWord('all'), uniqueId: '' }, ...uniqueTeamsFromGames],
       itemsSelectedIds: [],
       itemSelectedId: teamFilter,

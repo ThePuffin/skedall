@@ -1,6 +1,51 @@
 # Architecture & Recent Changes
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
+> **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
+
+## Fix: Selector loses selected teams on parent re-render (off-season API update)
+
+### Symptom
+
+When the teams data was updated (for example after `getTeamsFromApi` in `schedule.tsx` or a live-score refresh in `index.tsx`), an open team `Selector` could lose the user's selected/chosen teams. The selection was reset to an empty/unvalidated state at the moment of interaction, causing a click to miss its target.
+
+### Root cause
+
+`Selector` synchronizes its draft state when it becomes `visible` via:
+
+```js
+useEffect(() => {
+  if (visible) {
+    setTempSelectedIds(itemsSelectedIds || []);
+    ...
+  }
+}, [visible, itemsSelectedIds, itemSelectedId]);
+```
+
+`itemsSelectedIds` is passed as a new `[]`-array literal on every render in the parent `display()` functions. Because of referential inequality, the effect re-ran whenever the parent re-rendered (e.g. after teams were loaded), resetting the draft selection to `[]`.
+
+The earlier `randomNumber(999999)` value used in the `i` field was a red herring for this specific symptom: it generated a new `i` per render, but `i` is only read on validation, not used as a re-init dependency.
+
+### Solution
+
+Compare incoming selected IDs by content rather than by array reference:
+
+1. `Selector.tsx` — serialize `itemsSelectedIds` (`JSON.stringify`) and use it as the effect dependency, so a parent render that passes an equal-but-new `[]`-array no longer re-initializes the draft:
+```js
+const selectedIdsKey = JSON.stringify(itemsSelectedIds);
+useEffect(() => {
+  if (visible) {
+    setTempSelectedIds(JSON.parse(selectedIdsKey) as string[]);
+    setTempSelectedId(itemSelectedId || '');
+  }
+}, [visible, selectedIdsKey, itemSelectedId]);
+```
+
+2. `schedule.tsx`, `index.tsx` — replaced `randomNumber(999999)` for the `i` field with stable callback identifiers (`'teams'`, `'teamsFilter'`, `'teamsOfDay'`) so the parent can identify which selector is reporting a change across re-renders.
+
+3. Documentation updated: `frontend/docs/components/Selector.tsx.md`, `frontend/docs/schedule.tsx.md`, and `frontend/docs/index.tsx.md`.
+
+
 
 ## Fix: Infinite API call loop when no results (off-season with single league/team)
 
@@ -39,6 +84,42 @@ Removed the auto-retry `useEffect` and the `hasRetried` ref. The retry mechanism
 + useEffect(() => {
 +   ...
 + }, []);
+```
+
+---
+
+## Fix: Team selection missed due to debounce re-render
+
+### Symptom
+
+When typing in the search input and quickly clicking on a team, sometimes the selection doesn't register. The list re-renders (due to debounce firing) at the same time as the click, causing the tap to miss the target.
+
+### Root cause
+
+In `Selector.tsx`, the debounce timer (700ms) that filters the list was not cancelled when an item was selected. If the timer fired during the click, the FlatList would re-render and the tapped item could move or disappear before the press was registered.
+
+### Solution
+
+Modified file: `frontend/components/Selector.tsx`
+
+1. Store the debounce timer in a ref (`debounceTimerRef`) so it can be cancelled
+2. Cancel the pending debounce and immediately apply the current search value in `handleSelect()`
+3. Changed `keyboardShouldPersistTaps` from `"handled"` to `"always"` on the FlatList to ensure taps are always processed even with keyboard open
+
+```typescript
+const cancelDebounce = () => {
+  if (debounceTimerRef.current) {
+    clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = null;
+  }
+};
+
+const handleSelect = (id: string) => {
+  // Cancel any pending debounce to prevent list re-render during selection
+  cancelDebounce();
+  setDebouncedSearch(search);
+  // ... rest of selection logic
+};
 ```
 
 ---

@@ -4,6 +4,11 @@
 
 The **Game of the Day** tab (also called "Programme du jour") displays all games for a selected date, grouped by hour. It allows filtering by league, team, favorites, bookmarks, and supports live score updates.
 
+## Selection stability
+
+The team selector uses the stable callback identifier `teamsOfDay`. `Selector` compares incoming selected IDs by content, preserving draft selection across games/live-score refreshes when the committed selection has not changed.
+
+
 ## Key Features
 
 - **Date navigation** via `SliderDatePicker` (horizontal date slider)

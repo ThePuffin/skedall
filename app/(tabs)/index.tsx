@@ -1,3 +1,4 @@
+import DateRangePicker, { DatePickerHandle } from '@/components/DatePicker';
 import FilterAccordion from '@/components/FilterAccordion';
 import FilterSlider from '@/components/FilterSlider';
 import NoResults from '@/components/NoResults';
@@ -6,7 +7,6 @@ import ScoreToggle from '@/components/ScoreToggle';
 import Separator from '@/components/Separator';
 import SliderDatePicker from '@/components/SliderDatePicker';
 import TeamFilter from '@/components/TeamFilter';
-import DateRangePicker, { DatePickerHandle } from '@/components/DatePicker';
 import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthContext';
@@ -26,7 +26,7 @@ import { GameStatus, League } from '../../constants/enum';
 import { fetchDateRangeLimits, getDateRangeLimits } from '../../utils/dateRange';
 import { fetchGamesByHour, fetchLeagues, fetchLiveScores, getCache, saveCache } from '../../utils/fetchData';
 import { GameFormatted } from '../../utils/types';
-import { getFilterAccordionLabel, randomNumber, translateFilterLabel, translateWord } from '../../utils/utils';
+import { getFilterAccordionLabel, translateFilterLabel, translateWord } from '../../utils/utils';
 
 const formatDateLocal = (date: Date) => {
   const year = date.getFullYear();
@@ -698,7 +698,7 @@ const GameofTheDayContent = () => {
       <TeamFilter
         icon={<Ionicons name="search" size={24} color="white" />}
         selectorData={{
-          i: randomNumber(999999),
+          i: 'teamsOfDay',
           items: modalItems as any,
           itemSelectedId: modalItemSelectedId,
           itemsSelectedIds: [],
@@ -963,36 +963,36 @@ const GameofTheDayContent = () => {
                     <FilterAccordion
                       label={
                         isSmallDevice && !dateAccordionExpanded ? (
-                        <span>
-                          {translateFilterLabel('date')} :{' '}
-                          <i>
-                            <b>
-                              {new Date(selectDate).toLocaleDateString(undefined, {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                              })}
-                            </b>
-                          </i>
-                        </span>
-                      ) : (
-                        translateFilterLabel('date')
-                      )
-                    }
-                    defaultOpen={false}
-                    isSmallDevice={isSmallDevice}
-                    onExpandedChange={setDateAccordionExpanded}
-                  >
-                    <div>
-                      <SliderDatePicker
-                        onDateChange={(date) => handleDateChange(date, date)}
-                        selectDate={selectDate}
-                        disabled={isLoading}
-                        minDate={minDate}
-                        maxDate={maxDate}
-                        onSearch={() => dateRangePickerRef.current?.open()}
-                      />
-                      {/*
+                          <span>
+                            {translateFilterLabel('date')} :{' '}
+                            <i>
+                              <b>
+                                {new Date(selectDate).toLocaleDateString(undefined, {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                })}
+                              </b>
+                            </i>
+                          </span>
+                        ) : (
+                          translateFilterLabel('date')
+                        )
+                      }
+                      defaultOpen={false}
+                      isSmallDevice={isSmallDevice}
+                      onExpandedChange={setDateAccordionExpanded}
+                    >
+                      <div>
+                        <SliderDatePicker
+                          onDateChange={(date) => handleDateChange(date, date)}
+                          selectDate={selectDate}
+                          disabled={isLoading}
+                          minDate={minDate}
+                          maxDate={maxDate}
+                          onSearch={() => dateRangePickerRef.current?.open()}
+                        />
+                        {/*
                         Hidden date-range picker in single-date mode. It is opened
                         imperatively by the SliderDatePicker magnifier (onSearch) and
                         writes the selected date back to `selectDate` via
@@ -1000,18 +1000,18 @@ const GameofTheDayContent = () => {
                         input box since the selected date is already displayed in the
                         accordion header above.
                       */}
-                      <div style={{ position: 'relative', height: 0 }}>
-                        <DateRangePicker
-                          ref={dateRangePickerRef}
-                          selectDate={selectDate}
-                          onDateChange={handleDateChange}
-                          showInput={false}
-                        />
+                        <div style={{ position: 'relative', height: 0 }}>
+                          <DateRangePicker
+                            ref={dateRangePickerRef}
+                            selectDate={selectDate}
+                            onDateChange={handleDateChange}
+                            showInput={false}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div style={{ paddingTop: 10, paddingBottom: 10 }}>
-                      <Separator />
-                    </div>
+                      <div style={{ paddingTop: 10, paddingBottom: 10 }}>
+                        <Separator />
+                      </div>
                     </FilterAccordion>
                   </ThemedElements>
                 </div>
