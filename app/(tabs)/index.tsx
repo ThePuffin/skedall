@@ -25,7 +25,7 @@ import LoadingView from '../../components/LoadingView';
 import { GameStatus, League } from '../../constants/enum';
 import { fetchDateRangeLimits, getDateRangeLimits } from '../../utils/dateRange';
 import { fetchGamesByHour, fetchLeagues, fetchLiveScores, getCache, saveCache } from '../../utils/fetchData';
-import { GameFormatted } from '../../utils/types';
+import { GameFormatted, Team } from '../../utils/types';
 import { getFilterAccordionLabel, translateFilterLabel, translateWord } from '../../utils/utils';
 
 const formatDateLocal = (date: Date) => {
@@ -552,6 +552,17 @@ const GameofTheDayContent = () => {
     const finalTeamId = Array.isArray(teamId) ? teamId[0] : teamId;
     setTeamSelectedId(finalTeamId);
   }, []);
+const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
+    setDateAccordionExpanded(expanded);
+  }, []);
+
+  // Opens the calendar datepicker (loupe button). Only when the datepicker really
+  // displays, collapse the league/team filter to free vertical space (not on plain
+  // accordion toggle).
+  const openCalendarDatepicker = useCallback(() => {
+    dateRangePickerRef.current?.open();
+    setLeagueAccordionExpanded(false);
+  }, []);
 
   // Retry mechanism when no games are found (NoResults is visible)
   useEffect(() => {
@@ -918,6 +929,7 @@ const GameofTheDayContent = () => {
                       label={leagueAccordionLabel}
                       defaultOpen={false}
                       isSmallDevice={isSmallDevice}
+                      expanded={leagueAccordionExpanded}
                       onExpandedChange={setLeagueAccordionExpanded}
                     >
                       <FilterSlider
@@ -981,7 +993,7 @@ const GameofTheDayContent = () => {
                       }
                       defaultOpen={false}
                       isSmallDevice={isSmallDevice}
-                      onExpandedChange={setDateAccordionExpanded}
+                      onExpandedChange={handleDateAccordionExpanded}
                     >
                       <div>
                         <SliderDatePicker
@@ -990,7 +1002,7 @@ const GameofTheDayContent = () => {
                           disabled={isLoading}
                           minDate={minDate}
                           maxDate={maxDate}
-                          onSearch={() => dateRangePickerRef.current?.open()}
+                          onSearch={openCalendarDatepicker}
                         />
                         {/*
                         Hidden date-range picker in single-date mode. It is opened

@@ -1,7 +1,25 @@
 # Architecture & Recent Changes
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
-> **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
+
+## Fix: Open the date selector collapses the league/team filter (mobile height)
+
+### Symptom
+
+On mobile, opening the **calendar datepicker** (via the `SliderDatePicker` magnifier) could sometimes leave insufficient vertical space to fully see the calendar and the "Today" button.
+
+### Solution
+
+`FilterAccordion` initially kept its expanded state **internally**, so setting the parent's `leagueAccordionExpanded` had no visual effect. To allow forcing a collapse from the parent:
+
+1. `frontend/components/FilterAccordion.tsx` — added an optional **controlled** `expanded` prop. When provided, the accordion renders from that value and calls `onExpandedChange` on toggle (previous behavior is preserved when the prop is omitted).
+2. `frontend/app/(tabs)/index.tsx` — the league/team accordion now passes `expanded={leagueAccordionExpanded}` and is therefore parent-controlled. The collapse is triggered only when the **calendar datepicker actually displays** (the magnifier `onSearch` → `openCalendarDatepicker`), **not** when the date filter accordion is merely toggled open. `handleDateAccordionExpanded` (date accordion `onExpandedChange`) only updates `dateAccordionExpanded`. Closing the calendar does not change league accordion state.
+
+### Files
+
+- `frontend/components/FilterAccordion.tsx` — `expanded` controlled prop.
+- `frontend/app/(tabs)/index.tsx` — league accordion controlled by `leagueAccordionExpanded`; `openCalendarDatepicker` (wired to `SliderDatePicker` `onSearch`) collapses the league accordion when the calendar displays.
+- `frontend/docs/components/FilterAccordion.tsx.md`, `frontend/docs/index.tsx.md` — docs updated.
 
 ## Fix: Selector loses selected teams on parent re-render (off-season API update)
 
