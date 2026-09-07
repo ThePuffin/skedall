@@ -2,6 +2,10 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fix: Event count badge and divider hidden in the favorites modal (mobile)
+
+In the FAVORIS modal (`frontend/app/(tabs)/calendar.tsx`), the mobile single-game branch renders an `Accordion` that now passes `hideEventCount={true}`, so the "1 EVENEMENTS" badge and the divider bar under the title are not shown. This is opt-in via a new `hideEventCount` prop on `Accordion` (`frontend/components/Accordion.tsx`, type added in `frontend/utils/types.tsx`); all other accordions (schedule, index, calendar page) keep the badge and bar in every breakpoint.
+
 ## Fix: Opening the datepicker no longer collapses the league/team accordion
 
 Since the datepicker now renders in a centered modal (outside the page layout), it no longer needs extra vertical space: `openCalendarDatepicker` in `frontend/app/(tabs)/index.tsx` only calls `dateRangePickerRef.current?.open()` and the league/team accordion keeps its current state (open or closed).

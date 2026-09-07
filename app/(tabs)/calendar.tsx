@@ -838,6 +838,7 @@ export default function Calendar() {
                   gamesSelected={filteredGamesSelected}
                   onSelection={handleGamesSelection}
                   disableToggle={true}
+                  hideEventCount={true}
                 />
               ) : (
                 <GamesSelected
