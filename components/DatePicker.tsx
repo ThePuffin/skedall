@@ -13,7 +13,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Platform, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Platform, StyleSheet, TouchableOpacity, View, Modal } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 
 /**
@@ -48,6 +48,7 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
       selectDate,
       readonly = false,
       showInput = true,
+      onOpenChange,
     },
     ref,
   ) => {
@@ -72,6 +73,12 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
     }),
   );
 
+// Notify the parent whenever the calendar opens/closes so it can sync its UI
+  // (e.g. switch the magnifier button to a close icon), including when the calendar
+  // is closed by selecting a date or clicking outside.
+  useEffect(() => {
+    onOpenChange?.(isOpen);
+  }, [isOpen, onOpenChange]);
   // Use date limits from the API/cache instead of hardcoded today
   const dateLimits = useMemo(() => getDateRangeLimits(), []);
 
@@ -205,7 +212,76 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
   const minDate = dateLimits.minDate;
   const maxDate = dateLimits.maxDate;
 
-    return (
+    // Calendar card reused by both the web overlay and the native Modal
+  const calendarCard = (
+    <View
+      style={[
+        styles.calendarContainer,
+        {
+          backgroundColor,
+          width: Platform.OS === 'web' ? '90%' : 350,
+          maxWidth: 350,
+        },
+      ]}
+    >
+      {/* Close (X) button — top-right, same style as GameModal's closeButton */}
+      <TouchableOpacity
+        style={{ alignSelf: 'flex-end', padding: 5 } as any}
+        onPress={() => setIsOpen(false)}
+      >
+        <Icon name="close" type="font-awesome" size={20} color={textColor} />
+      </TouchableOpacity>
+      <Calendar
+        style={{ width: '100%' }}
+        onDayPress={handleDayPress}
+        markingType={'period'}
+        markedDates={getMarkedDates()}
+        current={selectDate ? toDateString(selectDate) : toDateString(dateRange.startDate)}
+        minDate={toDateString(minDate)}
+        maxDate={toDateString(maxDate)}
+        theme={{
+          calendarBackground: backgroundColor,
+          selectedDayBackgroundColor: selectedBackgroundColor,
+          selectedDayTextColor: selectedTextColor,
+          todayTextColor: textColor,
+          todayBackgroundColor: todayBrightColor,
+          dayTextColor: textColor,
+          textDisabledColor,
+          monthTextColor: textColor,
+          arrowColor: textColor,
+          textDayFontWeight: '500',
+          textMonthFontWeight: 'bold',
+          textDayHeaderFontWeight: 'bold',
+        }}
+      />
+      {selectDate && (
+        <TouchableOpacity
+          onPress={goToToday}
+          style={{
+            marginTop: 8,
+            paddingVertical: 8,
+            paddingHorizontal: 16,
+            backgroundColor: selectedBackgroundColor,
+            borderRadius: 8,
+            alignSelf: 'center',
+          }}
+        >
+          <ThemedText
+            style={{
+              color: selectedTextColor,
+              fontWeight: 'bold',
+              fontSize: 13,
+              textAlign: 'center',
+            }}
+          >
+            {translateWord('today')}
+          </ThemedText>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+
+  return (
     <div ref={wrapperRef} style={{ position: 'relative', zIndex: 100, width: '100%' }}>
       {showInput && (
         <TouchableOpacity
@@ -233,77 +309,52 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
         </TouchableOpacity>
       )}
 
-      {isOpen && (
-        <div
+      {/* WEB: position:fixed overlay (Modal is unreliable on react-native-web) */}
+      {isOpen && Platform.OS === 'web' && (
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => setIsOpen(false)}
           style={{
-            position: 'absolute',
-            top: showInput ? '110%' : '0',
+            position: 'fixed',
+            top: 0,
             left: 0,
             right: 0,
-            display: 'flex',
+            bottom: 0,
+            zIndex: 10000,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000,
-          }}
+            cursor: 'default',
+          } as any}
         >
-          <View
-            style={[
-              styles.calendarContainer,
-              {
-                backgroundColor,
-                width: Platform.OS === 'web' ? '90%' : 350,
-                maxWidth: 350,
-              },
-            ]}
+          <TouchableOpacity activeOpacity={1} onPress={() => {}}>
+            {calendarCard}
+          </TouchableOpacity>
+        </TouchableOpacity>
+      )}
+      {/* NATIVE: centered transparent Modal */}
+      {isOpen && Platform.OS !== 'web' && (
+        <Modal
+          transparent
+          animationType="fade"
+          visible={isOpen}
+          onRequestClose={() => setIsOpen(false)}
+        >
+          {/* Full-screen dimmed backdrop: tapping outside the card closes the picker */}
+          <TouchableOpacity
+            activeOpacity={1}
+            onPress={() => setIsOpen(false)}
+            style={{
+              flex: 1,
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
           >
-            <Calendar
-              style={{ width: '100%' }}
-              onDayPress={handleDayPress}
-              markingType={'period'}
-              markedDates={getMarkedDates()}
-              current={selectDate ? toDateString(selectDate) : toDateString(dateRange.startDate)}
-              minDate={toDateString(minDate)}
-              maxDate={toDateString(maxDate)}
-              theme={{
-                calendarBackground: backgroundColor,
-                selectedDayBackgroundColor: selectedBackgroundColor,
-                selectedDayTextColor: selectedTextColor,
-                todayTextColor: textColor,
-                todayBackgroundColor: todayBrightColor,
-                dayTextColor: textColor,
-                textDisabledColor,
-                monthTextColor: textColor,
-                arrowColor: textColor,
-                textDayFontWeight: '500',
-                textMonthFontWeight: 'bold',
-                textDayHeaderFontWeight: 'bold',
-              }}
-            />
-            {selectDate && (
-              <TouchableOpacity
-                onPress={goToToday}
-                style={{
-                  marginTop: 8,
-                  paddingVertical: 8,
-                  paddingHorizontal: 16,
-                  backgroundColor: selectedBackgroundColor,
-                  borderRadius: 8,
-                  alignSelf: 'center',
-                }}
-              >
-                <ThemedText
-                  style={{
-                    color: selectedTextColor,
-                    fontWeight: 'bold',
-                    fontSize: 13,
-                    textAlign: 'center',
-                  }}
-                >
-                  {translateWord('today')}
-                </ThemedText>
-              </TouchableOpacity>
-            )}
-          </View>
-        </div>
+            {/* Card — centered both vertically and horizontally; taps inside don't close */}
+            <TouchableOpacity activeOpacity={1}>{calendarCard}</TouchableOpacity>
+          </TouchableOpacity>
+        </Modal>
       )}
     </div>
   );

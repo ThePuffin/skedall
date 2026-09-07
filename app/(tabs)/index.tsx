@@ -556,12 +556,11 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     setDateAccordionExpanded(expanded);
   }, []);
 
-  // Opens the calendar datepicker (loupe button). Only when the datepicker really
-  // displays, collapse the league/team filter to free vertical space (not on plain
-  // accordion toggle).
+  // Open the calendar datepicker (loupe button). The league/team filter accordion
+  // is left in its current state (open or closed) — the calendar now renders in a
+  // centered modal, so it no longer needs extra vertical space in the page.
   const openCalendarDatepicker = useCallback(() => {
     dateRangePickerRef.current?.open();
-    setLeagueAccordionExpanded(false);
   }, []);
 
   // Retry mechanism when no games are found (NoResults is visible)
@@ -1006,11 +1005,11 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
                         />
                         {/*
                         Hidden date-range picker in single-date mode. It is opened
-                        imperatively by the SliderDatePicker magnifier (onSearch) and
+                        imperatively by the SliderDatePicker loupe button (onSearch) and
                         writes the selected date back to `selectDate` via
                         `handleDateChange`. `showInput={false}` avoids a duplicate
-                        input box since the selected date is already displayed in the
-                        accordion header above.
+                        input box since the selected date is already displayed
+                        in the accordion header above.
                       */}
                         <div style={{ position: 'relative', height: 0 }}>
                           <DateRangePicker

@@ -109,6 +109,8 @@ export interface DateRangePickerProps {
   readonly?: boolean;
   /** When false, hides the input box so the calendar can be opened imperatively via ref. Defaults to true. */
   showInput?: boolean;
+  /** Notifies when the calendar dropdown opens/closes (imperatively or via date selection / click-outside). */
+  onOpenChange?: (open: boolean) => void;
 }
 
 export interface IconButtonProps extends ButtonProps {

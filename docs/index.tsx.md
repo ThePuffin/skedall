@@ -137,15 +137,14 @@ The league filter accordion's label (`leagueAccordionLabel`) dynamically reflect
 
 When the accordion is open, the default translated label is always shown. The `onExpandedChange` callback updates `leagueAccordionExpanded` whenever the accordion toggles.
 
-## Date / Calendar Datepicker Height Management
+## Date / Calendar Datepicker Behavior
 
-On mobile, when the user opens the **calendar datepicker** (via the magnifier/loupe in `SliderDatePicker`), the app may not always have enough vertical space to fully show the calendar and the "Today" button. Only in that case — **not** when the date filter accordion is merely toggled open — the frontend collapses the league/team accordion to free space:
+When the user opens the **calendar datepicker** (via the magnifier/loupe in `SliderDatePicker`), the calendar renders in a **centered modal** (outside the page layout), so the league/team accordion is **left in its current state** (open or closed):
 
 ```ts
 const openCalendarDatepicker = useCallback(() => {
   dateRangePickerRef.current?.open();   // open the calendar datepicker
-  setLeagueAccordionExpanded(false);    // collapse league/team filter to increase height
 }, []);
 ```
 
-`openCalendarDatepicker` is wired to `SliderDatePicker` `onSearch` (the loupe button that displays the calendar). The date accordion's `onExpandedChange` (`handleDateAccordionExpanded`) only updates `dateAccordionExpanded` and does **not** collapse anything. Collapsing the league accordion does not affect the selected filters; it only hides the controls, so they return when the user reopens the accordion.
+`openCalendarDatepicker` is wired to `SliderDatePicker` `onSearch` (the loupe button that displays the calendar). The date accordion's `onExpandedChange` (`handleDateAccordionExpanded`) only updates `dateAccordionExpanded` and does **not** collapse anything.

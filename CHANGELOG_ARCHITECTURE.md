@@ -2,6 +2,56 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fix: Opening the datepicker no longer collapses the league/team accordion
+
+Since the datepicker now renders in a centered modal (outside the page layout), it no longer needs extra vertical space: `openCalendarDatepicker` in `frontend/app/(tabs)/index.tsx` only calls `dateRangePickerRef.current?.open()` and the league/team accordion keeps its current state (open or closed).
+
+## Fix: Datepicker opens in a centered modal (mobile clipping fixed)
+
+### Symptom
+
+On mobile (Game of the Day tab), the calendar dropdown was clipped by the page's `ScrollView` / sticky header / `height: 0` wrapper, and the close (X) button stayed partially hidden regardless of z-index.
+
+### Solution
+
+The datepicker no longer renders as an in-page absolutely-positioned dropdown. When opened, it renders in a **transparent `Modal` centered vertically and horizontally** over a dimmed backdrop (`rgba(0,0,0,0.5)`), completely outside the page layout, so nothing can clip it.
+
+- Tapping the dimmed backdrop closes the picker; taps on the card do not propagate.
+- Android back button (`onRequestClose`) closes the picker.
+- **Web support:** the RN `Modal` is unreliable on react-native-web, so on web the same card renders inside a `position: fixed` full-screen overlay (dimmed backdrop, `zIndex: 10000`, centered both axes). The card markup is shared (`calendarCard` variable) to avoid duplication.
+- The circular close (X) button is back at the **top of the modal card** (its own header row above the calendar), where it cannot overlap the month-navigation arrows. It then adopts `GameModal`'s `closeButton` style: a plain 20px `close` icon at the top-right (`alignSelf: 'flex-end', padding: 5`, no border).
+
+### Files
+
+- `frontend/components/DatePicker.tsx` — dropdown replaced by a centered `Modal`.
+- `frontend/docs/components/DatePicker.tsx.md` — documentation updated.
+
+---
+
+## Fix (superseded): Close (X) button of the datepicker was partially hidden
+
+> **Superseded** by the centered-modal fix above: the close button no longer sits at the bottom of an in-page dropdown.
+
+### Symptom
+
+On the Game of the Day tab, the circular close (X) button of the calendar dropdown was partially masked — first by the `react-native-calendars` month-navigation header (it was absolutely positioned at `top: 4 / right: 4`), then even after moving it into a dedicated top bar it remained clipped.
+
+### Root cause
+
+In `showInput={false}` mode (`index.tsx`), the `DateRangePicker` sits inside a `position: relative; height: 0` wrapper inside the screen's `ScrollView`, below a `position: sticky` header. The top edge of the opened dropdown can therefore be clipped by the scroll container / sticky area, hiding whatever is rendered at the very top of the card (z-index alone cannot fix clipping).
+
+### Solution
+
+The close (X) button now lives **at the bottom of the calendar card**, centered under the "Aujourd'hui" button. The bottom of the dropdown is always within the visible area, so the button is guaranteed to be tappable.
+
+### Files
+
+- `frontend/components/DatePicker.tsx` — close button moved to the bottom of the dropdown card.
+- `frontend/docs/components/DatePicker.tsx.md` — documentation updated.
+
+---
+
+
 ## Fix: Open the date selector collapses the league/team filter (mobile height)
 
 ### Symptom
@@ -21,6 +71,39 @@ On mobile, opening the **calendar datepicker** (via the `SliderDatePicker` magni
 - `frontend/app/(tabs)/index.tsx` — league accordion controlled by `leagueAccordionExpanded`; `openCalendarDatepicker` (wired to `SliderDatePicker` `onSearch`) collapses the league accordion when the calendar displays.
 - `frontend/docs/components/FilterAccordion.tsx.md`, `frontend/docs/index.tsx.md` — docs updated.
 
+## Feature: Close (X) button on the calendar datepicker (loupe kept on index)
+
+### Goal
+
+Let the user close the calendar datepicker on the Game of the Day tab, while keeping the magnifier (loupe) button. The loupe **opens** the calendar; a close (X) button rendered **inside the calendar dropdown** closes it.
+
+### Changes
+
+- `frontend/components/SliderDatePicker.tsx` — keeps the `Ionicons` `search` (loupe) icon; pressing it calls `onSearch` (which opens the calendar).
+- `frontend/components/DatePicker.tsx` — added a circular close (X) button in the top-right corner of the calendar dropdown (rendered while `isOpen`); tapping it calls `setIsOpen(false)`, which also fires `onOpenChange(false)`.
+- `frontend/utils/types.tsx` — `DateRangePickerProps` gained optional `onOpenChange?: (open: boolean) => void` (kept for future parent-driven sync).
+- `frontend/app/(tabs)/index.tsx` — reverted to `openCalendarDatepicker` (opens the calendar and collapses the league/team filter); removed the `calendarOpen` toggle state and the `onOpenChange` wiring (closing is handled by the X inside the calendar).
+
+---
+## Feature: Always-visible close (X) button for the calendar datepicker (Game of the Day)
+
+### Goal
+
+Provide a way to close the calendar datepicker on the Game of the Day tab. Instead of a magnifier only, the floating button always shows a **close (X)** icon and toggles the calendar open/close.
+
+### Changes
+
+- `frontend/components/SliderDatePicker.tsx` — the floating overlay button now always renders an `Ionicons` `close` icon (X). It still calls `onSearch` on press.
+- `frontend/utils/types.tsx` — added `onOpenChange?: (open: boolean) => void` to `DateRangePickerProps`.
+- `frontend/components/DatePicker.tsx` — added an `onOpenChange` effect that notifies the parent whenever the calendar opens/closes (imperatively, on date selection, or on click-outside).
+- `frontend/app/(tabs)/index.tsx` — tracks the calendar state with `calendarOpen`, wired `DateRangePicker` `onOpenChange={setCalendarOpen}`, and replaced `openCalendarDatepicker` with `toggleCalendarDatepicker` (opens if closed, closes if open) bound to `SliderDatePicker` `onSearch`. When opened, it still collapses the league/team filter to free height.
+
+### Files
+
+- `frontend/components/SliderDatePicker.tsx`, `frontend/components/DatePicker.tsx`, `frontend/utils/types.tsx`, `frontend/app/(tabs)/index.tsx` — implementation.
+- `frontend/docs/components/SliderDatePicker.tsx.md`, `frontend/docs/components/DatePicker.tsx.md`, `frontend/docs/types.tsx.md`, `frontend/docs/index.tsx.md` — docs updated.
+
+---
 ## Fix: Selector loses selected teams on parent re-render (off-season API update)
 
 ### Symptom
