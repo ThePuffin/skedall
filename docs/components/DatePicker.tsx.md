@@ -21,6 +21,7 @@ The **DateRangePicker** component provides a dropdown calendar picker for select
 - **"Aujourd'hui" button** — when the calendar is showing a month other than the current month, a button appears below the calendar to quickly jump back to today's date. In single-date mode, tapping it also selects today and closes the picker.
 - **Centered modal display (all platforms)** — when opened, the calendar card is rendered centered vertically and horizontally over a dimmed backdrop (`rgba(0,0,0,0.5)`). On mobile it uses a transparent React Native `Modal`; on web (where RN `Modal` is unreliable) it uses a `position: fixed` full-screen overlay with `zIndex: 10000`. The card markup is shared between both paths (`calendarCard` variable). Tapping the backdrop closes the picker; taps on the card do not propagate. `onRequestClose` (Android back) also closes it. This replaces the previous in-page absolutely-positioned dropdown, which could be clipped by the screen's `ScrollView` / sticky header / `height: 0` wrapper (e.g. `index.tsx`), hiding parts of the card.
 - **Close (X) button** — a plain close icon rendered at the **top-right of the modal card** (`alignSelf: 'flex-end', padding: 5`, 20px icon — identical to `GameModal`'s `closeButton` style); tapping it closes the calendar (`setIsOpen(false)`), which also fires `onOpenChange(false)`.
+- **Fade animation** — the modal fades in with a 200ms animation. On web, this is done via CSS `@keyframes datepickerFadeIn`. On native, the React Native `Modal` component's built-in `animationType="fade"` is used. The modal stays mounted (native) so the fade-out animation plays properly when closing.
 
 ## Props
 
@@ -42,7 +43,8 @@ The **DateRangePicker** component provides a dropdown calendar picker for select
 
 | Variable             | Type                  | Description                                  |
 | -------------------- | --------------------- | -------------------------------------------- |
-| `isOpen`             | `boolean`             | Whether the calendar dropdown is visible     |
+| `isOpen`             | `boolean`             | Whether the calendar dropdown is open (logical state, fires `onOpenChange`) |
+| `showModal`          | `boolean`             | Controls the actual visual rendering of the modal (delayed by 150ms after `isOpen` becomes true) |
 | `locale`             | `string`              | Locale string from `navigator.language`      |
 | `currentVisibleDate` | `string` (YYYY-MM-DD) | Month currently displayed in the calendar (`visibleMonth`, kept in sync via `onMonthChange` so the month arrows work even though `current` is a controlled prop; reset to the selected date's month each time the dropdown opens) |
 | `tempRange`          | `{ start, end }`      | Temporary selection during a two-click range |

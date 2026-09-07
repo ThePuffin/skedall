@@ -2,6 +2,22 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fix: Separator hidden before datepicker modal appears (Calendar tab)
+
+The `<Separator />` below the date range filter accordion is now hidden **before** the calendar modal fades in. The `DateRangePicker` now has a `showModal` state that delays the visual rendering of the modal by 150ms after `isOpen` becomes true, giving the parent time to hide the separator (via `onOpenChange`) first. A 200ms fade animation plays on both web (CSS keyframes) and native (Modal `animationType="fade"`).
+
+### Files
+
+- `frontend/components/DatePicker.tsx` — added `showModal` state with 150ms delay, fade animation on modal appearance/disappearance.
+- `frontend/components/css/DatePicker.css` — added `@keyframes datepickerFadeIn` for web fade-in.
+- `frontend/app/(tabs)/calendar.tsx` — added `datepickerOpen` state, wired `DateRangePicker` `onOpenChange={setDatepickerOpen}`, and updated the separator condition to `!isSmallDevice || (isDateAccordionOpen && !datepickerOpen)`.
+- `frontend/docs/calendar.tsx.md` — state variable documented.
+- `frontend/docs/components/DatePicker.tsx.md` — `showModal` state and fade animation documented.
+- `frontend/components/Separator.tsx` — added `opacity` prop with CSS transition for smooth opacity changes.
+- `frontend/docs/components/Separator.tsx.md` — documentation created.
+
+---
+
 ## Fix: Event count badge and divider hidden in the favorites modal (mobile)
 
 In the FAVORIS modal (`frontend/app/(tabs)/calendar.tsx`), the mobile single-game branch renders an `Accordion` that now passes `hideEventCount={true}`, so the "1 EVENEMENTS" badge and the divider bar under the title are not shown. This is opt-in via a new `hideEventCount` prop on `Accordion` (`frontend/components/Accordion.tsx`, type added in `frontend/utils/types.tsx`); all other accordions (schedule, index, calendar page) keep the badge and bar in every breakpoint.

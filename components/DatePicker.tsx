@@ -53,6 +53,7 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
     ref,
   ) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [showModal, setShowModal] = useState(false);
   // Month currently displayed in the calendar. `current` is a controlled prop on
   // react-native-calendars: without tracking it here, tapping the month arrows
   // snaps the calendar back to the initial month.
@@ -85,6 +86,17 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
   useEffect(() => {
     onOpenChange?.(isOpen);
   }, [isOpen, onOpenChange]);
+
+  // Delay the visual appearance of the modal so the parent has time to hide
+  // the separator (or any other UI sync) before the modal fades in.
+  useEffect(() => {
+    if (isOpen) {
+      const timer = setTimeout(() => setShowModal(true), 150);
+      return () => clearTimeout(timer);
+    } else {
+      setShowModal(false);
+    }
+  }, [isOpen]);
 
   // When the calendar opens, start on the month of the selected date / range start
   useEffect(() => {
@@ -325,7 +337,7 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
       )}
 
       {/* WEB: position:fixed overlay (Modal is unreliable on react-native-web) */}
-      {isOpen && Platform.OS === 'web' && (
+      {showModal && Platform.OS === 'web' && (
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => setIsOpen(false)}
@@ -340,6 +352,7 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'default',
+            animation: 'datepickerFadeIn 200ms ease-in-out',
           } as any}
         >
           <TouchableOpacity activeOpacity={1} onPress={() => {}}>
@@ -348,11 +361,11 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
         </TouchableOpacity>
       )}
       {/* NATIVE: centered transparent Modal */}
-      {isOpen && Platform.OS !== 'web' && (
+      {Platform.OS !== 'web' && (
         <Modal
           transparent
           animationType="fade"
-          visible={isOpen}
+          visible={showModal}
           onRequestClose={() => setIsOpen(false)}
         >
           {/* Full-screen dimmed backdrop: tapping outside the card closes the picker */}
@@ -367,7 +380,7 @@ const DateRangePicker = forwardRef<DatePickerHandle, Readonly<DateRangePickerPro
             }}
           >
             {/* Card — centered both vertically and horizontally; taps inside don't close */}
-            <TouchableOpacity activeOpacity={1}>{calendarCard}</TouchableOpacity>
+            <TouchableOpacity activeOpacity={1}>{showModal ? calendarCard : null}</TouchableOpacity>
           </TouchableOpacity>
         </Modal>
       )}
