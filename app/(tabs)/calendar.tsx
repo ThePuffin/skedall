@@ -741,11 +741,6 @@ export default function Calendar() {
                   </div>
                 </ThemedElements>
               </FilterAccordion>
-              {!isSmallDevice || isDateAccordionOpen ? (
-                <ThemedElements style={{ paddingTop: 10, paddingBottom: 10 }}>
-                  <Separator />
-                </ThemedElements>
-              ) : null}
             </div>
           </ThemedView>
         </div>
