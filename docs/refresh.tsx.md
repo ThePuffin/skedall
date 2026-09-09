@@ -58,3 +58,7 @@ Returns `LoadingView` when `isLoading`, otherwise `NoResults`.
 2. If no leagues → shows `LoadingView`/`NoResults`
 3. Otherwise renders TEAMS / SCORES buttons plus one refresh button per league
 4. Each button calls the appropriate API and toggles `isLoading` around the request
+
+## Notes / Rules of Hooks
+
+All hooks (`useState`, `useRef`, `useWindowDimensions`, `useEffect`, `useThemeColor`) are called unconditionally at the top of the component, **before** any early return. The conditional early return (`leaguesAvailable.length === 0`) happens after all hook calls — moving it earlier would break the Rules of Hooks and crash on page refresh ("Rendered more hooks than during the previous render").
