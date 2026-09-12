@@ -2,6 +2,21 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Feature: Game of the Day — `closest` date navigation in `NoResults` when a day is empty
+
+When the index tab shows `NoResults` for the displayed day, the screen now calls `GET /games/dates/closest` with only the displayed date as boundary plus the selected team when set (`teamSelectedIds`, no league filter), and renders navigation buttons inside `NoResults` above the text ("Date précédente disponible (12 mai 2026)" with `history` icon, "Date suivante disponible (...)" with `update` icon — dates localized to the browser locale). Tapping a button navigates to that day via `handleDateChange`. Requests are deduped per date+team via `closestRequestRef`.
+
+**Fix** (team filter resolution) : the slider sends a **label** (ex. "New Jersey Devils"), not a uniqueId. Resolution from `games` failed on empty days (games empty). Fix : resolve label → uniqueId **at selection time** via `getCache<Team[]>('teams')` (24h cache, day-independent) and store in `selectedTeamUniqueId` state. The modal sends the uniqueId directly. The `closest` effect now uses `selectedTeamUniqueId` (works even on empty days). `handleTeamFilterChange` no longer calls `handleTeamSelectionChange` (which would overwrite the uniqueId with the label). **Fallback** in the effect: if `selectedTeamUniqueId` is empty but `teamSelectedId` is a label (contains a space), resolve via `fetchTeams()` before the call — covers the case where the cache was not loaded at click time. **Preload**: `fetchTeams()` called on mount to guarantee the cache is available before any user interaction.
+
+### Files
+
+- `frontend/app/(tabs)/index.tsx` — `closestDates` state + `selectedTeamUniqueId` state + `closest` effect (uses `selectedTeamUniqueId`) + `goToClosestDate` + `handleTeamFilterChange`/`handleTeamSelectionChange` updated + props vers `NoResults`, `fetchClosestDates`/`fetchTeams` imports.
+- `frontend/components/NoResults.tsx` — nouvelles props `previousAvailableDate`/`nextAvailableDate`/`onGoToDate`, boutons de navigation au-dessus du texte.
+- `frontend/utils/utils.tsx` — nouvelles clés `previousAvailableDate`/`nextAvailableDate` traduites en 11 langues.
+- `frontend/docs/index.tsx.md`, `frontend/docs/components/NoResults.tsx.md` — documentation mise à jour.
+
+---
+
 ## Feature: Schedule — "Enable history" button via `closest` route when no upcoming games
 
 When the Schedule tab has no upcoming games (`visibleGamesByMonth` empty) and history is not already enabled, the screen now calls `GET /games/dates/closest` — with `teamSelectedIds=<team>` (or `leagues=<league>` when team selection is `all`) — and if the response contains a `previousDate`, renders an "Activer l'historique" button (label `translateWord('enableHistory')`, `MaterialIcons` `history` icon, matching the provided image) above the "Pas de résultat" (`NoResults`) text. Clicking it enables `showPreviousScores` via `handlePreviousScoreToggle(true)`. The button is hidden while loading or once history is enabled, and requests are deduped per selection via `closestRequestRef`.

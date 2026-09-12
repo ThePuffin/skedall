@@ -7,6 +7,17 @@ import { TouchableOpacity, View } from 'react-native';
 
 const REFRESH_COOLDOWN_MS = 60000;
 
+/** Formats an ISO date (YYYY-MM-DD) following the browser locale (e.g. 12 mai 2026 in FR). */
+const formatDateLocalized = (isoDate: string): string => {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  if (!y || !m || !d) return isoDate;
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
 interface NoResultsProps {
   onRetry?: () => void;
   /** When provided, shows a "Show all results" button while the retry cooldown is active. */
@@ -15,9 +26,23 @@ interface NoResultsProps {
   showHistoryButton?: boolean;
   /** Called when the user taps the "Enable history" button. */
   onEnableHistory?: () => void;
+  /** When provided, shows a "previous available date" navigation button (index tab). */
+  previousAvailableDate?: string | null;
+  /** When provided, shows a "next available date" navigation button (index tab). */
+  nextAvailableDate?: string | null;
+  /** Called with the chosen date (YYYY-MM-DD) when a nav button is tapped. */
+  onGoToDate?: (date: string) => void;
 }
 
-export default function NoResults({ onRetry, onShowAll, showHistoryButton, onEnableHistory }: NoResultsProps) {
+export default function NoResults({
+  onRetry,
+  onShowAll,
+  showHistoryButton,
+  onEnableHistory,
+  previousAvailableDate,
+  nextAvailableDate,
+  onGoToDate,
+}: NoResultsProps) {
   const [isCooldownActive, setIsCooldownActive] = useState(false);
 
   useEffect(() => {
@@ -82,6 +107,60 @@ export default function NoResults({ onRetry, onShowAll, showHistoryButton, onEna
             <ThemedText style={{ fontSize: 14, color: 'gray' }}>{translateWord('enableHistory')}</ThemedText>
           </View>
         </TouchableOpacity>
+      )}
+      {(!!previousAvailableDate || !!nextAvailableDate) && onGoToDate && (
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 12 }}>
+          {!!previousAvailableDate && (
+            <TouchableOpacity
+              onPress={() => onGoToDate(previousAvailableDate)}
+              accessibilityLabel={translateWord('previousAvailableDate')}
+              style={{ padding: 10 }}
+              activeOpacity={0.6}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: 'gray',
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 16,
+                }}
+              >
+                <MaterialIcons name="history" size={18} color="gray" style={{ marginRight: 8 }} />
+                <ThemedText style={{ fontSize: 14, color: 'gray' }}>
+                  {`${translateWord('previousAvailableDate')} (${formatDateLocalized(previousAvailableDate)})`}
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
+          )}
+          {!!nextAvailableDate && (
+            <TouchableOpacity
+              onPress={() => onGoToDate(nextAvailableDate)}
+              accessibilityLabel={translateWord('nextAvailableDate')}
+              style={{ padding: 10 }}
+              activeOpacity={0.6}
+            >
+              <View
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  borderWidth: 1,
+                  borderColor: 'gray',
+                  borderRadius: 8,
+                  paddingVertical: 8,
+                  paddingHorizontal: 16,
+                }}
+              >
+                <MaterialIcons name="update" size={18} color="gray" style={{ marginRight: 8 }} />
+                <ThemedText style={{ fontSize: 14, color: 'gray' }}>
+                  {`${translateWord('nextAvailableDate')} (${formatDateLocalized(nextAvailableDate)})`}
+                </ThemedText>
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
       )}
       <ThemedText
         style={{

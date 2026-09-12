@@ -24,7 +24,15 @@ import { ActionButton, ActionButtonRef } from '../../components/ActionButton';
 import LoadingView from '../../components/LoadingView';
 import { GameStatus, League } from '../../constants/enum';
 import { fetchDateRangeLimits, getDateRangeLimits } from '../../utils/dateRange';
-import { fetchGamesByHour, fetchLeagues, fetchLiveScores, getCache, saveCache } from '../../utils/fetchData';
+import {
+  fetchClosestDates,
+  fetchGamesByHour,
+  fetchLeagues,
+  fetchLiveScores,
+  fetchTeams,
+  getCache,
+  saveCache,
+} from '../../utils/fetchData';
 import { GameFormatted, Team } from '../../utils/types';
 import { getFilterAccordionLabel, translateFilterLabel, translateWord } from '../../utils/utils';
 
@@ -108,11 +116,25 @@ const GameofTheDayContent = () => {
   const [isLoading, setIsLoading] = useState(true);
   const readonlyRef = useRef(false);
   const hasInitializedRef = useRef(false);
+  const [closestDates, setClosestDates] = useState<{ previousDate: string | null; nextDate: string | null }>({
+    previousDate: null,
+    nextDate: null,
+  });
+  const closestRequestRef = useRef('');
+  // Stocke l'uniqueId résolu de l'équipe sélectionnée (slider = label → résolu via cache teams ; modale = uniqueId direct).
+  // Permet à l'effet 'closest' de filtrer par équipe même quand le jour est vide (games vide → résolution impossible depuis games).
+  const [selectedTeamUniqueId, setSelectedTeamUniqueId] = useState('');
 
   const [dateLimits, setDateLimits] = useState(() => getDateRangeLimits());
 
   useEffect(() => {
     fetchDateRangeLimits().then(setDateLimits);
+  }, []);
+
+  // Précharger le cache 'teams' (24h) au montage pour garantir que getCache<Team[]>('teams')
+  // est disponible quand l'utilisateur filtre par équipe via le slider (résolution label → uniqueId).
+  useEffect(() => {
+    fetchTeams().catch(() => {});
   }, []);
 
   const { minDate, maxDate } = dateLimits;
@@ -551,6 +573,8 @@ const GameofTheDayContent = () => {
   const handleTeamSelectionChange = useCallback((teamId: string | string[]) => {
     const finalTeamId = Array.isArray(teamId) ? teamId[0] : teamId;
     setTeamSelectedId(finalTeamId);
+    // La modale envoie directement l'uniqueId : le stocker pour l'effet 'closest'.
+    setSelectedTeamUniqueId(finalTeamId);
   }, []);
 const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     setDateAccordionExpanded(expanded);
@@ -579,6 +603,92 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
   useEffect(() => {
     setRetryCount(0);
   }, [selectDate, selectLeagues, teamSelectedId, activeFilter]);
+
+  // Quand aucun match n'est visible pour le jour + filtre courant, interroger
+  // la route 'closest' avec la date affichée comme borne :
+  // - équipe spécifique sélectionnée → teamSelectedIds (uniqueId déjà résolu dans selectedTeamUniqueId) ;
+  // - sinon ("TOUS") → leagues (la league filtrée, ex. MLB).
+  useEffect(() => {
+    if (isLoading || visibleGamesByHour.length > 0) {
+      if (visibleGamesByHour.length > 0) {
+        closestRequestRef.current = '';
+        setClosestDates({ previousDate: null, nextDate: null });
+      }
+      return;
+    }
+    // Contrat index : date affichée (borne) + équipe spécifique si sélectionnée,
+    // sinon league filtrée quand le filtre équipe est sur "TOUS".
+    // selectedTeamUniqueId contient l'uniqueId résolu au moment de la sélection
+    // (slider : label → résolu via cache teams ; modale : uniqueId direct),
+    // donc utilisable même quand le jour est vide (games vide).
+    // Fallback de sécurité : si selectedTeamUniqueId est vide mais que teamSelectedId
+    // est un label (contient un espace), résoudre via fetchTeams() (cache 24h) avant l'appel.
+    // Cela couvre le cas où le cache 'teams' n'aurait pas été chargé au moment du clic.
+    // League effective : filtre league explicite (ex. MLB via handleFilterChange),
+    // en excluant les pseudo-filtres ALL / FAVORITES / BOOKMARKS.
+    const effectiveLeague =
+      activeFilter !== 'ALL' && activeFilter !== 'FAVORITES' && activeFilter !== 'BOOKMARKS'
+        ? activeFilter
+        : selectLeagues.length === 1 && selectLeagues[0] !== ('ALL' as League)
+          ? selectLeagues[0]
+          : '';
+    const requestKey = [
+      formatDateLocal(selectDate),
+      selectedTeamUniqueId
+        ? `team:${selectedTeamUniqueId}`
+        : teamSelectedId && teamSelectedId.includes(' ')
+          ? `team:${teamSelectedId}`
+          : `league:${effectiveLeague || '-'}`,
+    ].join('|');
+    if (closestRequestRef.current === requestKey) {
+      return;
+    }
+    closestRequestRef.current = requestKey;
+    let cancelled = false;
+    let completed = false;
+    (async () => {
+      try {
+        let resolvedTeamId = selectedTeamUniqueId;
+        if (!resolvedTeamId && teamSelectedId && teamSelectedId.includes(' ')) {
+          try {
+            const teams = await fetchTeams();
+            resolvedTeamId = teams?.find((t) => t.label === teamSelectedId)?.uniqueId ?? '';
+          } catch {
+            resolvedTeamId = '';
+          }
+        }
+        const useTeam = !!resolvedTeamId;
+        const closest = useTeam
+          ? await fetchClosestDates({
+              teamSelectedId: resolvedTeamId,
+              date: formatDateLocal(selectDate),
+            })
+          : await fetchClosestDates({
+              league: effectiveLeague || undefined,
+              date: formatDateLocal(selectDate),
+            });
+        completed = true;
+        if (!cancelled) {
+          setClosestDates({
+            previousDate: closest?.previousDate ?? null,
+            nextDate: closest?.nextDate ?? null,
+          });
+        }
+      } catch {
+        completed = true;
+        if (!cancelled) {
+          setClosestDates({ previousDate: null, nextDate: null });
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+      if (!completed) {
+        closestRequestRef.current = '';
+      }
+    };
+    // selectedTeamUniqueId remplace games pour la résolution équipe (indépendant du jour).
+  }, [isLoading, visibleGamesByHour.length, selectDate, selectedTeamUniqueId, teamSelectedId, selectLeagues, activeFilter]);
 
   const hasFavorites = useMemo(() => {
     return games.some((game) => favoriteTeams.includes(game.homeTeamId) || favoriteTeams.includes(game.awayTeamId));
@@ -669,9 +779,16 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
   const displayFilters = useCallback(() => {
     const handleTeamFilterChange = (val: string) => {
       if (val === 'ALL') {
-        handleTeamSelectionChange('');
+        setTeamSelectedId('');
+        setSelectedTeamUniqueId('');
       } else {
-        handleTeamSelectionChange(val);
+        // Le slider envoie un label (ex. "New Jersey Devils") : résoudre vers l'uniqueId
+        // via le cache 'teams' (24h) pour que l'effet 'closest' puisse filtrer par équipe
+        // même quand le jour affiché est vide (games vide → résolution impossible depuis games).
+        const cachedTeams = getCache<Team[]>('teams');
+        const resolved = cachedTeams?.find((t) => t.label === val)?.uniqueId ?? '';
+        setTeamSelectedId(val);
+        setSelectedTeamUniqueId(resolved);
       }
     };
 
@@ -734,20 +851,45 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     }
   }, [isLoading, getGamesFromApi, selectDate]);
 
+  const goToClosestDate = useCallback(
+    (dateStr: string) => {
+      const [y, m, d] = dateStr.split('-').map(Number);
+      if (!y || !m || !d) return;
+      handleDateChange(new Date(y, m - 1, d), new Date(y, m - 1, d));
+    },
+    [handleDateChange],
+  );
+
   const displayContent = useCallback(() => {
     if (!games || games.length === 0) {
       return displayNoContent();
     }
 
     if (visibleGamesByHour.length === 0) {
+      // Si la route 'closest' a trouvé des dates avec des matchs pour les
+      // filtres courants, proposer de naviguer vers la date en amont/aval.
+      const closestProps =
+        !isLoading && (closestDates.previousDate || closestDates.nextDate)
+          ? {
+              previousAvailableDate: closestDates.previousDate,
+              nextAvailableDate: closestDates.nextDate,
+              onGoToDate: goToClosestDate,
+            }
+          : {};
       // If the user has a filter active (not "All"), offer a way to switch back
       // to the "All" option when the retry cooldown is active.
       const isFiltered =
         activeFilter !== 'ALL' || teamSelectedId !== '' || selectLeagues.length !== allLeaguesList.length;
       if (isFiltered) {
-        return <NoResults onRetry={() => getGamesFromApi(selectDate)} onShowAll={() => handleFilterChange('ALL')} />;
+        return (
+          <NoResults
+            onRetry={() => getGamesFromApi(selectDate)}
+            onShowAll={() => handleFilterChange('ALL')}
+            {...closestProps}
+          />
+        );
       }
-      return <NoResults onRetry={() => getGamesFromApi(selectDate)} />;
+      return <NoResults onRetry={() => getGamesFromApi(selectDate)} {...closestProps} />;
     }
 
     return (
@@ -780,6 +922,8 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     selectLeagues,
     allLeaguesList,
     handleFilterChange,
+    closestDates,
+    goToClosestDate,
   ]);
 
   useEffect(() => {

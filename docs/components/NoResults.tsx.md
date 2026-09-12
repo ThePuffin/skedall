@@ -25,6 +25,10 @@ Optional callback shown as a "Show all results" button **while the retry cooldow
 
 When `showHistoryButton` is true, an "Enable history" button (`translateWord('enableHistory')`, `MaterialIcons` `history` icon) is rendered **above** the "No results" text. Tapping it calls `onEnableHistory`. Used by the Schedule tab: after the `closest` route confirms a `previousDate` for the current selection, `schedule.tsx` passes `showHistoryButton + onEnableHistory={() => handlePreviousScoreToggle(true)}`.
 
+### `previousAvailableDate?` + `nextAvailableDate?` + `onGoToDate?`
+
+When either date is provided (ISO `YYYY-MM-DD`, with `onGoToDate`), navigation buttons are rendered **above** the "No results" text to jump to the closest day with games. Dates are displayed localized via `toLocaleDateString` (browser locale, e.g. "12 mai 2026" in FR); the raw ISO value is kept for navigation. The previous-date button uses the `history` icon (`translateWord('previousAvailableDate')` + date), the next-date button uses the `update` icon (`translateWord('nextAvailableDate')` + date). Used by the Game of the Day tab (`index.tsx`), which calls `GET /games/dates/closest` with the displayed date as boundary plus the selected team when set (no league filter).
+
 ## State Variables
 
 - `isCooldownActive` — whether the retry button is temporarily disabled

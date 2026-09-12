@@ -288,6 +288,8 @@ export const translateWord = (word: string) => {
         selectYourDates: 'Filtrer par période',
         showAllResults: 'Afficher tous les résultats',
         enableHistory: "Activer l'historique",
+        previousAvailableDate: 'Date précédente disponible',
+        nextAvailableDate: 'Date suivante disponible',
         today: 'Aujourd\'hui',
       };
       break;
@@ -372,6 +374,8 @@ export const translateWord = (word: string) => {
         selectYourDates: 'Nach Zeitraum filtern',
         showAllResults: 'Alle Ergebnisse anzeigen',
         enableHistory: 'Verlauf aktivieren',
+        previousAvailableDate: 'Vorheriges verfügbares Datum',
+        nextAvailableDate: 'Nächstes verfügbares Datum',
         today: 'Heute',
       };
       break;
@@ -456,6 +460,8 @@ export const translateWord = (word: string) => {
         selectYourDates: 'Filtrar por período',
         showAllResults: 'Mostrar todos los resultados',
         enableHistory: 'Activar el historial',
+        previousAvailableDate: 'Fecha anterior disponible',
+        nextAvailableDate: 'Fecha siguiente disponible',
         today: 'Hoy',
       };
       break;
@@ -539,6 +545,8 @@ export const translateWord = (word: string) => {
         selectYourDates: 'Filtrar por período',
         showAllResults: 'Mostra tutti i risultati',
         enableHistory: 'Attiva la cronologia',
+        previousAvailableDate: 'Data precedente disponibile',
+        nextAvailableDate: 'Data successiva disponibile',
         today: 'Oggi',
       };
       break;
@@ -622,6 +630,8 @@ export const translateWord = (word: string) => {
         selectYourDates: '期間でフィルター',
         showAllResults: 'すべての結果を表示',
         enableHistory: '履歴を有効にする',
+        previousAvailableDate: '前の利用可能な日付',
+        nextAvailableDate: '次の利用可能な日付',
         today: '今日',
       };
       break;
@@ -704,6 +714,8 @@ export const translateWord = (word: string) => {
         selectYourDates: '기간별 필터링',
         showAllResults: '모든 결과 표시',
         enableHistory: '히스토리 활성화',
+        previousAvailableDate: '이전 가능한 날짜',
+        nextAvailableDate: '다음 가능한 날짜',
         today: '오늘',
       };
       break;
@@ -787,6 +799,8 @@ export const translateWord = (word: string) => {
         selectYourDates: 'Filteren op periode',
         showAllResults: 'Alle resultaten tonen',
         enableHistory: 'Geschiedenis inschakelen',
+        previousAvailableDate: 'Vorige beschikbare datum',
+        nextAvailableDate: 'Volgende beschikbare datum',
         today: 'Vandaag',
       };
       break;
@@ -870,6 +884,8 @@ export const translateWord = (word: string) => {
         selectYourDates: 'Filtrar por período',
         showAllResults: 'Mostrar todos os resultados',
         enableHistory: 'Ativar o histórico',
+        previousAvailableDate: 'Data anterior disponível',
+        nextAvailableDate: 'Próxima data disponível',
         today: 'Hoje',
       };
       break;
@@ -953,6 +969,8 @@ export const translateWord = (word: string) => {
         selectYourDates: 'Filtrar por período',
         showAllResults: 'Показать все результаты',
         enableHistory: 'Включить историю',
+        previousAvailableDate: 'Предыдущая доступная дата',
+        nextAvailableDate: 'Следующая доступная дата',
         today: 'Сегодня',
       };
       break;
@@ -1035,6 +1053,8 @@ export const translateWord = (word: string) => {
         selectYourDates: '按时间段筛选',
         showAllResults: '显示所有结果',
         enableHistory: '启用历史记录',
+        previousAvailableDate: '上一个有比赛的日期',
+        nextAvailableDate: '下一个有比赛的日期',
         today: '今天',
       };
       break;
@@ -1117,6 +1137,8 @@ export const translateWord = (word: string) => {
         selectYourDates: 'Filter by period',
         showAllResults: 'Show all results',
         enableHistory: 'Enable history',
+        previousAvailableDate: 'Previous available date',
+        nextAvailableDate: 'Next available date',
         today: 'Today',
       };
       break;
