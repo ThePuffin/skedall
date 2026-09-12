@@ -2,6 +2,20 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Feature: Schedule — "Enable history" button via `closest` route when no upcoming games
+
+When the Schedule tab has no upcoming games (`visibleGamesByMonth` empty) and history is not already enabled, the screen now calls `GET /games/dates/closest` — with `teamSelectedIds=<team>` (or `leagues=<league>` when team selection is `all`) — and if the response contains a `previousDate`, renders an "Activer l'historique" button (label `translateWord('enableHistory')`, `MaterialIcons` `history` icon, matching the provided image) above the "Pas de résultat" (`NoResults`) text. Clicking it enables `showPreviousScores` via `handlePreviousScoreToggle(true)`. The button is hidden while loading or once history is enabled, and requests are deduped per selection via `closestRequestRef`.
+
+### Files
+
+- `frontend/app/(tabs)/schedule.tsx` — `hasPreviousHistory` state + `closest` effect + passe `showHistoryButton`/`onEnableHistory` à `NoResults`.
+- `frontend/components/NoResults.tsx` — nouvelles props `showHistoryButton`/`onEnableHistory`, bouton "Enable history" (`MaterialIcons` `history`) au-dessus du texte.
+- `frontend/utils/fetchData.ts` — new `fetchClosestDates({ league?, teamSelectedId?, date? })` helper (`GET /games/dates/closest`).
+- `frontend/utils/utils.tsx` — new `enableHistory` translation key (FR "Activer l'historique"; EN fallback "Enable history").
+- `frontend/docs/schedule.tsx.md`, `frontend/docs/fetchData.ts.md` — documentation updated.
+
+---
+
 ## Fix: Separator hidden before datepicker modal appears (Calendar tab)
 
 The `<Separator />` below the date range filter accordion is now hidden **before** the calendar modal fades in. The `DateRangePicker` now has a `showModal` state that delays the visual rendering of the modal by 150ms after `isOpen` becomes true, giving the parent time to hide the separator (via `onOpenChange`) first. A 200ms fade animation plays on both web (CSS keyframes) and native (Modal `animationType="fade"`).

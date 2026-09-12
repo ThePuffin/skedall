@@ -287,7 +287,7 @@ export const translateWord = (word: string) => {
         changePreferences: 'Changer mes préférences',
         selectYourDates: 'Filtrer par période',
         showAllResults: 'Afficher tous les résultats',
-
+        enableHistory: "Activer l'historique",
         today: 'Aujourd\'hui',
       };
       break;
@@ -371,6 +371,7 @@ export const translateWord = (word: string) => {
         changePreferences: 'Präferenzen ändern',
         selectYourDates: 'Nach Zeitraum filtern',
         showAllResults: 'Alle Ergebnisse anzeigen',
+        enableHistory: 'Verlauf aktivieren',
         today: 'Heute',
       };
       break;
@@ -454,6 +455,7 @@ export const translateWord = (word: string) => {
         changePreferences: 'Cambiar mis preferencias',
         selectYourDates: 'Filtrar por período',
         showAllResults: 'Mostrar todos los resultados',
+        enableHistory: 'Activar el historial',
         today: 'Hoy',
       };
       break;
@@ -536,6 +538,7 @@ export const translateWord = (word: string) => {
         changePreferences: 'Cambia le mie preferenze',
         selectYourDates: 'Filtrar por período',
         showAllResults: 'Mostra tutti i risultati',
+        enableHistory: 'Attiva la cronologia',
         today: 'Oggi',
       };
       break;
@@ -618,6 +621,7 @@ export const translateWord = (word: string) => {
         changePreferences: '設定を変更する',
         selectYourDates: '期間でフィルター',
         showAllResults: 'すべての結果を表示',
+        enableHistory: '履歴を有効にする',
         today: '今日',
       };
       break;
@@ -699,6 +703,7 @@ export const translateWord = (word: string) => {
         changePreferences: '기본 설정 변경',
         selectYourDates: '기간별 필터링',
         showAllResults: '모든 결과 표시',
+        enableHistory: '히스토리 활성화',
         today: '오늘',
       };
       break;
@@ -781,6 +786,7 @@ export const translateWord = (word: string) => {
         changePreferences: 'Voorkeuren wijzigen',
         selectYourDates: 'Filteren op periode',
         showAllResults: 'Alle resultaten tonen',
+        enableHistory: 'Geschiedenis inschakelen',
         today: 'Vandaag',
       };
       break;
@@ -863,6 +869,7 @@ export const translateWord = (word: string) => {
         changePreferences: 'Alterar preferências',
         selectYourDates: 'Filtrar por período',
         showAllResults: 'Mostrar todos os resultados',
+        enableHistory: 'Ativar o histórico',
         today: 'Hoje',
       };
       break;
@@ -945,6 +952,7 @@ export const translateWord = (word: string) => {
         changePreferences: 'Изменить настройки',
         selectYourDates: 'Filtrar por período',
         showAllResults: 'Показать все результаты',
+        enableHistory: 'Включить историю',
         today: 'Сегодня',
       };
       break;
@@ -1026,6 +1034,7 @@ export const translateWord = (word: string) => {
         changePreferences: '更改偏好',
         selectYourDates: '按时间段筛选',
         showAllResults: '显示所有结果',
+        enableHistory: '启用历史记录',
         today: '今天',
       };
       break;
@@ -1107,6 +1116,8 @@ export const translateWord = (word: string) => {
         changePreferences: 'Change my preferences',
         selectYourDates: 'Filter by period',
         showAllResults: 'Show all results',
+        enableHistory: 'Enable history',
+        today: 'Today',
       };
       break;
   }

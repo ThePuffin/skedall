@@ -1,7 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { translateWord } from '@/utils/utils';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { TouchableOpacity, View } from 'react-native';
 
@@ -11,9 +11,13 @@ interface NoResultsProps {
   onRetry?: () => void;
   /** When provided, shows a "Show all results" button while the retry cooldown is active. */
   onShowAll?: () => void;
+  /** When true, shows the "Enable history" button above the "No results" text. */
+  showHistoryButton?: boolean;
+  /** Called when the user taps the "Enable history" button. */
+  onEnableHistory?: () => void;
 }
 
-export default function NoResults({ onRetry, onShowAll }: NoResultsProps) {
+export default function NoResults({ onRetry, onShowAll, showHistoryButton, onEnableHistory }: NoResultsProps) {
   const [isCooldownActive, setIsCooldownActive] = useState(false);
 
   useEffect(() => {
@@ -56,6 +60,29 @@ export default function NoResults({ onRetry, onShowAll }: NoResultsProps) {
         marginVertical: 40,
       }}
     >
+      {showHistoryButton && (
+        <TouchableOpacity
+          onPress={onEnableHistory}
+          accessibilityLabel={translateWord('enableHistory')}
+          style={{ marginBottom: 12, padding: 10 }}
+          activeOpacity={0.6}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              borderWidth: 1,
+              borderColor: 'gray',
+              borderRadius: 8,
+              paddingVertical: 8,
+              paddingHorizontal: 16,
+            }}
+          >
+            <MaterialIcons name="history" size={18} color="gray" style={{ marginRight: 8 }} />
+            <ThemedText style={{ fontSize: 14, color: 'gray' }}>{translateWord('enableHistory')}</ThemedText>
+          </View>
+        </TouchableOpacity>
+      )}
       <ThemedText
         style={{
           fontSize: 16,

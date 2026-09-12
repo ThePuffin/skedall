@@ -21,6 +21,10 @@ Optional callback executed when the user presses the refresh button.
 
 Optional callback shown as a "Show all results" button **while the retry cooldown is active**. Used by screens (index, schedule) to let the user switch back to the "All" filter when a filtered view has no results and retry is temporarily unavailable.
 
+### `showHistoryButton?: boolean` + `onEnableHistory?: () => void`
+
+When `showHistoryButton` is true, an "Enable history" button (`translateWord('enableHistory')`, `MaterialIcons` `history` icon) is rendered **above** the "No results" text. Tapping it calls `onEnableHistory`. Used by the Schedule tab: after the `closest` route confirms a `previousDate` for the current selection, `schedule.tsx` passes `showHistoryButton + onEnableHistory={() => handlePreviousScoreToggle(true)}`.
+
 ## State Variables
 
 - `isCooldownActive` — whether the retry button is temporarily disabled
