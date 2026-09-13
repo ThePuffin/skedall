@@ -738,7 +738,7 @@ export default function Calendar() {
               >
                 <ThemedElements style={{ zIndex: 20 }}>
                   <div style={{ position: 'relative' }}>
-                    <DateRangePicker dateRange={dateRange} onDateChange={handleDateChange} onOpenChange={setDatepickerOpen} />
+                    <DateRangePicker dateRange={dateRange} onDateChange={handleDateChange} onOpenChange={setDatepickerOpen} title={translateWord('selectYourDates')} />
                   </div>
                 </ThemedElements>
               </FilterAccordion>

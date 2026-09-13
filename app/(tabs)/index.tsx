@@ -1161,6 +1161,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
                             selectDate={selectDate}
                             onDateChange={handleDateChange}
                             showInput={false}
+                            title={translateFilterLabel('date')}
                           />
                         </div>
                       </div>

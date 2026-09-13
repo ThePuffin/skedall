@@ -112,6 +112,8 @@ export interface DateRangePickerProps {
   showInput?: boolean;
   /** Notifies when the calendar dropdown opens/closes (imperatively or via date selection / click-outside). */
   onOpenChange?: (open: boolean) => void;
+  /** Modal title shown at the top of the calendar card. Auto-derived when omitted: "Filter by period" for single-date mode, "Filter by interval" for range mode. */
+  title?: string;
 }
 
 export interface IconButtonProps extends ButtonProps {

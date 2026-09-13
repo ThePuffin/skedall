@@ -2,6 +2,46 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Change: Datepicker modal — title matching the filter accordion + fixed height + top-aligned position
+
+The `DateRangePicker` modal is now aligned with the team/league filter (`Selector`) modal pattern:
+
+- **Title header** — the modal card gained a header row (`styles.header`) with the **title on the left** (`styles.headerTitle`, `modalTitle`) and the **close (X) button on the right**. The title is taken from the new optional `title` prop, so each parent passes the **same label as its date filter accordion**: `index.tsx` passes `translateFilterLabel('date')` ("Filtrer par date"), `calendar.tsx` passes `translateWord('selectYourDates')` ("Filtrer par période"). When omitted, `modalTitle` auto-derives from the mode: single-date → `translateWord('selectYourDates')`, range → `translateWord('filterInterval')`.
+- **Fixed / bounded height** — the calendar is wrapped in a `ScrollView` (`styles.scrollContent`, `maxHeight: 400`) so the content is always scrollable and never clipped, regardless of the page/viewport height.
+- **Top-aligned position** — the modal backdrop now uses `justifyContent: 'flex-start'` with a `paddingTop` margin (web 60px, native 80px) instead of being vertically centered, so the whole card is always visible on the screen.
+
+### Files
+- `frontend/components/DatePicker.tsx` — added `title` prop; `modalTitle` computed from `title ?? (selectDate ? selectYourDates : filterInterval)`; `calendarCard` now renders a `styles.header` (title + ✕) and a `ScrollView` (`styles.scrollContent` / `scrollContentContainer`, maxHeight 400) around the calendar; the "Aujourd'hui" button moved into a **footer** (`styles.footer`) **always rendered below** the ScrollView — in single-date mode it hosts the button, in range mode it acts as an **empty ~10px bottom buffer** — so it never disappears when the calendar fills the scroll height; removed `calendarContainer` style (replaced by `modalContent`/`header`/`headerTitle`/`scrollContent`/`scrollContentContainer`/`footer`); modal backdrop top-aligned.
+- `frontend/utils/types.tsx` — `DateRangePickerProps` gained `title?: string`.
+- `frontend/utils/utils.tsx` — added `filterInterval` translation key across all languages.
+- `frontend/app/(tabs)/index.tsx` — passes `title={translateFilterLabel('date')}` to the hidden `DateRangePicker`.
+- `frontend/app/(tabs)/calendar.tsx` — passes `title={translateWord('selectYourDates')}` to the `DateRangePicker`.
+- `frontend/docs/components/DatePicker.tsx.md` — documented the title header, `title` prop, bounded height, and top-aligned position.
+
+## Change: Datepicker range mode — explicit "Valider" button (deferred commit)
+
+In range mode (schedule tab), the datepicker no longer commits the selection and closes automatically after the second tap:
+
+- **Staged selection** — picking days only updates the local `tempRange`; the parent's `dateRange` is untouched.
+- **"Valider" footer button** — the selection is committed via `onDateChange` only when the user presses the new **"Valider" button** in the modal footer (same spot as the "Aujourd'hui" button on index). The button is disabled (greyed) until both bounds are picked.
+- **Revert on dismiss** — closing the modal any other way (backdrop, ✕, outside click) keeps the previous selection: on next open, the `isOpen` effect re-syncs `tempRange` from the committed `dateRange` props.
+- Single-date mode (index) is unchanged: tapping a day selects and closes immediately.
+
+### Files
+- `frontend/components/DatePicker.tsx` — `handleDayPress` (range mode) no longer commits/closes; new `handleValidateRange`; footer renders the "Valider" button in range mode; `isOpen` effect re-syncs `tempRange` from props on open.
+- `frontend/utils/utils.tsx` — added `validate` translation key across all 11 languages.
+- `frontend/docs/components/DatePicker.tsx.md` — documented the validation flow.
+
+## Fix: Modal closed when picking the range end in another month
+
+Presses inside the calendar (day cells, month-navigation arrows) bubbled up to the **parent** backdrop `TouchableOpacity` (RN-web propagation), closing the modal during the staged range selection. The dimmed backdrop is now a **sibling layer behind the card** (an `absoluteFill` TouchableOpacity underneath a `position: 'relative', zIndex: 1` card wrapper) on both web and native, so taps on the card can never reach the backdrop. Tapping outside the card still closes the picker.
+
+### Files
+- `frontend/components/DatePicker.tsx` — restructured the web overlay and native Modal: backdrop press-catcher as sibling `absoluteFill` layer, card in a `position: 'relative', zIndex: 1` wrapper above it.
+- `frontend/docs/components/DatePicker.tsx.md` — documented the sibling-backdrop structure.
+
+---
+
 ## Feature: Game of the Day — `closest` date navigation in `NoResults` when a day is empty
 
 When the index tab shows `NoResults` for the displayed day, the screen now calls `GET /games/dates/closest` with only the displayed date as boundary plus the selected team when set (`teamSelectedIds`, no league filter), and renders navigation buttons inside `NoResults` above the text ("Date précédente disponible (12 mai 2026)" with `history` icon, "Date suivante disponible (...)" with `update` icon — dates localized to the browser locale). Tapping a button navigates to that day via `handleDateChange`. Requests are deduped per date+team via `closestRequestRef`.
