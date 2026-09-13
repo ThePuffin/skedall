@@ -2,6 +2,22 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Change: FilterSlider — pinned selection outside the scroll (league / team / VS bars)
+
+On the Game of the Day (index) and Schedule tabs, the filter bars no longer scroll the selected chip:
+
+- **Pinned selection** — in single-selection sorted mode, `FilterSlider` renders the selected chip and its separator **outside** the ScrollView, pinned at the left. The scrollable area starts after them.
+- **Label truncation (mobile)** — on mobile, a pinned chip whose label exceeds 12 characters is truncated in JS starting at the 9th character (first 9 chars + `…`) instead of CSS `text-overflow`, which react-native-web doesn't apply reliably on `Text`.
+- **Left fade on the first scrollable chip** — the left edge fade is now a simple 40px ramp from the ScrollView's own left edge, so the first scrollable chip fades — the selection never fades and never scrolls.
+- **TeamFilter simplified** — the ScrollView no longer extends under the loupe/VS button: `marginLeft: -50`, `scrollPaddingLeft={50}` and `fadeLeftInset={50}` were removed; the pinned chip takes that space.
+- **Unchanged** — multi-selection bars (calendar team filter) and `disableSort` bars (month filter) keep the previous in-scroll behavior.
+
+### Files
+- `frontend/components/FilterSlider.tsx` — added `pinnedItem`/`scrollItems` memos; `renderChip` helper (chip + separator); pinned chip + separator rendered before the ScrollView (which gets `flex: 1` when pinned); `edgeMask` left ramp switches to `transparent 0px → black 40px` when pinned.
+- `frontend/components/TeamFilter.tsx` — removed the negative-margin overlay (`marginLeft: -50`, `scrollPaddingLeft`, `fadeLeftInset`).
+- `frontend/docs/components/FilterSlider.tsx.md`, `frontend/docs/components/TeamFilter.tsx.md` — documented the pinned-selection behavior.
+
+## Change: Datepicker modal — title matching the filter accordion + fixed height + top-aligned position
 ## Change: Datepicker modal — title matching the filter accordion + fixed height + top-aligned position
 
 The `DateRangePicker` modal is now aligned with the team/league filter (`Selector`) modal pattern:
