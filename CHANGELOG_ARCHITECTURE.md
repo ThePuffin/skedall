@@ -2,6 +2,16 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Change: Calendar — prevent swipe-to-filter from capturing horizontal scroll on the team filter
+
+On the Calendar tab, swiping left/right on the page cycles through the home/all/away game filter. Previously, a horizontal swipe on the team `FilterSlider` was also captured by the page-level `PanResponder`, accidentally changing the filter.
+
+- **Horizontal scroll guard** — `calendar.tsx` now reads `isScrollingHorizontally` from `HorizontalScrollContext` (via `useHorizontalScroll()`), mirrors it into `isScrollingHorizontallyRef`, and the `swipePanResponder`'s `onMoveShouldSetPanResponder` returns `false` while that ref is true — exactly the pattern already used in `index.tsx`. This prevents the swipe gesture from being claimed when the user is scrolling the team filter slider.
+
+### Files
+- `frontend/app/(tabs)/calendar.tsx` — imported `useHorizontalScroll`; added `isScrollingHorizontallyRef` + sync `useEffect`; guarded `onMoveShouldSetPanResponder`.
+- `frontend/docs/calendar.tsx.md` — documented the horizontal-scroll guard on `swipePanResponder`.
+
 ## Change: FilterSlider — pinned selection outside the scroll (league / team / VS bars)
 
 On the Game of the Day (index) and Schedule tabs, the filter bars no longer scroll the selected chip:

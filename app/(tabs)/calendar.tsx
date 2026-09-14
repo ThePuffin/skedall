@@ -6,6 +6,7 @@ import { ThemedElements } from '@/components/ThemedElements';
 import { ThemedView } from '@/components/ThemedView';
 import { maxTeamsNumber } from '@/constants/Constants';
 import { useAuth } from '@/context/AuthContext';
+import { useHorizontalScroll } from '@/context/HorizontalScrollContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { fetchDateRangeFromApi, fetchTeams, getCache, saveCache } from '@/utils/fetchData';
 import { syncToFirestore } from '@/utils/syncService';
@@ -39,6 +40,7 @@ const EXPO_PUBLIC_API_BASE_URL =
 
 export default function Calendar() {
   const { user, firestoreReady } = useAuth();
+  const { isScrollingHorizontally } = useHorizontalScroll();
   const iconColor = useThemeColor({}, 'text');
   const backgroundColor = useThemeColor({ light: '#F0F0F0', dark: '#121212' }, 'background');
   const modalBackgroundColor = useThemeColor({ light: '#ffffff', dark: '#000' }, 'background');
@@ -60,9 +62,14 @@ export default function Calendar() {
   const [hiddenTeams, setHiddenTeams] = useState<string[]>([]);
   const [gamesModalVisible, setGamesModalVisible] = useState(false);
   const isRestoringSelectionRef = useRef(false);
+  const isScrollingHorizontallyRef = useRef(isScrollingHorizontally);
   const [isTeamAccordionOpen, setIsTeamAccordionOpen] = useState(true);
   const [isDateAccordionOpen, setIsDateAccordionOpen] = useState(false);
   const [datepickerOpen, setDatepickerOpen] = useState(false);
+
+  useEffect(() => {
+    isScrollingHorizontallyRef.current = isScrollingHorizontally;
+  }, [isScrollingHorizontally]);
 
   useEffect(() => {
     const updateLeagues = () => {
@@ -615,6 +622,10 @@ export default function Calendar() {
   const swipePanResponder = useMemo(() => {
     return PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
+        // Don't capture horizontal swipes if we're scrolling horizontally (e.g., in FilterSlider)
+        if (isScrollingHorizontallyRef.current) {
+          return false;
+        }
         // Only capture horizontal swipes (ignore vertical scroll)
         return Math.abs(gestureState.dx) > 20 && Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.5;
       },

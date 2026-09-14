@@ -90,7 +90,7 @@ A `PanResponder` created with `useMemo` that detects horizontal swipes on the pa
 - **Swipe left** (`dx < -30`) → next filter
 - **Swipe right** (`dx > 30`) → previous filter
 
-Only horizontal swipes are captured (ignores vertical scroll) via `onMoveShouldSetPanResponder`.
+Only horizontal swipes are captured (ignores vertical scroll) via `onMoveShouldSetPanResponder`. It also checks `isScrollingHorizontallyRef` (mirroring `isScrollingHorizontally` from `HorizontalScrollContext`) and refuses to capture the gesture when the user is scrolling horizontally inside a `FilterSlider` (e.g., the team filter), preventing accidental filter changes.
 
 ## Key Memoized Values
 
