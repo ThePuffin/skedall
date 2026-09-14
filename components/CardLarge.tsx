@@ -277,6 +277,7 @@ export default function CardLarge({
   const isToday = now.toDateString() === start.toDateString();
   const diffHours = (now.getTime() - start.getTime()) / (1000 * 60 * 60);
   const isLive =
+    status !== GameStatus.DELAYED &&
     (status === GameStatus.IN_PROGRESS ||
       (!!gameStatus &&
         ['Top', 'Bot', 'Mid', 'End', '1st', '2nd', '3rd', '4th', 'OT', 'Half', "'", 'In SO'].some((s) =>
@@ -351,6 +352,8 @@ export default function CardLarge({
     timeText = translateWord('final');
   } else if (gameStatus === GameStatus.POSTPONED) {
     timeText = translateWord('postponedGame');
+  } else if (status === GameStatus.DELAYED) {
+    timeText = translateWord('delayedGame');
   } else if ((status === GameStatus.FINISHED || status === GameStatus.FINAL) && hasScore) {
     if (showDate && startTimeUTC) {
       timeText = showTime

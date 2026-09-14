@@ -79,19 +79,23 @@ export default function GameModal({
   const diffHours = (new Date().getTime() - new Date(startTimeUTC).getTime()) / (1000 * 60 * 60);
   const isStarted3hAgo = diffHours > 3;
   const isLive =
-    status === GameStatus.IN_PROGRESS ||
-    (!!gameStatus &&
-      ['Top', 'Bot', 'Mid', 'End', '1st', '2nd', '3rd', '4th', 'OT', 'Half', "'", 'In SO'].some((s) =>
-        gameStatus.includes(s),
-      ) &&
-      !gameStatus.toUpperCase().includes('FINAL') &&
-      !gameStatus.toUpperCase().includes('ENDED')) ||
-    (hasScore && isToday && status !== GameStatus.FINISHED && status !== GameStatus.FINAL);
+    (status as GameStatus) !== GameStatus.DELAYED &&
+    ((status as GameStatus) === GameStatus.IN_PROGRESS ||
+      (!!gameStatus &&
+        ['Top', 'Bot', 'Mid', 'End', '1st', '2nd', '3rd', '4th', 'OT', 'Half', "'", 'In SO'].some((s) =>
+          gameStatus.includes(s),
+        ) &&
+        !gameStatus.toUpperCase().includes('FINAL') &&
+        !gameStatus.toUpperCase().includes('ENDED')) ||
+      (hasScore &&
+        isToday &&
+        (status as GameStatus) !== GameStatus.FINISHED &&
+        (status as GameStatus) !== GameStatus.FINAL));
   const isGameFinishedByStatus =
     gameStatus?.toUpperCase().includes('FINAL') ||
     gameStatus?.toUpperCase().includes('ENDED') ||
-    status === GameStatus.FINAL ||
-    status === GameStatus.FINISHED;
+    (status as GameStatus) === GameStatus.FINAL ||
+    (status as GameStatus) === GameStatus.FINISHED;
   const gameStatusAlreadyIncludesClock = (status?: string, clock?: string) => {
     if (!status || !clock) return false;
     const normalizedStatus = status.toLowerCase();
@@ -175,8 +179,16 @@ export default function GameModal({
       );
     }
 
+    if ((status as GameStatus) === GameStatus.DELAYED) {
+      return (
+        <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
+          {translateWord('delayedGame')}
+        </ThemedText>
+      );
+    }
+
     if (hasScore) {
-      if (status === GameStatus.FINAL || status === GameStatus.FINISHED) {
+      if ((status as GameStatus) === GameStatus.FINISHED) {
         return (
           <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
             {translateWord('score')}
@@ -184,7 +196,8 @@ export default function GameModal({
         );
       }
 
-      const statusText = status === GameStatus.FINAL ? translateWord('final') : translateWord('ended');
+      const statusText =
+        (status as GameStatus) === GameStatus.FINAL ? translateWord('final') : translateWord('ended');
       return (
         <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
           {statusText}

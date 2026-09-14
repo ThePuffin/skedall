@@ -2,6 +2,27 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Change: Display interrupted games with a translated "Match interrompu" status
+
+### Problem
+
+A temporarily interrupted game (rain delay / suspended) was conflated with a postponement on the backend and set `isActive = false`, so it never appeared with its own status. The frontend had no `DELAYED` handling and no translation.
+
+### Solution
+
+- Added `DELAYED` to the `GameStatus` enum (`constants/enum.tsx`).
+- `getGamesStatus()` (`utils/date.ts`) returns `GameStatus.DELAYED` when `gameStatus` contains `DELAY`/`SUSPEND`/`RAIN`/`WEATHER`.
+- `CardLarge.tsx` displays the translated `delayedGame` label ("Match interrompu") and excludes `DELAYED` games from the live badge (no pulsing dot).
+- Added the `delayedGame` translation key in all 11 languages in `utils/utils.tsx`.
+
+### Files
+- `frontend/constants/enum.tsx` — `DELAYED` enum value
+- `frontend/utils/date.ts` — `getGamesStatus()` returns `DELAYED`
+- `frontend/components/CardLarge.tsx` — translated label + live-badge exclusion
+- `frontend/components/GameModal.tsx` — translated `delayedGame` label + live exclusion (same as card)
+- `frontend/utils/utils.tsx` — `delayedGame` translations (11 languages)
+- `frontend/docs/date.ts.md`, `frontend/docs/components/CardLarge.tsx.md` — updated docs
+
 ## Change: Calendar — prevent swipe-to-filter from capturing horizontal scroll on the team filter
 
 On the Calendar tab, swiping left/right on the page cycles through the home/all/away game filter. Previously, a horizontal swipe on the team `FilterSlider` was also captured by the page-level `PanResponder`, accidentally changing the filter.

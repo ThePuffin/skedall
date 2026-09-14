@@ -38,7 +38,7 @@ The **GameModal** component displays a detailed game popup with team logos, reco
 - `displayData` — `liveGame || data`
 - `hasScore` — both team scores are non-null
 - `status` — game status via `getGamesStatus(displayData)`
-- `isLive` — true when status is in-progress, period text is present, or scores exist today and game isn't final
+- `isLive` — true when status is in-progress, period text is present, or scores exist today and game isn't final (excludes `DELAYED` — interrupted games are not live)
 - `showFinalization` — no scores, not terminated, and game started > 3h ago (renders "Final")
 - `liveTimeText` — combined clock + period text without duplication
 - `stadiumSearch` — arena + place formatted for Google Maps query
@@ -63,8 +63,9 @@ Builds the ESPN standings URL from the `leagueMapping` constant, or returns `nul
 
 Renders the game status area:
 
-- **Live** — red clock/period text (or status string)
+- **Live** — red clock/period text (or status string); interrupted (`DELAYED`) games are excluded from live
 - **Finalized late** — "Final" fallback when no scores were reported
+- **Interrupted/Delayed** — translated `delayedGame` label ("Match interrompu")
 - **Has scores** — "Final"/"Ended"/"Score" label
 - **Default** — localized date/time of the game
 

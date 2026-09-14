@@ -65,11 +65,14 @@ The `timeText` is determined by game status:
 
 1. **Finalization** (no score, live status, started 4h+ ago) → `"Finalisation"`
 2. **Postponed** → `"Match reporté"`
-3. **Finished/Final with score** → date/time or `"Détails du match"`
-4. **Started 4h+ ago** → game status / period
-5. **Live** → `"{clock} - {period}"` or `"En cours"`
-6. **Has score** → `"Final"` or period info
-7. **Scheduled** → start time
+3. **Interrupted/Delayed** (rain delay, suspended) → `"Match interrompu"` (translated `delayedGame`)
+4. **Finished/Final with score** → date/time or `"Détails du match"`
+5. **Started 4h+ ago** → game status / period
+6. **Live** → `"{clock} - {period}"` or `"En cours"`
+7. **Has score** → `"Final"` or period info
+8. **Scheduled** → start time
+
+Interrupted/delayed games (`GameStatus.DELAYED`) are excluded from the live badge (no pulsing dot) since they aren't actively in progress.
 
 ## Data Flow
 
