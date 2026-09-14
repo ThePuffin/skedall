@@ -2,6 +2,22 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Change: Calendar — home/away swipe only on the games cards (never from filters)
+
+### Problem
+
+On the Calendar tab, swiping left/right on the page cycles home/all/away, but a swipe starting on the team-filter chips (FilterSlider) also triggered the root-level `PanResponder`, changing the home/away filter unintentionally. The flag-based approach (`onTouchStart`/`onPointerDown` on the filter zone) didn't work because on native the parent `PanResponder` negotiates the gesture before the child touch handlers reliably set the flag.
+
+### Solution
+
+- Removed the root-level `{...swipePanResponder.panHandlers}` from `ThemedView` and the `isTouchOnTeamFilterRef` flag/handlers.
+- `swipePanResponder.panHandlers` are now attached ONLY to the `View` wrapping `displayAccordions()` (the games cards). Swipes starting in the filter zone (team slider, date picker, buttons, header) can never reach the PanResponder, so they never change the home/away filter. Only swipes starting on the cards count.
+
+### Files
+
+- `frontend/app/(tabs)/calendar.tsx` — panHandlers moved from root view to games-cards wrapper.
+- `frontend/docs/calendar.tsx.md` — documented that swipe is scoped to the cards container.
+
 ## Change: Display interrupted games with a translated "Match interrompu" status
 
 ### Problem

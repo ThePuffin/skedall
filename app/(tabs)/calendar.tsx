@@ -618,7 +618,11 @@ export default function Calendar() {
     }
   }, [teamsSelected, teams]);
 
-  // Swipe gesture to cycle through home / all / away filters
+  // Swipe gesture to cycle through home / all / away filters.
+  // IMPORTANT: panHandlers are attached ONLY to the games-cards container
+  // (see below), NOT to the root view — so swipes starting in the filter
+  // zone (league/month/team sliders, date picker, buttons) can never
+  // trigger a home/away filter change. Only swipes starting on the cards count.
   const swipePanResponder = useMemo(() => {
     return PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
@@ -642,7 +646,7 @@ export default function Calendar() {
   }, [homeGameVisibility, handleHomeGameToggle]);
 
   return (
-    <ThemedView style={{ flex: 1 }} {...swipePanResponder.panHandlers}>
+    <ThemedView style={{ flex: 1 }}>
       <PageHeader rightElement={<HomeGameToggle value={homeGameVisibility} onValueChange={handleHomeGameToggle} />} />
       <ScrollView
         ref={scrollViewRef}
@@ -762,7 +766,7 @@ export default function Calendar() {
           </ThemedView>
         </div>
         {!teamsSelected.length && <LoadingView />}
-        {displayAccordions()}
+        <View {...swipePanResponder.panHandlers}>{displayAccordions()}</View>
       </ScrollView>
       <Modal
         animationType="slide"
