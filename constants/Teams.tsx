@@ -249,6 +249,7 @@ export const TeamsEnum: Record<string, string> = {
   'NCAAF-BOIS': 'Boise State Broncos',
   'NCAAF-BRIS': 'Bridgewater State Bears',
   'NCAAF-BRY': 'Bryant Bulldogs',
+  'NCAAF-BUCK': 'Bucknell Bison',
   'NCAAF-BUFF': 'Buffalo Bulls',
   'NCAAF-BVU': 'Buena Vista Beavers',
   'NCAAF-BYU': 'Byu Cougars',
