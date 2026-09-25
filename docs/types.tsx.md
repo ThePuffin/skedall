@@ -49,6 +49,8 @@ Represents a formatted game object returned by the API:
 | `gameStatus?`             | `string`         | Game status (e.g., "FINAL", "1st", "OT") |
 | `gameClock?`              | `string`         | Game clock                               |
 | `gamePeriod?`             | `number`         | Game period                              |
+| `seriesSummary?`          | `string`         | Series/doubleheader note (ESPN headline) |
+| `seriesStatus?`           | `string`         | Series status summary                    |
 
 ### `League`
 

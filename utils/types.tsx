@@ -39,6 +39,8 @@ export interface GameFormatted {
   gameStatus?: string;
   gameClock?: string;
   gamePeriod?: number;
+  seriesSummary?: string;
+  seriesStatus?: string;
 }
 
 export interface League {

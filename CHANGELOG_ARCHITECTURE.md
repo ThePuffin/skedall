@@ -2,6 +2,33 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fix: Schedule — show all games of the same day (doubleheaders)
+
+### Problem
+
+Le backend `GET /games/team/:id?clean=true` renvoyait bien les 2 matchs MLB-CHC du
+2026-09-25 (doubleheader Game 1 + Game 2), mais la page Schedule n'en affichait
+qu'un seul. En cause : `visibleGamesByMonth` utilisait `dayGames.find(...)` pour
+la sélection d'équipe, qui ne garde que le PREMIER match du jour.
+
+### Solution
+
+- Remplacé `find` par `filter` + `push(...gamesOnDay)` : tous les matchs du jour
+  pour `gamesTeamId` sont conservés (les cartes sont déjà triées par
+  `startTimeUTC` via `mergeGames`).
+
+### Files
+
+- `frontend/app/(tabs)/schedule.tsx` — `visibleGamesByMonth` keeps all day games.
+- `frontend/docs/schedule.tsx.md` — documented doubleheader behavior.
+- `frontend/components/CardLarge.tsx` — schedule cards (`showDate + showTime`)
+  stack date above and time below on two lines (computed separately via `Intl`,
+  locale-independent), so two games the same day are distinguishable by hour;
+  `timeContainer` uses `minHeight` instead of fixed height to allow the second line.
+- `frontend/utils/types.tsx` + `frontend/docs/types.tsx.md` — `GameFormatted`
+  gains optional `seriesSummary`/`seriesStatus` (already sent by the API).
+- `frontend/docs/components/CardLarge.tsx.md` — documented two-line date/time.
+
 ## Change: Calendar — home/away swipe only on the games cards (never from filters)
 
 ### Problem

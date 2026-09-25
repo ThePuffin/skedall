@@ -510,9 +510,9 @@ export default function Schedule() {
               acc.push(...dayGames);
             }
           } else {
-            const gameOnDay = dayGames.find((game: GameFormatted) => game.teamSelectedId === gamesTeamId);
-            if (gameOnDay) {
-              acc.push(gameOnDay);
+            const gamesOnDay = dayGames.filter((game: GameFormatted) => game.teamSelectedId === gamesTeamId);
+            if (gamesOnDay.length) {
+              acc.push(...gamesOnDay);
             }
           }
           return acc;
