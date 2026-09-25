@@ -10,16 +10,20 @@ The **GamesSelected** component renders a responsive grid of selected (bookmarke
 - **Vertical mode** — uses `verticalMode` when many teams (> 6) or on small devices
 - **Animations** — enables entry/exit animations on the cards (`animateEntry`, `animateExit`)
 - **Click handling** — forwards selection to `onAction(game)`
+- **Favorites mode** — when `onRemoveFromFavorites` is provided, each card is put in
+  favorites-details mode: tapping the card opens `GameModal` (whose trash button removes the
+  game) instead of calling `onAction`
 - **Centered single card** — a single selected team's card is centered at 33% width on desktop
 - **Unique keys** — uses `uniqueId` or `_id` for card keys
 
 ## Props (`GamesSelectedProps`)
 
-| Prop         | Type              | Default | Description                                    |
-| ------------ | ----------------- | ------- | ---------------------------------------------- |
-| `data`       | `GameFormatted[]` | `[]`    | Games to display                               |
-| `onAction`   | `(game) => void`  | —       | Called when a card is selected                 |
-| `teamNumber` | `number`          | `1`     | Number of selected teams (drives column count) |
+| Prop                    | Type                    | Default | Description                                             |
+| ----------------------- | ----------------------- | ------- | ------------------------------------------------------- |
+| `data`                  | `GameFormatted[]`       | `[]`    | Games to display                                        |
+| `onAction`              | `(game) => void`        | —       | Called when a card is selected                          |
+| `onRemoveFromFavorites` | `(game) => void`        | —       | Favorites modal: card press opens details, removal button |
+| `teamNumber`            | `number`                | `1`     | Number of selected teams (drives column count)          |
 
 ## Key Memoized / Computed Values
 
@@ -36,3 +40,5 @@ The **GamesSelected** component renders a responsive grid of selected (bookmarke
 2. Computes responsive layout from `useWindowDimensions()` and `teamNumber`
 3. Maps each game to a `CardLarge` in a flex-wrap row
 4. `onSelection` triggers `onAction(game)` when a card is tapped
+5. In favorites mode, `onRemoveFromFavorites` is forwarded to each card (bound to that game), so
+   the card press opens the details modal and the removal flows back to the parent

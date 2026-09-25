@@ -11,6 +11,9 @@ The **GameModal** component displays a detailed game popup with team logos, reco
 - **Live status** — detects in-progress games and displays clock/period text
 - **Favorite toggle** — star icons to add teams to favorites (respects `maxFavoritesNumber`)
 - **Action buttons** — game details (ESPN), standings (ESPN/PWHL), ICS download, map link
+- **Remove from favorites** — when `onRemoveFromFavorites` is passed (favorites modal), the
+  "locate arena" button is **replaced** by a trash button labelled `removeFromFavorites`
+  (translated in 11 languages) that removes the game from the bookmarks and closes the modal
 - **Theme aware** — switches logos to dark variants and colors icons based on color scheme
 - **Dark mode logos** — uses `homeTeamLogoDark`/`awayTeamLogoDark` when in dark theme
 - **Translated text** — uses `translateWord()` for all labels
@@ -18,14 +21,15 @@ The **GameModal** component displays a detailed game popup with team logos, reco
 
 ## Props
 
-| Prop            | Type            | Default | Description                           |
-| --------------- | --------------- | ------- | ------------------------------------- |
-| `visible`       | `boolean`       | —       | Whether the modal is shown            |
-| `onClose`       | `() => void`    | —       | Closes the modal                      |
-| `data`          | `GameFormatted` | —       | Game data to display                  |
-| `gradientStyle` | `any`           | —       | Style object for the modal background |
-| `favoriteTeams` | `string[]`      | —       | List of favorite team IDs             |
-| `showScores`    | `boolean`       | `true`  | Whether scores are displayed          |
+| Prop                    | Type                                | Default | Description                                                         |
+| ----------------------- | ----------------------------------- | ------- | ------------------------------------------------------------------- |
+| `visible`               | `boolean`                           | —       | Whether the modal is shown                                          |
+| `onClose`               | `() => void`                        | —       | Closes the modal                                                    |
+| `data`                  | `GameFormatted`                     | —       | Game data to display                                                |
+| `gradientStyle`         | `any`                               | —       | Style object for the modal background                               |
+| `favoriteTeams`         | `string[]`                          | —       | List of favorite team IDs                                           |
+| `showScores`            | `boolean`                           | `true`  | Whether scores are displayed                                        |
+| `onRemoveFromFavorites` | `(game: GameFormatted) => void`     | —       | Shows the trash button (replaces "locate arena") and removes the game |
 
 ## State Variables
 
@@ -76,3 +80,7 @@ Renders the game status area:
 3. Renders teams, logos, records, score/status, and action buttons
 4. Clicking star toggles favorite via `addFavoriteTeam`
 5. Action buttons open external links or download the ICS file
+6. With `onRemoveFromFavorites` (favorites modal), the trash button replaces the arena map
+   button (non-live games) or is appended to the live/final action row, and removes the
+   game from the bookmarks before closing the modal. `styles.actionsRow` uses
+   `flexWrap: 'wrap'` so the buttons never overflow on narrow screens.

@@ -2,6 +2,46 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Feature: Modale FAVORIS — clic sur une carte ouvre les détails, bouton corbeille pour retirer le favori
+
+### Problem
+
+Dans la modale FAVORIS (`frontend/app/(tabs)/calendar.tsx`), un clic sur une carte retirait
+immédiatement le match des favoris (`onSelection` → `handleGamesSelection`) : action
+destructive, sans confirmation, et impossible de consulter les détails d'un match favori.
+
+### Solution
+
+- `frontend/components/CardLarge.tsx` — nouveau mode « détails favoris », activé dès que
+  `onRemoveFromFavorites` est fourni (`detailsMode = !!onRemoveFromFavorites`) : le clic sur la
+  carte ouvre `GameModal` au lieu de retirer le favori, et la pastille signet (coin supérieur
+  droit) retire explicitement le match. L'animation de sortie est factorisée dans
+  `animateExitThen(action)` (partagée par le clic et le signet). `GameModal` reçoit
+  `onRemoveFromFavorites={onRemoveFromFavorites}`.
+- `frontend/components/GameModal.tsx` — nouvelle prop optionnelle `onRemoveFromFavorites`.
+  Pour un match à venir, le bouton **corbeille** (icône `trash`) **remplace** le bouton
+  « Localiser l'arène » ; pour un match en direct/terminé, il s'ajoute à la ligne d'actions
+  (Détails du match / Classement). `actionsRow` passe en `flexWrap: 'wrap'`.
+- `frontend/app/(tabs)/calendar.tsx` — nouveau `handleRemoveGameSelection(game)` (retrait
+  inconditionnel : state + cache `gameSelected` + event `gamesSelectedUpdated` + Firestore)
+  branché sur l'`Accordion` (mobile, 1 match) et `GamesSelected` de la modale FAVORIS. Le
+  rapprochement « mêmes équipes + même heure UTC » est extrait dans l'helper de module
+  `isSameGame(a, b)`, réutilisé par `handleGamesSelection`.
+- `frontend/components/Accordion.tsx` / `frontend/components/GamesSelected.tsx` — transmettent
+  `onRemoveFromFavorites` aux `CardLarge` (lié au match courant).
+- `frontend/utils/types.tsx` — `onRemoveFromFavorites?: (game: GameFormatted) => void` sur
+  `CardsProps`, `AccordionProps` et `GamesSelectedProps`.
+- `frontend/utils/utils.tsx` — clé de traduction `removeFromFavorites` (« Retirer des favoris »)
+  dans les 11 langues.
+- Docs mises à jour : `docs/calendar.tsx.md`, `docs/components/CardLarge.tsx.md`,
+  `docs/components/GameModal.tsx.md`, `docs/components/Accordion.tsx.md`,
+  `docs/components/GamesSelected.tsx.md`, `docs/types.tsx.md`.
+
+### Note
+
+Le bouton corbeille de l'en-tête de la modale FAVORIS continue de vider toute la sélection, et
+la modale se ferme automatiquement quand plus aucun favori n'est affiché.
+
 ## Fix: Schedule — show all games of the same day (doubleheaders)
 
 ### Problem

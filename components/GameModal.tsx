@@ -16,6 +16,11 @@ interface GameModalProps {
   gradientStyle: any;
   favoriteTeams: string[];
   showScores?: boolean;
+  /**
+   * When provided (favorites modal), displays a "remove from favorites" button
+   * next to the `.ics` / "locate arena" actions and calls it on press.
+   */
+  onRemoveFromFavorites?: (game: GameFormatted) => void;
 }
 
 export default function GameModal({
@@ -25,6 +30,7 @@ export default function GameModal({
   gradientStyle,
   favoriteTeams,
   showScores = true,
+  onRemoveFromFavorites,
 }: Readonly<GameModalProps>) {
   const [liveGame, setLiveGame] = useState<GameFormatted | null>(null);
 
@@ -345,6 +351,28 @@ export default function GameModal({
                       </View>
                     </a>
                   )}
+                  {onRemoveFromFavorites && (
+                    <View style={styles.buttonWrapper}>
+                      <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}
+                        onPress={() => {
+                          onRemoveFromFavorites(data);
+                          onClose();
+                        }}
+                      >
+                        <Icon
+                          name="trash"
+                          type="font-awesome"
+                          size={18}
+                          color={iconColor}
+                          style={styles.buttonIcon}
+                        />
+                        <ThemedText style={styles.actionButtonText}>
+                          {translateWord('removeFromFavorites')}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </>
               ) : (
                 <>
@@ -367,26 +395,49 @@ export default function GameModal({
                     </TouchableOpacity>
                   </View>
 
-                  {arenaName && (
+                  {(arenaName || onRemoveFromFavorites) && (
                     <View style={styles.buttonWrapper}>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${stadiumSearch}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ textDecoration: 'none' }}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <View style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}>
+                      {onRemoveFromFavorites ? (
+                        // Favorites modal: the trash button replaces the
+                        // "locate arena" action.
+                        <TouchableOpacity
+                          style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}
+                          onPress={() => {
+                            onRemoveFromFavorites(data);
+                            onClose();
+                          }}
+                        >
                           <Icon
-                            name="map-marker"
+                            name="trash"
                             type="font-awesome"
                             size={18}
                             color={iconColor}
                             style={styles.buttonIcon}
                           />
-                          <ThemedText style={styles.actionButtonText}>{translateWord('localizeArena')}</ThemedText>
-                        </View>
-                      </a>
+                          <ThemedText style={styles.actionButtonText}>
+                            {translateWord('removeFromFavorites')}
+                          </ThemedText>
+                        </TouchableOpacity>
+                      ) : (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${stadiumSearch}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ textDecoration: 'none' }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <View style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}>
+                            <Icon
+                              name="map-marker"
+                              type="font-awesome"
+                              size={18}
+                              color={iconColor}
+                              style={styles.buttonIcon}
+                            />
+                            <ThemedText style={styles.actionButtonText}>{translateWord('localizeArena')}</ThemedText>
+                          </View>
+                        </a>
+                      )}
                     </View>
                   )}
                 </>
@@ -487,6 +538,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     justifyContent: 'center',
     alignItems: 'center',
+    flexWrap: 'wrap',
   },
   buttonWrapper: {
     flex: 1,

@@ -29,6 +29,7 @@ export default function CardLarge({
   showScores: propShowScores,
   forceShowScores = false,
   onSelection,
+  onRemoveFromFavorites,
   isSelected: propIsSelected,
   animateExit = false,
   animateEntry = false,
@@ -191,6 +192,31 @@ export default function CardLarge({
 
   const isFavorite = favoriteTeams.includes(homeTeamId) || favoriteTeams.includes(awayTeamId);
   const isOneTeamInSelection = teamsSelectedIds.includes(homeTeamId) || teamsSelectedIds.includes(awayTeamId);
+
+  // Details mode: the card lives inside the favorites (bookmarks) modal. Tapping
+  // the card opens the game details modal — which offers a dedicated "remove
+  // from favorites" button — instead of removing the game from the favorites.
+  const detailsMode = !!onRemoveFromFavorites;
+
+  // Plays the exit animation (when enabled) and then runs the removal action.
+  const animateExitThen = (action: () => void) => {
+    if (animateExit) {
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(scaleAnim, {
+          toValue: 0.95,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => action());
+    } else {
+      action();
+    }
+  };
 
   const internalHandleSelection = async () => {
     const isMatch = (g: GameFormatted) => {
@@ -642,7 +668,10 @@ export default function CardLarge({
       <TouchableOpacity
         onPress={(e) => {
           e.stopPropagation();
-          if (onSelection) onSelection(data);
+          if (onRemoveFromFavorites) {
+            // Favorites modal: the filled bookmark explicitly removes the game.
+            animateExitThen(() => onRemoveFromFavorites(data));
+          } else if (onSelection) onSelection(data);
           else internalHandleSelection();
         }}
         style={{
@@ -701,24 +730,15 @@ export default function CardLarge({
       >
         <Pressable
           onPress={() => {
-            if (onSelection) {
+            if (detailsMode) {
+              // Favorites modal: show the game details instead of deleting it.
+              setModalVisible(true);
+              if (hasScore) {
+                setScoreRevealed(true);
+              }
+            } else if (onSelection) {
               if (data.homeTeamShort && data.awayTeamShort) {
-                if (animateExit) {
-                  Animated.parallel([
-                    Animated.timing(fadeAnim, {
-                      toValue: 0,
-                      duration: 300,
-                      useNativeDriver: true,
-                    }),
-                    Animated.timing(scaleAnim, {
-                      toValue: 0.95,
-                      duration: 300,
-                      useNativeDriver: true,
-                    }),
-                  ]).start(() => onSelection(data));
-                } else {
-                  onSelection(data);
-                }
+                animateExitThen(() => onSelection(data));
               }
             } else {
               setModalVisible(true);
@@ -979,6 +999,7 @@ export default function CardLarge({
         gradientStyle={gradientStyle}
         favoriteTeams={favoriteTeams}
         showScores={showScores}
+        onRemoveFromFavorites={onRemoveFromFavorites}
       />
     </Animated.View>
   );

@@ -38,6 +38,24 @@ import { getFilterAccordionLabel, translateFilterLabel, translateWord } from '..
 const EXPO_PUBLIC_API_BASE_URL =
   process.env.EXPO_PUBLIC_API_BASE_URL ?? 'https://sportschedule2025backend.onrender.com';
 
+/**
+ * Two games are considered identical when they share both teams AND the exact
+ * UTC kick-off hour — so doubleheader Game 1 / Game 2 stay distinguishable.
+ */
+const isSameGame = (a: GameFormatted, b: GameFormatted) => {
+  const sameTeams = a.homeTeamId === b.homeTeamId && a.awayTeamId === b.awayTeamId;
+  if (!sameTeams) return false;
+
+  const d1 = new Date(a.startTimeUTC);
+  const d2 = new Date(b.startTimeUTC);
+  return (
+    d1.getUTCFullYear() === d2.getUTCFullYear() &&
+    d1.getUTCMonth() === d2.getUTCMonth() &&
+    d1.getUTCDate() === d2.getUTCDate() &&
+    d1.getUTCHours() === d2.getUTCHours()
+  );
+};
+
 export default function Calendar() {
   const { user, firestoreReady } = useAuth();
   const { isScrollingHorizontally } = useHorizontalScroll();
@@ -426,19 +444,7 @@ export default function Calendar() {
     async (game: GameFormatted) => {
       let newSelection = [...gamesSelected];
 
-      const isMatch = (g: GameFormatted) => {
-        const sameTeams = g.homeTeamId === game.homeTeamId && g.awayTeamId === game.awayTeamId;
-        if (!sameTeams) return false;
-
-        const d1 = new Date(g.startTimeUTC);
-        const d2 = new Date(game.startTimeUTC);
-        return (
-          d1.getUTCFullYear() === d2.getUTCFullYear() &&
-          d1.getUTCMonth() === d2.getUTCMonth() &&
-          d1.getUTCDate() === d2.getUTCDate() &&
-          d1.getUTCHours() === d2.getUTCHours()
-        );
-      };
+      const isMatch = (g: GameFormatted) => isSameGame(g, game);
 
       const wasAdded = gamesSelected.some(isMatch);
 
@@ -479,6 +485,25 @@ export default function Calendar() {
     storeTeamsSelected(tempTeams);
     setReorderModalVisible(false);
   };
+
+  const handleRemoveGameSelection = useCallback(
+    async (game: GameFormatted) => {
+      const newSelection = gamesSelected.filter((g) => !isSameGame(g, game));
+      if (newSelection.length === gamesSelected.length) return;
+
+      setGamesSelected(newSelection);
+      saveCache('gameSelected', newSelection);
+      if (globalThis.window !== undefined) {
+        globalThis.window.dispatchEvent(new Event('gamesSelectedUpdated'));
+      }
+
+      if (user) {
+        // Debounced replication to Firestore; errors are handled gracefully inside syncService
+        syncToFirestore(user.uid, { gameSelected: newSelection });
+      }
+    },
+    [gamesSelected, user],
+  );
 
   const handleClearGamesSelection = useCallback(async () => {
     setGamesSelected([]);
@@ -853,12 +878,14 @@ export default function Calendar() {
                   showDate={true}
                   gamesSelected={filteredGamesSelected}
                   onSelection={handleGamesSelection}
+                  onRemoveFromFavorites={handleRemoveGameSelection}
                   disableToggle={true}
                   hideEventCount={true}
                 />
               ) : (
                 <GamesSelected
                   onAction={handleGamesSelection}
+                  onRemoveFromFavorites={handleRemoveGameSelection}
                   data={filteredGamesSelected}
                   teamNumber={filteredGamesSelected.length}
                 />
