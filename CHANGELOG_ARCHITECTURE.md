@@ -2,59 +2,120 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
-## Feature: Modale FAVORIS — clic sur une carte ouvre les détails, bouton corbeille pour retirer le favori
+## Fix: Default team logo missing in the game modal
 
 ### Problem
 
-Dans la modale FAVORIS (`frontend/app/(tabs)/calendar.tsx`), un clic sur une carte retirait
-immédiatement le match des favoris (`onSelection` → `handleGamesSelection`) : action
-destructive, sans confirmation, et impossible de consulter les détails d'un match favori.
+In `frontend/components/GameModal.tsx`, a missing team logo was resolved with
+`homeTeamLogo || leagueLogos.DEFAULT` and the result was always rendered through
+`<Image source={{ uri: displayHomeLogo }} />`. `leagueLogos.DEFAULT` is a
+`require('../assets/images/DEFAULT.png')` value, i.e. a **number** — so the fallback silently
+became `{ uri: <number> }`, an invalid source React Native renders as nothing. Any game whose
+team logo is empty (`homeTeamLogo: ''` / `awayTeamLogo: ''`, produced by the backend when a
+team has no logo) therefore showed **no logo at all** in the modal, even though the same team
+correctly displayed the placeholder shield on its card. The same expression also prevented an
+empty dark-mode logo (`homeTeamLogoDark`) from falling back to the light logo.
 
 ### Solution
 
-- `frontend/components/CardLarge.tsx` — nouveau mode « détails favoris », activé dès que
-  `onRemoveFromFavorites` est fourni (`detailsMode = !!onRemoveFromFavorites`) : le clic sur la
-  carte ouvre `GameModal` au lieu de retirer le favori, et la pastille signet (coin supérieur
-  droit) retire explicitement le match. L'animation de sortie est factorisée dans
-  `animateExitThen(action)` (partagée par le clic et le signet). `GameModal` reçoit
+- `frontend/components/GameModal.tsx` — `displayHomeLogo` / `displayAwayLogo` now hold the dark
+  variant when available, otherwise the light logo (`null` when neither exists), and both
+  `<Image>` use the same pattern as the cards:
+  `source={displayLogo ? { uri: displayLogo } : defaultLogo}`, where `defaultLogo` is the
+  module-level `require('../assets/images/default_logo.png')` asset (shared placeholder).
+  The `<Image>` is now always rendered, so a team without a logo shows the shield instead of
+  nothing. The then-unused `leagueLogos` import was removed.
+- `frontend/docs/components/GameModal.tsx.md` — documented the fallback behaviour.
+- `frontend/components/__tests__/GameModal-test.tsx` — new `react-test-renderer` suite (6 tests):
+  the bundled shield is used when both logos are empty, no `uri` is ever a non-string (the exact
+  regression), remote logos are preserved, dark variants win in dark mode, and the
+  dark → light → default fallback chain. Firebase, AsyncStorage, `syncService` and `@rneui/themed`
+  are stubbed (jest cannot transform their ESM), and `useColorScheme` is mocked through
+  `react-native/Libraries/Utilities/useColorScheme`. The suite fails on the pre-fix code
+  (3 tests), which is the regression proof.
+
+
+
+### Problem
+
+In the league slider of the **Today** tab (`frontend/app/(tabs)/index.tsx`), the favorites chip
+(bookmark icon) stayed tappable as soon as a game was bookmarked for **any day**:
+`disabledFilters` only tested `gamesSelected.length === 0`. Tapping the chip on a date without
+favorites gave the user an empty list (no game to show for the displayed day).
+
+### Solution
+
+- `frontend/app/(tabs)/index.tsx` — `disabledFilters` now disables `BOOKMARKS` as soon as
+  `!isAnyGameSelectedToday` (no favorite game scheduled for the **displayed date**) instead of
+  `gamesSelected.length === 0`. The rule is now identical to the icon's: filled bookmark =
+  tappable, outlined bookmark = dimmed chip (`opacity 0.4`, `disabled`) and not tappable.
+  Favorites from other days, invisible for the displayed day, no longer keep the chip active.
+
+### Files
+
+- `frontend/app/(tabs)/index.tsx` — `disabledFilters` (deps `disabledLeagues`, `isAnyGameSelectedToday`).
+- `frontend/docs/index.tsx.md` — `isAnyGameSelectedToday` (new) and `disabledFilters` sections updated.
+
+### Note
+
+`FilterSlider` behaviour is unchanged: `disabledValues` already dims the chip
+(`styles.disabledChip`) and blocks `onPress`/`disabled`. No automatic reset of the `BOOKMARKS`
+filter is added: if the user switches to a day without favorites, the chip becomes dimmed and
+the "ALL" selector remains available.
+
+## Feature: FAVORITES modal — tapping a card opens the details, trash button removes the favorite
+
+### Problem
+
+In the FAVORITES modal (`frontend/app/(tabs)/calendar.tsx`), tapping a card immediately removed
+the game from the favorites (`onSelection` → `handleGamesSelection`): a destructive action,
+without confirmation, which also made it impossible to view the details of a favorite game.
+
+### Solution
+
+- `frontend/components/CardLarge.tsx` — new "favorites details" mode, enabled as soon as
+  `onRemoveFromFavorites` is provided (`detailsMode = !!onRemoveFromFavorites`): tapping the
+  card opens `GameModal` instead of removing the favorite, and the bookmark badge (top-right
+  corner) explicitly removes the game. The exit animation is factored into
+  `animateExitThen(action)` (shared by the tap and the badge). `GameModal` receives
   `onRemoveFromFavorites={onRemoveFromFavorites}`.
-- `frontend/components/GameModal.tsx` — nouvelle prop optionnelle `onRemoveFromFavorites`.
-  Pour un match à venir, le bouton **corbeille** (icône `trash`) **remplace** le bouton
-  « Localiser l'arène » ; pour un match en direct/terminé, il s'ajoute à la ligne d'actions
-  (Détails du match / Classement). `actionsRow` passe en `flexWrap: 'wrap'`.
-- `frontend/app/(tabs)/calendar.tsx` — nouveau `handleRemoveGameSelection(game)` (retrait
-  inconditionnel : state + cache `gameSelected` + event `gamesSelectedUpdated` + Firestore)
-  branché sur l'`Accordion` (mobile, 1 match) et `GamesSelected` de la modale FAVORIS. Le
-  rapprochement « mêmes équipes + même heure UTC » est extrait dans l'helper de module
-  `isSameGame(a, b)`, réutilisé par `handleGamesSelection`.
-- `frontend/components/Accordion.tsx` / `frontend/components/GamesSelected.tsx` — transmettent
-  `onRemoveFromFavorites` aux `CardLarge` (lié au match courant).
-- `frontend/utils/types.tsx` — `onRemoveFromFavorites?: (game: GameFormatted) => void` sur
-  `CardsProps`, `AccordionProps` et `GamesSelectedProps`.
-- `frontend/utils/utils.tsx` — clé de traduction `removeFromFavorites` (« Retirer des favoris »)
-  dans les 11 langues.
-- Docs mises à jour : `docs/calendar.tsx.md`, `docs/components/CardLarge.tsx.md`,
+- `frontend/components/GameModal.tsx` — new optional `onRemoveFromFavorites` prop.
+  For an upcoming game, the **trash** button (`trash` icon) **replaces** the
+  "Locate the arena" button; for a live/finished game, it is added to the actions row
+  (Match details / Standings). `actionsRow` switches to `flexWrap: 'wrap'`.
+- `frontend/app/(tabs)/calendar.tsx` — new `handleRemoveGameSelection(game)` (unconditional
+  removal: state + `gameSelected` cache + `gamesSelectedUpdated` event + Firestore) wired to the
+  `Accordion` (mobile, 1 game) and to `GamesSelected` inside the FAVORITES modal. The
+  "same teams + same UTC time" matching is extracted into the module helper
+  `isSameGame(a, b)`, reused by `handleGamesSelection`.
+- `frontend/components/Accordion.tsx` / `frontend/components/GamesSelected.tsx` — forward
+  `onRemoveFromFavorites` to `CardLarge` (bound to the current game).
+- `frontend/utils/types.tsx` — `onRemoveFromFavorites?: (game: GameFormatted) => void` on
+  `CardsProps`, `AccordionProps` and `GamesSelectedProps`.
+- `frontend/utils/utils.tsx` — `removeFromFavorites` translation key ("Remove from favorites")
+  in all 11 languages.
+- Docs updated: `docs/calendar.tsx.md`, `docs/components/CardLarge.tsx.md`,
   `docs/components/GameModal.tsx.md`, `docs/components/Accordion.tsx.md`,
   `docs/components/GamesSelected.tsx.md`, `docs/types.tsx.md`.
 
 ### Note
 
-Le bouton corbeille de l'en-tête de la modale FAVORIS continue de vider toute la sélection, et
-la modale se ferme automatiquement quand plus aucun favori n'est affiché.
+The trash button in the FAVORITES modal header still clears the whole selection, and the modal
+closes automatically once no favorite is displayed any more.
 
 ## Fix: Schedule — show all games of the same day (doubleheaders)
 
 ### Problem
 
-Le backend `GET /games/team/:id?clean=true` renvoyait bien les 2 matchs MLB-CHC du
-2026-09-25 (doubleheader Game 1 + Game 2), mais la page Schedule n'en affichait
-qu'un seul. En cause : `visibleGamesByMonth` utilisait `dayGames.find(...)` pour
-la sélection d'équipe, qui ne garde que le PREMIER match du jour.
+The backend `GET /games/team/:id?clean=true` did return both MLB-CHC games of
+2026-09-25 (doubleheader Game 1 + Game 2), but the Schedule page displayed only
+one of them. Root cause: `visibleGamesByMonth` used `dayGames.find(...)` for the
+team selection, which keeps only the FIRST game of the day.
 
 ### Solution
 
-- Remplacé `find` par `filter` + `push(...gamesOnDay)` : tous les matchs du jour
-  pour `gamesTeamId` sont conservés (les cartes sont déjà triées par
+- Replaced `find` with `filter` + `push(...gamesOnDay)`: every game of the day
+  for `gamesTeamId` is kept (cards are already sorted by
   `startTimeUTC` via `mergeGames`).
 
 ### Files
@@ -180,10 +241,10 @@ When the index tab shows `NoResults` for the displayed day, the screen now calls
 
 ### Files
 
-- `frontend/app/(tabs)/index.tsx` — `closestDates` state + `selectedTeamUniqueId` state + `closest` effect (uses `selectedTeamUniqueId`) + `goToClosestDate` + `handleTeamFilterChange`/`handleTeamSelectionChange` updated + props vers `NoResults`, `fetchClosestDates`/`fetchTeams` imports.
-- `frontend/components/NoResults.tsx` — nouvelles props `previousAvailableDate`/`nextAvailableDate`/`onGoToDate`, boutons de navigation au-dessus du texte.
-- `frontend/utils/utils.tsx` — nouvelles clés `previousAvailableDate`/`nextAvailableDate` traduites en 11 langues.
-- `frontend/docs/index.tsx.md`, `frontend/docs/components/NoResults.tsx.md` — documentation mise à jour.
+- `frontend/app/(tabs)/index.tsx` — `closestDates` state + `selectedTeamUniqueId` state + `closest` effect (uses `selectedTeamUniqueId`) + `goToClosestDate` + `handleTeamFilterChange`/`handleTeamSelectionChange` updated + props passed to `NoResults`, `fetchClosestDates`/`fetchTeams` imports.
+- `frontend/components/NoResults.tsx` — new props `previousAvailableDate`/`nextAvailableDate`/`onGoToDate`, navigation buttons above the text.
+- `frontend/utils/utils.tsx` — new `previousAvailableDate`/`nextAvailableDate` translation keys in all 11 languages.
+- `frontend/docs/index.tsx.md`, `frontend/docs/components/NoResults.tsx.md` — documentation updated.
 
 ---
 
@@ -193,8 +254,8 @@ When the Schedule tab has no upcoming games (`visibleGamesByMonth` empty) and hi
 
 ### Files
 
-- `frontend/app/(tabs)/schedule.tsx` — `hasPreviousHistory` state + `closest` effect + passe `showHistoryButton`/`onEnableHistory` à `NoResults`.
-- `frontend/components/NoResults.tsx` — nouvelles props `showHistoryButton`/`onEnableHistory`, bouton "Enable history" (`MaterialIcons` `history`) au-dessus du texte.
+- `frontend/app/(tabs)/schedule.tsx` — `hasPreviousHistory` state + `closest` effect + passes `showHistoryButton`/`onEnableHistory` to `NoResults`.
+- `frontend/components/NoResults.tsx` — new props `showHistoryButton`/`onEnableHistory`, "Enable history" button (`MaterialIcons` `history`) above the text.
 - `frontend/utils/fetchData.ts` — new `fetchClosestDates({ league?, teamSelectedId?, date? })` helper (`GET /games/dates/closest`).
 - `frontend/utils/utils.tsx` — new `enableHistory` translation key (FR "Activer l'historique"; EN fallback "Enable history").
 - `frontend/docs/schedule.tsx.md`, `frontend/docs/fetchData.ts.md` — documentation updated.

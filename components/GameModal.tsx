@@ -1,6 +1,6 @@
 import { ThemedText } from '@/components/ThemedText';
 import { maxFavoritesNumber } from '@/constants/Constants';
-import { GameStatus, League, leagueLogos, leagueMapping } from '@/constants/enum';
+import { GameStatus, League, leagueMapping } from '@/constants/enum';
 import { getGamesStatus } from '@/utils/date';
 import { fetchLiveScores } from '@/utils/fetchData';
 import { GameFormatted } from '@/utils/types';
@@ -8,6 +8,13 @@ import { addFavoriteTeam, generateICSFile, translateWord } from '@/utils/utils';
 import { Icon } from '@rneui/themed';
 import React, { useEffect, useState } from 'react';
 import { Image, Modal, Pressable, StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
+
+/**
+ * Bundled placeholder shown when a team has no logo (same asset as the cards).
+ * It is a `require()` asset id, so it must be used directly as `source` and
+ * never through `{ uri: ... }`.
+ */
+const defaultLogo = require('../assets/images/default_logo.png');
 
 interface GameModalProps {
   visible: boolean;
@@ -147,10 +154,10 @@ export default function GameModal({
   const iconColor = isDark ? 'white' : 'black';
   const buttonBackgroundColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)';
 
-  const displayHomeLogo =
-    isDark && homeTeamLogoDark ? homeTeamLogoDark || leagueLogos.DEFAULT : homeTeamLogo || leagueLogos.DEFAULT;
-  const displayAwayLogo =
-    isDark && awayTeamLogoDark ? awayTeamLogoDark || leagueLogos.DEFAULT : awayTeamLogo || leagueLogos.DEFAULT;
+  // Missing or empty logo strings must resolve to the bundled `defaultLogo`
+  // asset (a numeric `require()` id) when building the `<Image source>`.
+  const displayHomeLogo = isDark && homeTeamLogoDark ? homeTeamLogoDark : homeTeamLogo;
+  const displayAwayLogo = isDark && awayTeamLogoDark ? awayTeamLogoDark : awayTeamLogo;
 
   const getEspnStandingsUrl = (leagueKey: string) => {
     const baseUrl = 'https://www.espn.com';
@@ -229,9 +236,11 @@ export default function GameModal({
           <View style={styles.modalContent}>
             <View style={styles.teamsContainer}>
               <View style={styles.teamColumn}>
-                {displayAwayLogo && (
-                  <Image source={{ uri: displayAwayLogo }} style={styles.logo} resizeMode="contain" />
-                )}
+                <Image
+                  source={displayAwayLogo ? { uri: displayAwayLogo } : defaultLogo}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
                 <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.modalTeamName}>
                   {awayTeam ? awayTeam.replace(/ (?=[^ ]*$)/, '\n') : ''}
                   {(favoriteTeams.includes(awayTeamId) || favoriteTeams.length < maxFavoritesNumber) && (
@@ -271,9 +280,11 @@ export default function GameModal({
               )}
 
               <View style={styles.teamColumn}>
-                {displayHomeLogo && (
-                  <Image source={{ uri: displayHomeLogo }} style={styles.logo} resizeMode="contain" />
-                )}
+                <Image
+                  source={displayHomeLogo ? { uri: displayHomeLogo } : defaultLogo}
+                  style={styles.logo}
+                  resizeMode="contain"
+                />
                 <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.modalTeamName}>
                   {homeTeam ? homeTeam.replace(/ (?=[^ ]*$)/, '\n') : ''}
                   {(favoriteTeams.includes(homeTeamId) || favoriteTeams.length < maxFavoritesNumber) && (

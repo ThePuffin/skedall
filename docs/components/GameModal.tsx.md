@@ -16,6 +16,10 @@ The **GameModal** component displays a detailed game popup with team logos, reco
   (translated in 11 languages) that removes the game from the bookmarks and closes the modal
 - **Theme aware** — switches logos to dark variants and colors icons based on color scheme
 - **Dark mode logos** — uses `homeTeamLogoDark`/`awayTeamLogoDark` when in dark theme
+- **Default logo fallback** — when a team has no logo (empty/`undefined`, e.g. games synced
+  without logos), the bundled `assets/images/default_logo.png` shield is shown — the same
+  placeholder as `Cards`/`CardLarge`. The asset is a `require()` id (a number), so it is passed
+  directly to `source` and never through `{ uri: ... }`
 - **Translated text** — uses `translateWord()` for all labels
 - **Click-outside close** — backdrop press and close button dismiss the modal
 
@@ -47,7 +51,9 @@ The **GameModal** component displays a detailed game popup with team logos, reco
 - `liveTimeText` — combined clock + period text without duplication
 - `stadiumSearch` — arena + place formatted for Google Maps query
 - `standingUrl` — ESPN standings URL via `leagueMapping`, or PWHL standings for PWHL
-- `displayHomeLogo` / `displayAwayLogo` — dark-mode logo variants when in dark theme
+- `displayHomeLogo` / `displayAwayLogo` — dark-mode logo variants when in dark theme, falling back
+  to the light logo when no dark variant exists; `null`/empty values make the `<Image>` use the
+  bundled `defaultLogo` require asset
 
 ## Key Functions
 
