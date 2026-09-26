@@ -525,6 +525,7 @@ export const TeamsEnum: Record<string, string> = {
   'NCAAF-UCF': 'Ucf Knights',
   'NCAAF-UCLA': 'Ucla Bruins',
   'NCAAF-UGA': 'Georgia Bulldogs',
+  'NCAAF-UIW': 'Incarnate Word Cardinals',
   'NCAAF-UK': 'Kentucky Wildcats',
   'NCAAF-UL': 'Louisiana Ragin\' Cajuns',
   'NCAAF-ULM': 'Ul Monroe Warhawks',
