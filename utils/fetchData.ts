@@ -125,7 +125,7 @@ const fetchWithCacheStrategy = async <T>(
     if (cacheKey) saveCache(cacheKey, data, storage);
     if (customSaveCache) customSaveCache(data);
     return data;
-  } catch (error) {
+  } catch {
     console.warn(`Fetch failed for ${url} (5s). Checking cache...`);
 
     let cached: T | null = null;
