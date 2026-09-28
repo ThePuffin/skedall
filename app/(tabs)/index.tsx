@@ -659,8 +659,14 @@ const GameofTheDayContent = () => {
       setSelectDate(startDate);
 
       const YYYYMMDD = dateStr;
-      if (!gamesDayCache.current[YYYYMMDD]) {
+      const isTargetPastDay = YYYYMMDD < formatDateLocal(new Date());
+      if (!gamesDayCache.current[YYYYMMDD] || isTargetPastDay) {
         setIsLoading(true);
+      }
+
+      if (isTargetPastDay) {
+        setLeagueDayGroups([]);
+        setGames([]);
       }
 
       getGamesFromApi(startDate).finally(() => {
@@ -986,6 +992,11 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     }
 
     if (visibleGroupCount === 0) {
+      // Still fetching: never flash "no results" (or the closest-date navigation)
+      // while the groups of the requested day are on their way.
+      if (isLoading) {
+        return <LoadingView />;
+      }
       // When the 'closest' route found dates with games for the
       // current filters, offer to navigate to the previous/next date.
       const closestProps =
@@ -1162,8 +1173,15 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
 
     setSelectDate(d);
     const YYYYMMDD = dStr;
-    if (!gamesDayCache.current[YYYYMMDD]) {
+    const isTargetPastDay = YYYYMMDD < formatDateLocal(new Date());
+    if (!gamesDayCache.current[YYYYMMDD] || isTargetPastDay) {
       setIsLoading(true);
+    }
+    // Same as `handleDateChange`: drop the groups of the day being left so the
+    // loading screen shows instead of the previous day's sections.
+    if (isTargetPastDay) {
+      setLeagueDayGroups([]);
+      setGames([]);
     }
     getGamesFromApi(d).finally(() => setIsLoading(false));
   }, [dateParam, selectDate, getGamesFromApi, router, minDate, maxDate]);

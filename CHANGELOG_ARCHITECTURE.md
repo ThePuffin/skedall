@@ -2,6 +2,33 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fix: brief "no results" flash when selecting a past day
+
+### Problem
+
+Picking a day before today briefly rendered `NoResults` before the games appeared. Two causes:
+
+1. `handleDateChange()` (and the `date` route-param effect) only raised `isLoading` when the day was
+   missing from `gamesDayCache`. A past day is always fetched (`/games/league-day`), so the loader was
+   often not raised at all.
+2. Even with `isLoading = true`, `displayContent()` returned `NoResults` as soon as `games` was
+   non-empty (still the previous day's games) while `visibleGroupCount === 0` for the incoming past
+   day — the `isLoading` check only existed in the `games.length === 0` branch.
+
+### Solution
+
+- `handleDateChange()` and the `date` route-param effect now set `isLoading = true` when the target
+  day is not cached **or is a past day**, and immediately clear `leagueDayGroups` + `games` for a
+  past target so the sections of the day being left are not rendered during the request.
+- `displayContent()` returns `LoadingView` when `isLoading` is true, before the
+  `visibleGroupCount === 0` branch — `NoResults` (and the closest-date navigation) is only rendered
+  once the request has completed.
+
+### Files
+
+- `app/(tabs)/index.tsx` — `handleDateChange()`, `date` param effect, `displayContent()`.
+- `docs/index.tsx.md` — new "Loading State on Date Change" section.
+
 ## Fix: Revealing a score reveals it in both accordions (past-day league view)
 
 ### Problem

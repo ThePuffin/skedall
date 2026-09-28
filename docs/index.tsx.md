@@ -193,6 +193,20 @@ only: bookmarks from other dates are invisible for the displayed day.
 
 The favorites section of a past day is computed by the **backend**, so the favorite team ids are sent with `/games/league-day`. A dedicated effect (declared after the init effect) refetches the selected past day when `favoriteTeams` differs from `leagueDayFavoritesKeyRef` — the key used by the last past-day fetch — so opening/closing the day or listing leagues never triggers an extra request. Leagues, team and bookmarks filters stay client-side (`visibleLeagueGroups`) and need no refetch.
 
+## Loading State on Date Change
+
+`isLoading` is raised as soon as a date is selected, before any request:
+
+- `handleDateChange()` (slider, calendar, swipe) and the `date` route-param effect set
+  `isLoading = true` when the target day is missing from `gamesDayCache` **or is a past day** (a past
+  day is always fetched, since the backend builds its league groups).
+- For a past target day, `leagueDayGroups` and `games` are **cleared immediately**: otherwise the
+  sections of the day being left (or an empty section list) stayed on screen during the request, which
+  produced a brief "no results" flash instead of the loader.
+- `displayContent()` returns `LoadingView` whenever `isLoading` is true, including when `games` is
+  non-empty but `visibleGroupCount === 0` — `NoResults` (and its closest-date navigation) is only
+  rendered once the request has completed.
+
 ## Date Accordion Label Behavior
 
 The date filter accordion's label (the `<span>` containing the formatted date) is only shown when:
