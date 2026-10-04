@@ -21,25 +21,56 @@ The **GameModal** component displays a detailed game popup with team logos, reco
   placeholder as `Cards`/`CardLarge`. The asset is a `require()` id (a number), so it is passed
   directly to `source` and never through `{ uri: ... }`
 - **Translated text** — uses `translateWord()` for all labels
+- **Recent form row** — under each team (below its record), up to 5 dots showing the last 5 results,
+  **oldest on the left, most recent on the right**: filled = win, hollow = loss, half-filled (left
+  half) = draw. The dots are drawn in the **modal's text color** (module-level `DOT_COLORS`:
+  `#0f172a` light / `#ffffff` dark, the very colors the modal passes to its `ThemedText` labels)
+  for the fill _and_ the border, so the row reads as a neutral indicator and never borrows — or
+  clashes with — a team color. **A loss in overtime or a shootout is shown as a draw** (half-filled):
+  those leagues have no real tie, so an `otLosses` result reads as a half-filled dot. Nothing is
+  rendered when the
+  team has no stored history. Data comes from `fetchRecentFormGames(teamId, formBefore, 5)` →
+  `GET /games/team/:id/form`, loaded per team so a failure on one side never hides the other row;
+  the rows are reset when the modal closes or the game changes
+- **Form window: the games _before_ the displayed one** — `formBefore` bounds the query with a strict
+  `startTimeUTC < before`, so the API only returns what precedes the game shown: **no bound** when the
+  game is upcoming (→ the five most recent results), **its own start** when it is already past (→ the
+  five results played just before it). Leaving the bound out for an upcoming game keeps the request
+  URL — and the cache key derived from it — identical across opens; a `now` bound would carry
+  milliseconds and be unique on every open. The displayed game can therefore never be returned, and
+  `getRecentForm` still passes `data.uniqueId` as a defensive exclusion
+- **Loading skeleton** — while the results request is in flight, each team's row shows five neutral
+  gray placeholder dots instead of the real ones, so the results never "pop" into place. A single
+  `Animated.Value` (`FormSkeleton`) sweeps `0 → 1` over `LOADER_CYCLE_MS` (1400 ms); each dot
+  interpolates its own slice of that sweep, offset by `index * DOT_DELAY_MS` (220 ms, fading over
+  `DOT_FADE_MS` = 260 ms), so the dots light up one after the other. `Animated.loop` restarts the
+  sequence once the value reaches 1 — the "all dots shown → start again" loader behavior — and the
+  animation is stopped when the modal closes. The skeleton reuses `formRow`/`formDot`, so the layout
+  is identical and nothing shifts when the real dots land; a team with no id never shows one
+- **Scrollable content** — the modal card is capped at `maxHeight: '92%'` and its content is wrapped
+  in a `ScrollView`, so the added form rows can never push the card past the viewport
 - **Click-outside close** — backdrop press and close button dismiss the modal
 
 ## Props
 
-| Prop                    | Type                                | Default | Description                                                         |
-| ----------------------- | ----------------------------------- | ------- | ------------------------------------------------------------------- |
-| `visible`               | `boolean`                           | —       | Whether the modal is shown                                          |
-| `onClose`               | `() => void`                        | —       | Closes the modal                                                    |
-| `data`                  | `GameFormatted`                     | —       | Game data to display                                                |
-| `gradientStyle`         | `any`                               | —       | Style object for the modal background                               |
-| `favoriteTeams`         | `string[]`                          | —       | List of favorite team IDs                                           |
-| `showScores`            | `boolean`                           | `true`  | Whether scores are displayed                                        |
-| `onRemoveFromFavorites` | `(game: GameFormatted) => void`     | —       | Shows the trash button (replaces "locate arena") and removes the game |
+| Prop                    | Type                            | Default | Description                                                           |
+| ----------------------- | ------------------------------- | ------- | --------------------------------------------------------------------- |
+| `visible`               | `boolean`                       | —       | Whether the modal is shown                                            |
+| `onClose`               | `() => void`                    | —       | Closes the modal                                                      |
+| `data`                  | `GameFormatted`                 | —       | Game data to display                                                  |
+| `gradientStyle`         | `any`                           | —       | Style object for the modal background                                 |
+| `favoriteTeams`         | `string[]`                      | —       | List of favorite team IDs                                             |
+| `showScores`            | `boolean`                       | `true`  | Whether scores are displayed                                          |
+| `onRemoveFromFavorites` | `(game: GameFormatted) => void` | —       | Shows the trash button (replaces "locate arena") and removes the game |
 
 ## State Variables
 
-| Variable   | Type                      | Description                                  |
-| ---------- | ------------------------- | -------------------------------------------- |
-| `liveGame` | `GameFormatted` \| `null` | Live score data when fetched; null otherwise |
+| Variable      | Type                      | Description                                                                                              |
+| ------------- | ------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `liveGame`    | `GameFormatted` \| `null` | Live score data when fetched; null otherwise                                                             |
+| `awayForm`    | `GameOutcome[]`           | Last results of the away team, oldest → newest (`[]` when none)                                          |
+| `homeForm`    | `GameOutcome[]`           | Last results of the home team, oldest → newest (`[]` when none)                                          |
+| `formLoading` | `boolean`                 | True while the results request is in flight → animated gray skeletons are shown instead of the real rows |
 
 ## Key Memoized / Computed Values
 
@@ -56,6 +87,43 @@ The **GameModal** component displays a detailed game popup with team logos, reco
   bundled `defaultLogo` require asset
 
 ## Key Functions
+
+### `loadTeamForm(teamId?)`
+
+Fetches one team's recent results (`fetchRecentFormGames`) and turns them into the form row
+(`getRecentForm`) with `RECENT_FORM_LENGTH` as the cap and `data.uniqueId` as a defensive exclusion.
+Returns `[]` for a missing team id, and swallows any failure into `[]` so a team
+with no stored history — or a failing request — simply shows no dots instead of breaking the modal.
+`formBefore` is memoized on `data.startTimeUTC`: it is `undefined` for an upcoming game and the
+game's own ISO start for a past one. Called from a `useEffect` keyed on
+`[visible, data.awayTeamId, data.homeTeamId]`: the rows are reset
+when the modal closes, both teams are loaded in parallel, and a `cancelled` flag discards a response
+that arrives after the modal was closed or another game was opened.
+
+### `renderFormRow(form, teamId?)`
+
+Renders the dot row, or `null` when `form` is empty. Each dot is a bordered circle: filled
+(`W`) / hollow (`L`) / half-filled on the left (`D`), all in the modal's text color from the
+module-level `DOT_COLORS` (the same values the modal gives its `ThemedText` labels), which serves as
+both the fill and the border color. `teamId` only decides whether a loading skeleton can appear —
+the team color is no longer used.
+
+### `openWikipediaTeam(teamName?)`
+
+Opens the team's Wikipedia article in the reader's language. Delegates the URL to
+`getTeamWikipediaUrl()` (`@/utils/utils`) and opens it with `Linking.openURL()`. A missing team name
+yields no URL, so the press is a no-op; a failing `openURL` (no browser, user cancelled) is caught
+and logged with `console.warn` rather than propagated, so a convenience link can never crash the
+modal.
+
+Both team logos (`awayTeam`, `homeTeam`) are wrapped in a `<TouchableOpacity activeOpacity={0.7}>`
+calling this function, with `accessibilityRole="link"` and `accessibilityLabel` set to the team name.
+The touchable is `disabled` when the team name is empty, so a nameless game renders an inert logo.
+
+Language resolution lives in `utils/utils.tsx`: `getWikipediaLanguage()` reads `navigator.language`
+(the same source as `translateWord()`), keeps the primary subtag and falls back to `en` for the 11
+app languages (`en, fr, de, es, it, ja, ko, nl, pt, ru, zh` — all of which have a Wikipedia edition).
+`getTeamWikipediaUrl()` turns spaces into underscores and `encodeURIComponent`-escapes the result.
 
 ### `fetchLiveGameData()`
 

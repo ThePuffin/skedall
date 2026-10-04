@@ -1,20 +1,65 @@
-import { ThemedText } from '@/components/ThemedText';
-import { maxFavoritesNumber } from '@/constants/Constants';
-import { GameStatus, League, leagueMapping } from '@/constants/enum';
-import { getGamesStatus } from '@/utils/date';
-import { fetchLiveScores } from '@/utils/fetchData';
-import { GameFormatted } from '@/utils/types';
-import { addFavoriteTeam, generateICSFile, translateWord } from '@/utils/utils';
-import { Icon } from '@rneui/themed';
-import React, { useEffect, useState } from 'react';
-import { Image, Modal, Pressable, StyleSheet, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { ThemedText } from "@/components/ThemedText";
+import { maxFavoritesNumber } from "@/constants/Constants";
+import { GameStatus, League, leagueMapping } from "@/constants/enum";
+import {
+  getGamesStatus,
+  getRecentForm,
+  GameOutcome,
+  RECENT_FORM_LENGTH,
+} from "@/utils/date";
+import { fetchLiveScores, fetchRecentFormGames } from "@/utils/fetchData";
+import { GameFormatted } from "@/utils/types";
+import {
+  addFavoriteTeam,
+  generateICSFile,
+  getTeamWikipediaUrl,
+  translateWord,
+} from "@/utils/utils";
+import { Icon } from "@rneui/themed";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Animated,
+  Easing,
+  Image,
+  Linking,
+  Modal,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+  useColorScheme,
+} from "react-native";
 
 /**
  * Bundled placeholder shown when a team has no logo (same asset as the cards).
  * It is a `require()` asset id, so it must be used directly as `source` and
  * never through `{ uri: ... }`.
  */
-const defaultLogo = require('../assets/images/default_logo.png');
+/** Delay before each placeholder dot starts fading in, and its fade duration. */
+const DOT_DELAY_MS = 220;
+const DOT_FADE_MS = 260;
+/**
+ * One full cycle of the loader: the last dot finishes fading at
+ * `(5 - 1) * 220 + 260 = 1140ms`, so the cycle is padded to leave a brief pause
+ * before the sequence restarts and reads as a loop rather than a flicker.
+ */
+const LOADER_CYCLE_MS = 1400;
+
+const defaultLogo = require("../assets/images/default_logo.png");
+
+/**
+ * Color of the form dots: the same as the modal's own text, so the row reads as
+ * a neutral indicator instead of borrowing a team color. Mirrors the
+ * `lightColor` / `darkColor` the modal passes to its `ThemedText` labels.
+ */
+const DOT_COLORS = { light: "#0f172a", dark: "#ffffff" };
 
 interface GameModalProps {
   visible: boolean;
@@ -40,15 +85,69 @@ export default function GameModal({
   onRemoveFromFavorites,
 }: Readonly<GameModalProps>) {
   const [liveGame, setLiveGame] = useState<GameFormatted | null>(null);
+  // Last results of each team, oldest → newest, for the form dots row.
+  const [awayForm, setAwayForm] = useState<GameOutcome[]>([]);
+  const [homeForm, setHomeForm] = useState<GameOutcome[]>([]);
+  // True while the results request is in flight: gray placeholder dots are shown
+  // instead of the real row, so nothing "pops" into place once the data lands.
+  const [formLoading, setFormLoading] = useState(false);
+
+  /**
+   * The instant the form is computed up to, passed to the API as `before` so the
+   * returned games are the ones played before the displayed game:
+   * - game in the future → `undefined`, i.e. the team's five most recent
+   *   results. A "now" bound would carry milliseconds and change on every
+   *   render, making the request URL (and the cache key built from it) unique
+   *   on each open, so no result could ever be reused;
+   * - game in the past → its own start, i.e. the five results played just
+   *   before it.
+   *
+   * The displayed game can therefore never come back in the payload, so
+   * `getRecentForm` does not need to exclude it by id.
+   */
+  const formBefore = useMemo(() => {
+    const start = new Date(data.startTimeUTC);
+    const isUpcoming =
+      Number.isNaN(start.getTime()) || start.getTime() > Date.now();
+    return isUpcoming ? undefined : start.toISOString();
+  }, [data.startTimeUTC]);
+
+  /**
+   * Loads the recent results of one team and turns them into a form row.
+   * A failure is swallowed into an empty row: a team with no stored history (or
+   * a failing request) simply shows no dots instead of breaking the modal.
+   */
+  const loadTeamForm = useCallback(
+    async (teamId: string | undefined) => {
+      if (!teamId) return [] as GameOutcome[];
+      try {
+        const games = await fetchRecentFormGames(
+          teamId,
+          formBefore,
+          RECENT_FORM_LENGTH,
+        );
+        return getRecentForm(games, teamId, RECENT_FORM_LENGTH, data.uniqueId);
+      } catch {
+        return [] as GameOutcome[];
+      }
+    },
+    [formBefore, data.uniqueId],
+  );
 
   useEffect(() => {
     if (visible) {
       const fetchLiveGameData = async () => {
         const gameTime = new Date(data.startTimeUTC);
         const now = new Date();
-        const hoursDiff = (now.getTime() - gameTime.getTime()) / (1000 * 60 * 60);
+        const hoursDiff =
+          (now.getTime() - gameTime.getTime()) / (1000 * 60 * 60);
 
-        if (hoursDiff > -0.25 && hoursDiff < 5 && data.gameStatus !== 'FINAL' && data.gameStatus !== 'FINISHED') {
+        if (
+          hoursDiff > -0.25 &&
+          hoursDiff < 5 &&
+          data.gameStatus !== "FINAL" &&
+          data.gameStatus !== "FINISHED"
+        ) {
           const liveScores = await fetchLiveScores([data.uniqueId]);
           if (liveScores && liveScores.length > 0) {
             setLiveGame(liveScores[0]);
@@ -61,6 +160,39 @@ export default function GameModal({
       setLiveGame(null);
     }
   }, [visible, data.uniqueId, data.startTimeUTC, data.gameStatus]);
+
+  // Recent form of both teams. Reset as soon as the modal closes (or the match
+  // changes) so a previous row is never shown against another game, and each
+  // team is loaded independently so one failure cannot hide the other row.
+  useEffect(() => {
+    if (!visible) {
+      setAwayForm([]);
+      setHomeForm([]);
+      setFormLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    // Gray placeholders stay until BOTH rows are settled, so the skeleton never
+    // flashes for a team that already answered.
+    setFormLoading(true);
+    const load = async () => {
+      const [away, home] = await Promise.all([
+        loadTeamForm(data.awayTeamId),
+        loadTeamForm(data.homeTeamId),
+      ]);
+      // The modal may have been closed (or another game opened) meanwhile.
+      if (cancelled) return;
+      setAwayForm(away);
+      setHomeForm(home);
+      setFormLoading(false);
+    };
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [visible, data.awayTeamId, data.homeTeamId, loadTeamForm, formBefore]);
 
   const displayData = liveGame || data;
   const {
@@ -88,18 +220,32 @@ export default function GameModal({
 
   const hasScore = homeTeamScore != null && awayTeamScore != null;
   const status = getGamesStatus(displayData);
-  const isToday = new Date().toDateString() === new Date(startTimeUTC).toDateString();
-  const diffHours = (new Date().getTime() - new Date(startTimeUTC).getTime()) / (1000 * 60 * 60);
+  const isToday =
+    new Date().toDateString() === new Date(startTimeUTC).toDateString();
+  const diffHours =
+    (new Date().getTime() - new Date(startTimeUTC).getTime()) /
+    (1000 * 60 * 60);
   const isStarted3hAgo = diffHours > 3;
   const isLive =
     (status as GameStatus) !== GameStatus.DELAYED &&
     ((status as GameStatus) === GameStatus.IN_PROGRESS ||
       (!!gameStatus &&
-        ['Top', 'Bot', 'Mid', 'End', '1st', '2nd', '3rd', '4th', 'OT', 'Half', "'", 'In SO'].some((s) =>
-          gameStatus.includes(s),
-        ) &&
-        !gameStatus.toUpperCase().includes('FINAL') &&
-        !gameStatus.toUpperCase().includes('ENDED')) ||
+        [
+          "Top",
+          "Bot",
+          "Mid",
+          "End",
+          "1st",
+          "2nd",
+          "3rd",
+          "4th",
+          "OT",
+          "Half",
+          "'",
+          "In SO",
+        ].some((s) => gameStatus.includes(s)) &&
+        !gameStatus.toUpperCase().includes("FINAL") &&
+        !gameStatus.toUpperCase().includes("ENDED")) ||
       (hasScore &&
         isToday &&
         (status as GameStatus) !== GameStatus.FINISHED &&
@@ -109,88 +255,245 @@ export default function GameModal({
     const normalizedStatus = status.toLowerCase();
     const normalizedClock = clock.toLowerCase();
     const variants = [normalizedClock];
-    if (normalizedClock.startsWith('00:')) {
-      variants.push(normalizedClock.replace(/^00:/, ''));
+    if (normalizedClock.startsWith("00:")) {
+      variants.push(normalizedClock.replace(/^00:/, ""));
     }
-    if (normalizedClock.startsWith('0:')) {
-      variants.push(normalizedClock.replace(/^0:/, ''));
+    if (normalizedClock.startsWith("0:")) {
+      variants.push(normalizedClock.replace(/^0:/, ""));
     }
     return variants.some((variant) => normalizedStatus.includes(variant));
   };
 
-  const livePeriodText = gameStatus || (typeof gamePeriod === 'number' ? `P${gamePeriod}` : '');
+  const livePeriodText =
+    gameStatus || (typeof gamePeriod === "number" ? `P${gamePeriod}` : "");
   const liveTimeText =
     gameClock && livePeriodText
       ? gameStatusAlreadyIncludesClock(livePeriodText, gameClock)
         ? livePeriodText
         : `${gameClock} - ${livePeriodText}`
-      : gameClock || livePeriodText || translateWord('inProgress');
+      : gameClock || livePeriodText || translateWord("inProgress");
   const showLiveScoreNumbers = hasScore;
   const serviceReportsNotTerminated =
     isLive ||
     (!!gameStatus &&
-      !gameStatus.toUpperCase().includes('FINAL') &&
-      gameStatus.toUpperCase() !== 'FINISHED' &&
-      gameStatus.toUpperCase() !== 'ENDED');
-  const showFinalization = !hasScore && serviceReportsNotTerminated && isStarted3hAgo;
+      !gameStatus.toUpperCase().includes("FINAL") &&
+      gameStatus.toUpperCase() !== "FINISHED" &&
+      gameStatus.toUpperCase() !== "ENDED");
+  const showFinalization =
+    !hasScore && serviceReportsNotTerminated && isStarted3hAgo;
 
   const dateOptions: Intl.DateTimeFormatOptions = {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   };
 
-  const stadiumSearch = (arenaName || '').replace(/\s+/g, '+') + ',' + (placeName || '').replace(/\s+/g, '+');
-  const theme = useColorScheme() ?? 'light';
-  const isDark = theme === 'dark';
-  const iconColor = isDark ? 'white' : 'black';
-  const buttonBackgroundColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)';
+  const stadiumSearch =
+    (arenaName || "").replace(/\s+/g, "+") +
+    "," +
+    (placeName || "").replace(/\s+/g, "+");
+  const theme = useColorScheme() ?? "light";
+  const isDark = theme === "dark";
+  const iconColor = isDark ? "white" : "black";
+  const buttonBackgroundColor = isDark
+    ? "rgba(255, 255, 255, 0.2)"
+    : "rgba(0, 0, 0, 0.1)";
 
   // Missing or empty logo strings must resolve to the bundled `defaultLogo`
   // asset (a numeric `require()` id) when building the `<Image source>`.
-  const displayHomeLogo = isDark && homeTeamLogoDark ? homeTeamLogoDark : homeTeamLogo;
-  const displayAwayLogo = isDark && awayTeamLogoDark ? awayTeamLogoDark : awayTeamLogo;
+  const displayHomeLogo =
+    isDark && homeTeamLogoDark ? homeTeamLogoDark : homeTeamLogo;
+  const displayAwayLogo =
+    isDark && awayTeamLogoDark ? awayTeamLogoDark : awayTeamLogo;
 
   const getEspnStandingsUrl = (leagueKey: string) => {
-    const baseUrl = 'https://www.espn.com';
+    const baseUrl = "https://www.espn.com";
 
-    const path = leagueMapping[leagueKey.toUpperCase() as keyof typeof leagueMapping];
+    const path =
+      leagueMapping[leagueKey.toUpperCase() as keyof typeof leagueMapping];
 
     if (!path) return null;
 
     return `${baseUrl}/${path}`;
   };
 
-  const standingUrl = league === League.PWHL ? 'https://www.thepwhl.com/stats/standings' : getEspnStandingsUrl(league);
+  const standingUrl =
+    league === League.PWHL
+      ? "https://www.thepwhl.com/stats/standings"
+      : getEspnStandingsUrl(league);
+
+  /**
+   * Opens the team's Wikipedia article in the reader's language (falls back to
+   * the English edition for a language Wikipedia does not publish, and does
+   * nothing when the game carries no team name).
+   */
+  const openWikipediaTeam = async (teamName?: string | null) => {
+    const url = getTeamWikipediaUrl(teamName);
+    if (!url) return;
+
+    try {
+      await Linking.openURL(url);
+    } catch {
+      // The device may have no browser or the user may have cancelled: never
+      // crash the modal for a convenience link.
+      console.warn(`Could not open the Wikipedia page for "${teamName}".`);
+    }
+  };
+
+  /**
+   * Placeholder row shown while the results request is in flight: five neutral gray
+   * dots that light up one after the other, then restart, so the row reads as a
+   * loader instead of the real dots popping into place all at once.
+   *
+   * A single `Animated.Value` drives the whole sequence (cheaper than one per dot):
+   * it sweeps 0 → 1 over `LOADER_CYCLE_MS`, each dot interpolating its own slice of
+   * that sweep, offset by `index * DOT_DELAY_MS`. The loop restarts when the value
+   * reaches 1, which is exactly the "all dots shown → start again" behavior.
+   *
+   * Stops (`stopAnimation`) when the modal closes so no timer keeps running.
+   */
+  function FormSkeleton({ isDark }: { isDark: boolean }) {
+    const progress = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+      const animation = Animated.loop(
+        Animated.timing(progress, {
+          toValue: 1,
+          duration: LOADER_CYCLE_MS,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }),
+      );
+      animation.start();
+      return () => animation.stop();
+    }, [progress]);
+
+    const baseColor = isDark
+      ? "rgba(148, 163, 184, 0.25)"
+      : "rgba(100, 116, 139, 0.25)";
+
+    return (
+      <View style={styles.formRow} testID="form-skeleton">
+        {Array.from({ length: RECENT_FORM_LENGTH }).map((_, index) => {
+          const start = (index * DOT_DELAY_MS) / LOADER_CYCLE_MS;
+          const end = (index * DOT_DELAY_MS + DOT_FADE_MS) / LOADER_CYCLE_MS;
+          return (
+            <Animated.View
+              key={index}
+              testID={`form-skeleton-dot-${index}`}
+              style={[
+                styles.formDot,
+                {
+                  backgroundColor: baseColor,
+                  opacity: progress.interpolate({
+                    inputRange: [Math.min(start, 1), Math.min(end, 1)],
+                    outputRange: [0.45, 1],
+                    extrapolate: "clamp",
+                  }),
+                },
+              ]}
+            />
+          );
+        })}
+      </View>
+    );
+  }
+
+  /**
+   * The "last 5 results" row: one dot per game, **oldest on the left, most
+   * recent on the right**.
+   *
+   * - `W` — filled dot;
+   * - `L` — hollow dot (transparent fill, same-color border);
+   * - `D` — half-filled (left half filled), the convention used by the football
+   *   UIs this borrows from.
+   *
+   * The dots use the modal's text color (`DOT_COLORS`) rather than the team
+   * color, so the row stays a neutral indicator and never clashes with the card.
+   * Renders nothing at all when the team has no stored history.
+   */
+  const renderFormRow = (form: GameOutcome[], teamId?: string) => {
+    // While loading, the neutral animated placeholders take the row's place: the
+    // layout is identical, so nothing shifts when the real dots land. A team with
+    // no id has nothing to load, so it never shows a loader.
+    if (formLoading && teamId) return <FormSkeleton isDark={isDark} />;
+    if (!form || form.length === 0) return null;
+
+    const color = isDark ? DOT_COLORS.dark : DOT_COLORS.light;
+
+    return (
+      <View style={styles.formRow}>
+        {form.map((outcome, index) => (
+          <View
+            key={`${outcome}-${index}`}
+            style={[styles.formDot, { borderColor: color }]}
+            accessibilityRole="image"
+            accessibilityLabel={outcome}
+            testID={`form-dot-${index}`}
+          >
+            {outcome !== "L" ? (
+              <View
+                style={[
+                  styles.formDotFill,
+                  outcome === "D" ? styles.formDotFillHalf : null,
+                  { backgroundColor: color },
+                ]}
+              />
+            ) : null}
+          </View>
+        ))}
+      </View>
+    );
+  };
 
   const renderStatusText = () => {
     if (isLive) {
-      if ((!gameClock || gameClock === '00:00') && gameStatus && gameStatus !== 'IN_PROGRESS') {
+      if (
+        (!gameClock || gameClock === "00:00") &&
+        gameStatus &&
+        gameStatus !== "IN_PROGRESS"
+      ) {
         return (
-          <ThemedText style={[styles.dateText, { color: '#ef4444', fontWeight: 'bold' }]}>{gameStatus}</ThemedText>
+          <ThemedText
+            style={[styles.dateText, { color: "#ef4444", fontWeight: "bold" }]}
+          >
+            {gameStatus}
+          </ThemedText>
         );
       }
 
       return (
-        <ThemedText style={[styles.dateText, { color: '#ef4444', fontWeight: 'bold' }]}>{liveTimeText}</ThemedText>
+        <ThemedText
+          style={[styles.dateText, { color: "#ef4444", fontWeight: "bold" }]}
+        >
+          {liveTimeText}
+        </ThemedText>
       );
     }
 
     if (showFinalization) {
       return (
-        <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
-          {translateWord('final')}
+        <ThemedText
+          lightColor="#475569"
+          darkColor="#CBD5E1"
+          style={styles.dateText}
+        >
+          {translateWord("final")}
         </ThemedText>
       );
     }
 
     if ((status as GameStatus) === GameStatus.DELAYED) {
       return (
-        <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
-          {translateWord('delayedGame')}
+        <ThemedText
+          lightColor="#475569"
+          darkColor="#CBD5E1"
+          style={styles.dateText}
+        >
+          {translateWord("delayedGame")}
         </ThemedText>
       );
     }
@@ -198,106 +501,209 @@ export default function GameModal({
     if (hasScore) {
       if ((status as GameStatus) === GameStatus.FINISHED) {
         return (
-          <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
-            {translateWord('score')}
+          <ThemedText
+            lightColor="#475569"
+            darkColor="#CBD5E1"
+            style={styles.dateText}
+          >
+            {translateWord("score")}
           </ThemedText>
         );
       }
 
       const statusText =
-        (status as GameStatus) === GameStatus.FINAL ? translateWord('final') : translateWord('ended');
+        (status as GameStatus) === GameStatus.FINAL
+          ? translateWord("final")
+          : translateWord("ended");
       return (
-        <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
+        <ThemedText
+          lightColor="#475569"
+          darkColor="#CBD5E1"
+          style={styles.dateText}
+        >
           {statusText}
         </ThemedText>
       );
     }
 
     return (
-      <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.dateText}>
-        {startTimeUTC ? new Date(startTimeUTC).toLocaleDateString(undefined, dateOptions) : ''}
+      <ThemedText
+        lightColor="#475569"
+        darkColor="#CBD5E1"
+        style={styles.dateText}
+      >
+        {startTimeUTC
+          ? new Date(startTimeUTC).toLocaleDateString(undefined, dateOptions)
+          : ""}
       </ThemedText>
     );
   };
 
   return (
-    <Modal animationType="fade" transparent={true} visible={visible} onRequestClose={onClose}>
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={visible}
+      onRequestClose={onClose}
+    >
       <Pressable style={styles.centeredView} onPress={onClose}>
-        <Pressable style={[styles.modalView, gradientStyle]} onPress={(e) => e.stopPropagation()}>
+        <Pressable
+          style={[styles.modalView, gradientStyle]}
+          onPress={(e) => e.stopPropagation()}
+        >
           <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <Icon name="close" type="font-awesome" size={20} color={iconColor} />
+            <Icon
+              name="close"
+              type="font-awesome"
+              size={20}
+              color={iconColor}
+            />
           </TouchableOpacity>
 
-          <View style={styles.modalContent}>
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalContent}
+            showsVerticalScrollIndicator={false}
+          >
             <View style={styles.teamsContainer}>
               <View style={styles.teamColumn}>
-                <Image
-                  source={displayAwayLogo ? { uri: displayAwayLogo } : defaultLogo}
-                  style={styles.logo}
-                  resizeMode="contain"
-                />
-                <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.modalTeamName}>
-                  {awayTeam ? awayTeam.replace(/ (?=[^ ]*$)/, '\n') : ''}
-                  {(favoriteTeams.includes(awayTeamId) || favoriteTeams.length < maxFavoritesNumber) && (
+                {/* Away team logo: opens the team's Wikipedia article in the reader's language. */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  disabled={!awayTeam}
+                  accessibilityRole="link"
+                  accessibilityLabel={awayTeam}
+                  onPress={() => openWikipediaTeam(awayTeam)}
+                >
+                  <Image
+                    source={
+                      displayAwayLogo ? { uri: displayAwayLogo } : defaultLogo
+                    }
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+                <ThemedText
+                  lightColor="#0f172a"
+                  darkColor="#ffffff"
+                  style={styles.modalTeamName}
+                >
+                  {awayTeam ? awayTeam.replace(/ (?=[^ ]*$)/, "\n") : ""}
+                  {(favoriteTeams.includes(awayTeamId) ||
+                    favoriteTeams.length < maxFavoritesNumber) && (
                     <Icon
                       onPress={() => addFavoriteTeam(favoriteTeams, awayTeamId)}
-                      name={favoriteTeams.includes(awayTeamId) ? 'star' : 'star-o'}
+                      name={
+                        favoriteTeams.includes(awayTeamId) ? "star" : "star-o"
+                      }
                       type="font-awesome"
                       size={14}
-                      color={favoriteTeams.includes(awayTeamId) ? '#FFD700' : '#94a3b8'}
+                      color={
+                        favoriteTeams.includes(awayTeamId)
+                          ? "#FFD700"
+                          : "#94a3b8"
+                      }
                       style={{ marginLeft: 5 }}
                     />
                   )}
                 </ThemedText>
                 {awayTeamRecord && (
-                  <ThemedText lightColor="#475569" darkColor="#94a3b8" style={styles.recordText}>
+                  <ThemedText
+                    lightColor="#475569"
+                    darkColor="#94a3b8"
+                    style={styles.recordText}
+                  >
                     {awayTeamRecord}
                   </ThemedText>
                 )}
+                {renderFormRow(awayForm, awayTeamId)}
               </View>
 
               {showLiveScoreNumbers ? (
                 <View style={styles.scoreContainer}>
-                  <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.scoreText}>
+                  <ThemedText
+                    lightColor="#0f172a"
+                    darkColor="#ffffff"
+                    style={styles.scoreText}
+                  >
                     {awayTeamScore}
                   </ThemedText>
-                  <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.scoreDivider}>
+                  <ThemedText
+                    lightColor="#475569"
+                    darkColor="#CBD5E1"
+                    style={styles.scoreDivider}
+                  >
                     -
                   </ThemedText>
-                  <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.scoreText}>
+                  <ThemedText
+                    lightColor="#0f172a"
+                    darkColor="#ffffff"
+                    style={styles.scoreText}
+                  >
                     {homeTeamScore}
                   </ThemedText>
                 </View>
               ) : (
-                <ThemedText lightColor="#475569" darkColor="#CBD5E1" style={styles.modalVsText}>
+                <ThemedText
+                  lightColor="#475569"
+                  darkColor="#CBD5E1"
+                  style={styles.modalVsText}
+                >
                   @
                 </ThemedText>
               )}
 
               <View style={styles.teamColumn}>
-                <Image
-                  source={displayHomeLogo ? { uri: displayHomeLogo } : defaultLogo}
-                  style={styles.logo}
-                  resizeMode="contain"
-                />
-                <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.modalTeamName}>
-                  {homeTeam ? homeTeam.replace(/ (?=[^ ]*$)/, '\n') : ''}
-                  {(favoriteTeams.includes(homeTeamId) || favoriteTeams.length < maxFavoritesNumber) && (
+                {/* Home team logo: opens the team's Wikipedia article in the reader's language. */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  disabled={!homeTeam}
+                  accessibilityRole="link"
+                  accessibilityLabel={homeTeam}
+                  onPress={() => openWikipediaTeam(homeTeam)}
+                >
+                  <Image
+                    source={
+                      displayHomeLogo ? { uri: displayHomeLogo } : defaultLogo
+                    }
+                    style={styles.logo}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+                <ThemedText
+                  lightColor="#0f172a"
+                  darkColor="#ffffff"
+                  style={styles.modalTeamName}
+                >
+                  {homeTeam ? homeTeam.replace(/ (?=[^ ]*$)/, "\n") : ""}
+                  {(favoriteTeams.includes(homeTeamId) ||
+                    favoriteTeams.length < maxFavoritesNumber) && (
                     <Icon
                       onPress={() => addFavoriteTeam(favoriteTeams, homeTeamId)}
-                      name={favoriteTeams.includes(homeTeamId) ? 'star' : 'star-o'}
+                      name={
+                        favoriteTeams.includes(homeTeamId) ? "star" : "star-o"
+                      }
                       type="font-awesome"
                       size={14}
-                      color={favoriteTeams.includes(homeTeamId) ? '#FFD700' : '#94a3b8'}
+                      color={
+                        favoriteTeams.includes(homeTeamId)
+                          ? "#FFD700"
+                          : "#94a3b8"
+                      }
                       style={{ marginLeft: 5 }}
                     />
                   )}
                 </ThemedText>
                 {homeTeamRecord && (
-                  <ThemedText lightColor="#475569" darkColor="#94a3b8" style={styles.recordText}>
+                  <ThemedText
+                    lightColor="#475569"
+                    darkColor="#94a3b8"
+                    style={styles.recordText}
+                  >
                     {homeTeamRecord}
                   </ThemedText>
                 )}
+                {renderFormRow(homeForm, homeTeamId)}
               </View>
             </View>
             {renderStatusText()}
@@ -310,14 +716,22 @@ export default function GameModal({
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
-                      textDecoration: 'none',
-                      display: 'flex',
+                      textDecoration: "none",
+                      display: "flex",
                       flex: 1,
-                      justifyContent: 'center',
+                      justifyContent: "center",
                     }}
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <View style={[styles.actionButton, { backgroundColor: buttonBackgroundColor, width: '100%' }]}>
+                    <View
+                      style={[
+                        styles.actionButton,
+                        {
+                          backgroundColor: buttonBackgroundColor,
+                          width: "100%",
+                        },
+                      ]}
+                    >
                       <Icon
                         name="list-alt"
                         type="font-awesome"
@@ -325,8 +739,12 @@ export default function GameModal({
                         color={iconColor}
                         style={{ marginRight: 10 }}
                       />
-                      <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.actionButtonText}>
-                        {translateWord('gameDetails')}
+                      <ThemedText
+                        lightColor="#0f172a"
+                        darkColor="#ffffff"
+                        style={styles.actionButtonText}
+                      >
+                        {translateWord("gameDetails")}
                       </ThemedText>
                     </View>
                   </a>
@@ -336,14 +754,22 @@ export default function GameModal({
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
-                        textDecoration: 'none',
-                        display: 'flex',
+                        textDecoration: "none",
+                        display: "flex",
                         flex: 1,
-                        justifyContent: 'center',
+                        justifyContent: "center",
                       }}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <View style={[styles.actionButton, { backgroundColor: buttonBackgroundColor, width: '100%' }]}>
+                      <View
+                        style={[
+                          styles.actionButton,
+                          {
+                            backgroundColor: buttonBackgroundColor,
+                            width: "100%",
+                          },
+                        ]}
+                      >
                         <Icon
                           name="list-ol"
                           type="font-awesome"
@@ -351,8 +777,12 @@ export default function GameModal({
                           color={iconColor}
                           style={{ marginRight: 10 }}
                         />
-                        <ThemedText lightColor="#0f172a" darkColor="#ffffff" style={styles.actionButtonText}>
-                          {translateWord('standings')}
+                        <ThemedText
+                          lightColor="#0f172a"
+                          darkColor="#ffffff"
+                          style={styles.actionButtonText}
+                        >
+                          {translateWord("standings")}
                         </ThemedText>
                       </View>
                     </a>
@@ -360,7 +790,10 @@ export default function GameModal({
                   {onRemoveFromFavorites && (
                     <View style={styles.buttonWrapper}>
                       <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}
+                        style={[
+                          styles.actionButton,
+                          { backgroundColor: buttonBackgroundColor },
+                        ]}
                         onPress={() => {
                           onRemoveFromFavorites(data);
                           onClose();
@@ -374,7 +807,7 @@ export default function GameModal({
                           style={styles.buttonIcon}
                         />
                         <ThemedText style={styles.actionButtonText}>
-                          {translateWord('removeFromFavorites')}
+                          {translateWord("removeFromFavorites")}
                         </ThemedText>
                       </TouchableOpacity>
                     </View>
@@ -384,7 +817,10 @@ export default function GameModal({
                 <>
                   <View style={styles.buttonWrapper}>
                     <TouchableOpacity
-                      style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}
+                      style={[
+                        styles.actionButton,
+                        { backgroundColor: buttonBackgroundColor },
+                      ]}
                       onPress={() => {
                         generateICSFile(data);
                         onClose();
@@ -397,7 +833,9 @@ export default function GameModal({
                         color={iconColor}
                         style={styles.buttonIcon}
                       />
-                      <ThemedText style={styles.actionButtonText}>{translateWord('downloadICS')}</ThemedText>
+                      <ThemedText style={styles.actionButtonText}>
+                        {translateWord("downloadICS")}
+                      </ThemedText>
                     </TouchableOpacity>
                   </View>
 
@@ -407,7 +845,10 @@ export default function GameModal({
                         // Favorites modal: the trash button replaces the
                         // "locate arena" action.
                         <TouchableOpacity
-                          style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}
+                          style={[
+                            styles.actionButton,
+                            { backgroundColor: buttonBackgroundColor },
+                          ]}
                           onPress={() => {
                             onRemoveFromFavorites(data);
                             onClose();
@@ -421,7 +862,7 @@ export default function GameModal({
                             style={styles.buttonIcon}
                           />
                           <ThemedText style={styles.actionButtonText}>
-                            {translateWord('removeFromFavorites')}
+                            {translateWord("removeFromFavorites")}
                           </ThemedText>
                         </TouchableOpacity>
                       ) : (
@@ -429,10 +870,15 @@ export default function GameModal({
                           href={`https://www.google.com/maps/search/?api=1&query=${stadiumSearch}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ textDecoration: 'none' }}
+                          style={{ textDecoration: "none" }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <View style={[styles.actionButton, { backgroundColor: buttonBackgroundColor }]}>
+                          <View
+                            style={[
+                              styles.actionButton,
+                              { backgroundColor: buttonBackgroundColor },
+                            ]}
+                          >
                             <Icon
                               name="map-marker"
                               type="font-awesome"
@@ -440,7 +886,9 @@ export default function GameModal({
                               color={iconColor}
                               style={styles.buttonIcon}
                             />
-                            <ThemedText style={styles.actionButtonText}>{translateWord('localizeArena')}</ThemedText>
+                            <ThemedText style={styles.actionButtonText}>
+                              {translateWord("localizeArena")}
+                            </ThemedText>
                           </View>
                         </a>
                       )}
@@ -449,7 +897,7 @@ export default function GameModal({
                 </>
               )}
             </View>
-          </View>
+          </ScrollView>
         </Pressable>
       </Pressable>
     </Modal>
@@ -459,41 +907,47 @@ export default function GameModal({
 const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
   },
   modalView: {
     margin: 20,
     borderRadius: 20,
     padding: 20,
-    alignItems: 'center',
-    shadowColor: '#000',
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    width: '90%',
+    width: "90%",
     maxWidth: 500,
+    // The card must never exceed the viewport: its content (two team columns,
+    // the form rows, the status line and the actions) is scrollable below.
+    maxHeight: "92%",
   },
   closeButton: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     padding: 5,
   },
+  modalScroll: {
+    width: "100%",
+  },
   modalContent: {
-    alignItems: 'center',
-    width: '100%',
+    alignItems: "center",
+    width: "100%",
   },
   teamsContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-    width: '100%',
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    width: "100%",
     marginBottom: 20,
     paddingHorizontal: 10,
   },
   teamColumn: {
-    alignItems: 'center',
+    alignItems: "center",
     flex: 1,
   },
   logo: {
@@ -503,48 +957,75 @@ const styles = StyleSheet.create({
   },
   modalTeamName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   recordText: {
     fontSize: 14,
     marginTop: 4,
-    textAlign: 'center',
+    textAlign: "center",
+  },
+  formRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    // Fixed height so the two rows can never stretch the modal further.
+    height: 12,
+    marginTop: 6,
+  },
+  formDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    marginHorizontal: 1.5,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  formDotFill: {
+    width: "100%",
+    height: "100%",
+  },
+  formDotFillHalf: {
+    // Keeps the left half filled (draw), the right one stays hollow.
+    width: "50%",
+    alignSelf: "flex-start",
   },
   modalTeamFullName: {
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 5,
   },
   scoreContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: 70,
   },
   modalVsText: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 70,
   },
   scoreText: {
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginHorizontal: 5,
     lineHeight: 32,
   },
   scoreDivider: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   actionsRow: {
-    flexDirection: 'row',
-    width: '100%',
+    flexDirection: "row",
+    width: "100%",
     gap: 12,
     marginTop: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexWrap: 'wrap',
+    justifyContent: "center",
+    alignItems: "center",
+    flexWrap: "wrap",
   },
   buttonWrapper: {
     flex: 1,
@@ -552,28 +1033,28 @@ const styles = StyleSheet.create({
     minWidth: 120,
   },
   actionButton: {
-    flexDirection: 'row',
+    flexDirection: "row",
     height: 54,
-    width: '100%',
+    width: "100%",
     borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 10,
   },
   buttonIcon: {
     marginRight: 8,
   },
   actionButtonText: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 13,
-    textAlign: 'center',
+    textAlign: "center",
     flexShrink: 1,
   },
   dateText: {
     marginBottom: 20,
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-    textTransform: 'capitalize',
+    fontWeight: "600",
+    textAlign: "center",
+    textTransform: "capitalize",
   },
 });
