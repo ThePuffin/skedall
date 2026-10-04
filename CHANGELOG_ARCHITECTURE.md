@@ -2,6 +2,75 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Changed: "Finalisation" also covers a live feed that went silent (`dataChangedAt`)
+
+### Problem
+
+Once "Finalisation" became clock-based, one case was left uncovered: the expected end had passed, the
+clock still read `"02:00"`, and the provider had simply stopped sending anything new for minutes. The
+card kept showing a live-looking `02:00 - 3rd` for a match that was in fact over.
+
+The obvious fix — using the existing `updateDate` — is wrong: `syncGameWithScore()` rewrites
+`updateDate` on **every** live sync whether or not anything moved, so it means "last time we polled the
+provider", not "last time the data changed". It can never detect a stuck feed.
+
+### Changes
+
+- **`backend/src/games/schemas/game.schema.ts`** — new optional `dataChangedAt` prop: ISO-8601 instant
+  of the last actual **value change** of `gameClock` / `gamePeriod` / scores / `gameStatus`.
+- **`backend/src/games/games.service.ts`** — `syncGameWithScore()` now captures the previous clock,
+  period, both scores and the previous status before overwriting them, keeps writing `updateDate` every
+  sync, and refreshes `dataChangedAt` **only** when one of those values differs (or when the field is
+  still missing, so existing documents are backfilled on their first sync).
+- **`backend/src/games/dto/create-game.dto.ts` / `update-game.dto.ts`** — `dataChangedAt?: string`.
+- **`frontend/utils/date.ts`** — new `STALE_FEED_MINUTES` (`15`) and `isLiveFeedStale(dataChangedAt, now?)`.
+  15 minutes is deliberate: past a game's expected end a live clock never legitimately stands still that
+  long, and the app polls every 30 s, so a shorter threshold would fire on a slow provider rather than on
+  a stuck one. A missing/unparsable `dataChangedAt` returns `false` — absence is not evidence, so the UI
+  keeps trusting the clock instead of guessing (documents synced before this field existed).
+- **`frontend/utils/date.ts` (`isGameAwaitingFinalization`)** — the second condition is now
+  `hasNoTimeLeftOnClock(gameClock) || isLiveFeedStale(dataChangedAt)`, so a frozen clock past the
+  expected end qualifies.
+- **`frontend/components/CardLarge.tsx` / `GameModal.tsx`** — destructure `dataChangedAt` and forward it
+  to `isGameAwaitingFinalization()`. `!hasScore` still gates everything, so a finished game **with** a
+  score keeps its existing behavior (`"Score"` / `"Final"` / date) — unchanged.
+- **`frontend/utils/types.tsx`** — `dataChangedAt?: string` on `GameFormatted`.
+- **`frontend/utils/date.test.ts`** — 9 new tests: fresh vs. frozen feed at/beyond the threshold, an
+  absent/invalid timestamp, a frozen clock past the expected end (`true`), the same clock inside the
+  threshold or before the expected end (`false`), and the clock-less-sport case.
+- Docs updated: `docs/date.ts.md`, `docs/types.tsx.md`, `docs/components/CardLarge.tsx.md`,
+  `docs/components/GameModal.tsx.md`.
+
+## Changed: "Finalisation" only appears once the match is really over
+
+### Problem
+
+The `"Finalisation"` fallback (shown when the provider never sent a score) was gated by a flat
+elapsed-time rule — `diffHours > 4` in `CardLarge`, `> 3` in `GameModal` — which had nothing to do with
+the state of the match itself. A game 4h01 in that was legitimately still running (a long overtime, a
+rain delay, extra periods) was announced as "Finalisation" while it was being played, and the two
+screens disagreed on when the label appeared.
+
+### Changes
+
+- **`frontend/utils/date.ts`** — two new exports:
+  - `hasNoTimeLeftOnClock(gameClock?)`: a missing/empty/placeholder clock (a sport with no running
+    clock at all) and a non-clock string such as `"Final"` count as "no time left"; an `M:SS` clock
+    only when it is `"00:00"` / `"0:00"`.
+  - `isGameAwaitingFinalization({ startTimeUTC, league?, gameClock? })`: `true` only when the
+    **expected end of the match has passed** (`now > start + timeDurationEnum[league]`, the same
+    duration table as `getGamesStatus()`) **and** the clock reports no time left. Invalid dates return
+    `false`.
+- **`frontend/components/CardLarge.tsx`** — `showFinalization` now uses
+  `isGameAwaitingFinalization({ startTimeUTC, league, gameClock })` instead of `isStarted4hAgo`.
+- **`frontend/components/GameModal.tsx`** — same replacement; the now-unused `diffHours` /
+  `isStarted3hAgo` locals were removed.
+- **`frontend/utils/date.test.ts`** — new suites for both helpers: zeroed/missing/placeholder clocks,
+  a running clock, an overtime game past its duration, a match before its expected end, an
+  invalid start time.
+- Docs updated: `docs/date.ts.md`, `docs/components/CardLarge.tsx.md`,
+  `docs/components/GameModal.tsx.md`.
+
 ## Changed: the GameModal "form" row draws bare icons instead of circles
 
 ### Problem

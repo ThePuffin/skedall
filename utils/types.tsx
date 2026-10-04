@@ -27,6 +27,12 @@ export interface GameFormatted {
   selectedTeam: boolean;
   league: string;
   updateDate?: Date;
+  /**
+   * ISO timestamp of the last time `gameClock` / `gamePeriod` / scores / status
+   * actually changed value (as opposed to `updateDate`, refreshed on every sync).
+   * Absent on documents synced before this field existed.
+   */
+  dataChangedAt?: string;
   venueTimezone?: string;
   isActive?: boolean;
   urlLive?: string;

@@ -82,7 +82,7 @@ The **GameModal** component displays a detailed game popup with team logos, reco
 - `hasScore` — both team scores are non-null
 - `status` — game status via `getGamesStatus(displayData)`
 - `isLive` — true when status is in-progress, period text is present, or scores exist today and game isn't final (excludes `DELAYED` — interrupted games are not live)
-- `showFinalization` — no scores, not terminated, and game started > 3h ago (renders "Final")
+- `showFinalization` — no scores, not terminated, and the game is awaiting finalization (`isGameAwaitingFinalization`): expected end passed **and** either no time left on the clock or a feed frozen past `STALE_FEED_MINUTES` since `dataChangedAt`. A game in overtime, or one whose feed simply updated 2 minutes ago, is not flagged (renders "Final")
 - `liveTimeText` — combined clock + period text without duplication
 - `stadiumSearch` — arena + place formatted for Google Maps query
 - `standingUrl` — ESPN standings URL via `leagueMapping`, or PWHL standings for PWHL
