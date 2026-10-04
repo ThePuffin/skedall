@@ -21,14 +21,17 @@ The **GameModal** component displays a detailed game popup with team logos, reco
   placeholder as `Cards`/`CardLarge`. The asset is a `require()` id (a number), so it is passed
   directly to `source` and never through `{ uri: ... }`
 - **Translated text** — uses `translateWord()` for all labels
-- **Recent form row** — under each team (below its record), up to 5 dots showing the last 5 results,
-  **oldest on the left, most recent on the right**: filled = win, hollow = loss, half-filled (left
-  half) = draw. The dots are drawn in the **modal's text color** (module-level `DOT_COLORS`:
-  `#0f172a` light / `#ffffff` dark, the very colors the modal passes to its `ThemedText` labels)
-  for the fill _and_ the border, so the row reads as a neutral indicator and never borrows — or
-  clashes with — a team color. **A loss in overtime or a shootout is shown as a draw** (half-filled):
-  those leagues have no real tie, so an `otLosses` result reads as a half-filled dot. Nothing is
-  rendered when the
+- **Recent form row** — under each team (below its record), up to 5 **bare Ionicons icons** showing
+  the last 5 results, **oldest on the left, most recent on the right**: checkmark = win, cross =
+  loss, half-filled circle (`contrast`) = draw (module-level `FORM_OUTCOME_ICONS`). The icons carry
+  **no background and no border** — only the **modal's text color** (module-level `DOT_COLORS`:
+  `#0f172a` light / `#ffffff` dark, the very colors the modal passes to its `ThemedText` labels), so
+  the row reads as a neutral indicator and never borrows — or clashes with — a team color. Each icon
+  sits in a fixed `formIconSlot` (12×12) so a checkmark and a cross line up exactly. Each entry's
+  `accessibilityLabel` is spelled out for screen readers ("Win" / "Loss" / "Draw", module-level
+  `FORM_OUTCOME_LABELS` — plain English, as `translateWord()` has no matching key). **A loss in
+  overtime or a shootout is shown as a draw** (half-filled circle): those leagues have no real tie,
+  so an `otLosses` result reads as a draw. Nothing is rendered when the
   team has no stored history. Data comes from `fetchRecentFormGames(teamId, formBefore, 5)` →
   `GET /games/team/:id/form`, loaded per team so a failure on one side never hides the other row;
   the rows are reset when the modal closes or the game changes
@@ -40,13 +43,14 @@ The **GameModal** component displays a detailed game popup with team logos, reco
   milliseconds and be unique on every open. The displayed game can therefore never be returned, and
   `getRecentForm` still passes `data.uniqueId` as a defensive exclusion
 - **Loading skeleton** — while the results request is in flight, each team's row shows five neutral
-  gray placeholder dots instead of the real ones, so the results never "pop" into place. A single
-  `Animated.Value` (`FormSkeleton`) sweeps `0 → 1` over `LOADER_CYCLE_MS` (1400 ms); each dot
+  gray placeholder squares instead of the real icons, so the results never "pop" into place. A single
+  `Animated.Value` (`FormSkeleton`) sweeps `0 → 1` over `LOADER_CYCLE_MS` (1400 ms); each square
   interpolates its own slice of that sweep, offset by `index * DOT_DELAY_MS` (220 ms, fading over
-  `DOT_FADE_MS` = 260 ms), so the dots light up one after the other. `Animated.loop` restarts the
-  sequence once the value reaches 1 — the "all dots shown → start again" loader behavior — and the
-  animation is stopped when the modal closes. The skeleton reuses `formRow`/`formDot`, so the layout
-  is identical and nothing shifts when the real dots land; a team with no id never shows one
+  `DOT_FADE_MS` = 260 ms), so the placeholders light up one after the other. `Animated.loop` restarts
+  the sequence once the value reaches 1 — the "all shown → start again" loader behavior — and the
+  animation is stopped when the modal closes. The skeleton uses `formSkeletonPlaceholder`, sized
+  identically to `formIconSlot`, so the layout is identical and nothing shifts when the real icons
+  land; a team with no id never shows one
 - **Scrollable content** — the modal card is capped at `maxHeight: '92%'` and its content is wrapped
   in a `ScrollView`, so the added form rows can never push the card past the viewport
 - **Click-outside close** — backdrop press and close button dismiss the modal
@@ -93,7 +97,7 @@ The **GameModal** component displays a detailed game popup with team logos, reco
 Fetches one team's recent results (`fetchRecentFormGames`) and turns them into the form row
 (`getRecentForm`) with `RECENT_FORM_LENGTH` as the cap and `data.uniqueId` as a defensive exclusion.
 Returns `[]` for a missing team id, and swallows any failure into `[]` so a team
-with no stored history — or a failing request — simply shows no dots instead of breaking the modal.
+with no stored history — or a failing request — simply shows no icons instead of breaking the modal.
 `formBefore` is memoized on `data.startTimeUTC`: it is `undefined` for an upcoming game and the
 game's own ISO start for a past one. Called from a `useEffect` keyed on
 `[visible, data.awayTeamId, data.homeTeamId]`: the rows are reset
@@ -102,11 +106,12 @@ that arrives after the modal was closed or another game was opened.
 
 ### `renderFormRow(form, teamId?)`
 
-Renders the dot row, or `null` when `form` is empty. Each dot is a bordered circle: filled
-(`W`) / hollow (`L`) / half-filled on the left (`D`), all in the modal's text color from the
-module-level `DOT_COLORS` (the same values the modal gives its `ThemedText` labels), which serves as
-both the fill and the border color. `teamId` only decides whether a loading skeleton can appear —
-the team color is no longer used.
+Renders the icon row, or `null` when `form` is empty. Each entry is a **bare** Ionicons glyph from the
+module-level `FORM_OUTCOME_ICONS` — `checkmark` (`W`) / `close` (`L`) / `contrast` (`D`, a
+half-filled circle) — drawn at `size={12}` in the modal's text color from the module-level
+`DOT_COLORS` (the same values the modal gives its `ThemedText` labels). No background and no border
+are drawn: the glyph is the whole indicator. `teamId` only decides whether a loading skeleton can
+appear — the team color is no longer used.
 
 ### `openWikipediaTeam(teamName?)`
 

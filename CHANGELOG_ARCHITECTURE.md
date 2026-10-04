@@ -2,6 +2,51 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Changed: the GameModal "form" row draws bare icons instead of circles
+
+### Problem
+
+The last-5-results row told a win from a loss from a draw purely with circles: **filled** = win,
+**hollow** = loss, **half-filled on the left** = draw. Filled vs. hollow is a shape difference you
+have to zoom in on to read, it is the one distinction the row most needs to be instant, and it is
+useless in monochrome or to a colorblind reader — nothing distinguishes the three at a glance. A
+symbol has no such problem.
+
+### Changes
+
+- **`frontend/components/GameModal.tsx`**
+  - `renderFormRow()` renders one **bare Ionicons glyph** per game instead of a bordered circle:
+    `checkmark` = win, `close` = loss, `contrast` = draw. Both come from the new module-level
+    `FORM_OUTCOME_ICONS: Record<GameOutcome, ...>`. Draw keeps a circle-ish glyph on purpose:
+    "nothing happened" has no glyph of its own, and a half circle reads as a tie far better than a
+    plain dash.
+  - The icons carry **no background and no border** — only the modal's text color (`DOT_COLORS`),
+    which is the neutrality already documented for this row, so the row still never borrows a team
+    color.
+  - Each glyph sits in a new `formIconSlot` (fixed 12×12 box): a checkmark and a cross have
+    different natural extents, so without a fixed box they would not line up on the row.
+  - The accessibility label is now spelled out (`FORM_OUTCOME_LABELS`: "Win" / "Loss" / "Draw")
+    instead of the bare `"W"` / `"L"` / `"D"`, which VoiceOver read as a single letter. Plain English
+    on purpose: `translateWord()` has no `win` / `loss` / `draw` key, and the icons are already
+    self-explanatory for sighted users, so the label is only a screen-reader fallback.
+  - `FormSkeleton`'s placeholders use a new `formSkeletonPlaceholder` (12×12, radius 3) instead of
+    the old circle styles — **sized identically to `formIconSlot`**, so the loading row keeps the
+    exact same layout and nothing shifts when the real icons land.
+  - **Deleted styles** `formDot`, `formDotFill` and `formDotFillHalf`, which the circles needed (fill
+    + half-fill) and the icons no longer use. `formRow` and its `height: 12` are unchanged.
+- **Tests** (`components/__tests__/GameModal-test.tsx`): `@expo/vector-icons` is now mocked like
+  `@rneui/themed` so the suite does not need the bundled icon font. The `formLabels` helper maps the
+  new labels back to `W`/`L`/`D`, so all 33 existing form assertions keep testing the same outcomes
+  and order.
+- **Docs** (`docs/components/GameModal.tsx.md`): the "Recent form row" and "Loading skeleton"
+  bullets and the `renderFormRow` section were rewritten; every mention of the filled/hollow/half
+  circles is gone.
+
+### Notes
+
+No new dependency (`@expo/vector-icons` was already used by `HomeGameToggle`, `ScoreToggle` and
+`calendar.tsx`) and no backend change — `GET /games/team/:id/form` is untouched.
+
 ## Fixed: a win could be rendered as a loss (score read from the wrong side)
 
 ### Problem

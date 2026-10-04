@@ -4,6 +4,7 @@ import renderer from "react-test-renderer";
 
 import GameModal from "../GameModal";
 import { fetchRecentFormGames } from "../../utils/fetchData";
+import { GameOutcome } from "../../utils/date";
 
 import { GameFormatted } from "../../utils/types";
 
@@ -28,6 +29,12 @@ jest.mock("../../utils/syncService", () => ({
 // which is irrelevant to the logo rendering asserted below.
 jest.mock("@rneui/themed", () => ({
   Icon: () => null,
+}));
+
+// The recent-form row renders bare Ionicons glyphs; stubbed so the suite does not
+// depend on the bundled font being loaded in the test environment.
+jest.mock("@expo/vector-icons", () => ({
+  Ionicons: () => null,
 }));
 
 // The recent-form row calls the team-results endpoint on open; stubbed here so
@@ -460,11 +467,22 @@ const renderModalWithForm = async (game: GameFormatted) => {
 };
 
 /**
- * Outcome label of every dot, in render order (the away row comes first).
- * `findAll` also matches the composite element and its host instance, which
- * both carry the same props, so only host instances are kept to avoid counting
- * every dot twice.
+ * Outcome of every entry in the form row, in render order (the away row comes
+ * first). `findAll` also matches the composite element and its host instance,
+ * which both carry the same props, so only host instances are kept to avoid
+ * counting every entry twice.
+ *
+ * The row now draws bare icons instead of circles, so the only thing left to
+ * assert is each entry's accessibility label. Those labels are spelled out for
+ * screen readers ("Win" / "Loss" / "Draw"); they are mapped back to the compact
+ * `W` / `L` / `D` form used throughout the suite.
  */
+const FORM_LABEL_TO_OUTCOME: Record<string, GameOutcome> = {
+  Win: "W",
+  Loss: "L",
+  Draw: "D",
+};
+
 const formLabels = (tree: renderer.ReactTestRenderer) =>
   tree.root
     .findAll(
@@ -472,7 +490,7 @@ const formLabels = (tree: renderer.ReactTestRenderer) =>
         typeof node.type === "string" &&
         String(node.props.testID ?? "").startsWith("form-dot-"),
     )
-    .map((node) => node.props.accessibilityLabel);
+    .map((node) => FORM_LABEL_TO_OUTCOME[node.props.accessibilityLabel]);
 
 describe("GameModal recent form (last 5 results)", () => {
   beforeEach(() => {

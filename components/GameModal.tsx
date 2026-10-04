@@ -16,6 +16,7 @@ import {
   translateWord,
 } from "@/utils/utils";
 import { Icon } from "@rneui/themed";
+import { Ionicons } from "@expo/vector-icons";
 import React, {
   useCallback,
   useEffect,
@@ -60,6 +61,36 @@ const defaultLogo = require("../assets/images/default_logo.png");
  * `lightColor` / `darkColor` the modal passes to its `ThemedText` labels.
  */
 const DOT_COLORS = { light: "#0f172a", dark: "#ffffff" };
+
+/**
+ * Bare Ionicons glyph per form outcome — the icons replace the former
+ * filled/hollow circles. They are drawn **without any background**, in the
+ * modal's text color, so the row stays a neutral indicator that never clashes
+ * with the card or borrows the team color.
+ *
+ * `D` keeps a circle-ish glyph (`contrast`, half-filled) because "nothing
+ * happened" has no glyph of its own and reads better as a half circle than as
+ * a plain dash.
+ */
+const FORM_OUTCOME_ICONS: Record<
+  GameOutcome,
+  "checkmark" | "close" | "contrast"
+> = {
+  W: "checkmark",
+  L: "close",
+  D: "contrast",
+};
+
+/**
+ * Screen-reader label per outcome. Plain English on purpose: `translateWord()`
+ * has no `win` / `loss` / `draw` key, and the icons are now self-explanatory to
+ * a sighted user, so the label is only a fallback for VoiceOver/TalkBack.
+ */
+const FORM_OUTCOME_LABELS: Record<GameOutcome, string> = {
+  W: "Win",
+  L: "Loss",
+  D: "Draw",
+};
 
 interface GameModalProps {
   visible: boolean;
@@ -385,7 +416,7 @@ export default function GameModal({
               key={index}
               testID={`form-skeleton-dot-${index}`}
               style={[
-                styles.formDot,
+                styles.formSkeletonPlaceholder,
                 {
                   backgroundColor: baseColor,
                   opacity: progress.interpolate({
@@ -403,21 +434,21 @@ export default function GameModal({
   }
 
   /**
-   * The "last 5 results" row: one dot per game, **oldest on the left, most
-   * recent on the right**.
+   * The "last 5 results" row: one bare icon per game, **oldest on the left,
+   * most recent on the right**.
    *
-   * - `W` — filled dot;
-   * - `L` — hollow dot (transparent fill, same-color border);
-   * - `D` — half-filled (left half filled), the convention used by the football
-   *   UIs this borrows from.
+   * - `W` — checkmark;
+   * - `L` — cross;
+   * - `D` — half-filled circle.
    *
-   * The dots use the modal's text color (`DOT_COLORS`) rather than the team
-   * color, so the row stays a neutral indicator and never clashes with the card.
-   * Renders nothing at all when the team has no stored history.
+   * The icons carry **no background and no border**: they only use the modal's
+   * text color (`DOT_COLORS`) rather than the team color, so the row stays a
+   * neutral indicator and never clashes with the card. Renders nothing at all
+   * when the team has no stored history.
    */
   const renderFormRow = (form: GameOutcome[], teamId?: string) => {
     // While loading, the neutral animated placeholders take the row's place: the
-    // layout is identical, so nothing shifts when the real dots land. A team with
+    // layout is identical, so nothing shifts when the real icons land. A team with
     // no id has nothing to load, so it never shows a loader.
     if (formLoading && teamId) return <FormSkeleton isDark={isDark} />;
     if (!form || form.length === 0) return null;
@@ -429,20 +460,16 @@ export default function GameModal({
         {form.map((outcome, index) => (
           <View
             key={`${outcome}-${index}`}
-            style={[styles.formDot, { borderColor: color }]}
+            style={styles.formIconSlot}
             accessibilityRole="image"
-            accessibilityLabel={outcome}
+            accessibilityLabel={FORM_OUTCOME_LABELS[outcome]}
             testID={`form-dot-${index}`}
           >
-            {outcome !== "L" ? (
-              <View
-                style={[
-                  styles.formDotFill,
-                  outcome === "D" ? styles.formDotFillHalf : null,
-                  { backgroundColor: color },
-                ]}
-              />
-            ) : null}
+            <Ionicons
+              name={FORM_OUTCOME_ICONS[outcome]}
+              size={12}
+              color={color}
+            />
           </View>
         ))}
       </View>
@@ -973,24 +1000,23 @@ const styles = StyleSheet.create({
     height: 12,
     marginTop: 6,
   },
-  formDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 1.5,
+  formIconSlot: {
+    // Fixed-size wrapper around each outcome icon: it gives every glyph the same
+    // box (so a checkmark and a cross line up exactly) and owns the spacing.
+    width: 12,
+    height: 12,
     marginHorizontal: 1.5,
-    overflow: "hidden",
     alignItems: "center",
     justifyContent: "center",
   },
-  formDotFill: {
-    width: "100%",
-    height: "100%",
-  },
-  formDotFillHalf: {
-    // Keeps the left half filled (draw), the right one stays hollow.
-    width: "50%",
-    alignSelf: "flex-start",
+  formSkeletonPlaceholder: {
+    // Same box as `formIconSlot` so the loading row has the exact same layout as
+    // the real icons — nothing shifts when they land. Not a circle anymore: a
+    // faint rounded square is the neutral "unknown result" shape.
+    width: 12,
+    height: 12,
+    marginHorizontal: 1.5,
+    borderRadius: 3,
   },
   modalTeamFullName: {
     fontSize: 16,
