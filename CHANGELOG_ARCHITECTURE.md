@@ -2,6 +2,28 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Feature: Filter accordions on tablets (breakpoint raised to 1024px)
+
+### Problem
+
+On a tablet (typically 768–1024px wide in portrait), the filters were always fully expanded: the filter band (league slider, team filters, opponent filter, month slider) took a large part of the screen height, leaving too little room to see the games.
+
+### Solution
+
+`FilterAccordion` decided between accordion and static section from the `isSmallDevice` prop (`width < 768`), so anything wider than 768px got the always-expanded layout. The breakpoint has been raised to **1024px**, which covers tablets in portrait:
+
+1. `frontend/components/FilterAccordion.tsx` — new exported constant `ACCORDION_MAX_WIDTH = 1024`. The component now reads the width itself with `useWindowDimensions` and renders the accordion when `width < ACCORDION_MAX_WIDTH`, regardless of the `isSmallDevice` prop (prop kept for API compatibility).
+2. `frontend/app/(tabs)/schedule.tsx`, `index.tsx`, `calendar.tsx` — each screen now derives `useFilterAccordion = width < ACCORDION_MAX_WIDTH` from the imported constant and uses it for every filter-layout branch (padding, accordion vs static markup, separator visibility, accordion labels). `isSmallDevice` (`< 768`) is kept for the non-filter layouts (column counts, single-match accordion, sticky offset).
+
+At 1024px and above nothing changes: filters stay expanded and labelled as before.
+
+### Files
+
+- `frontend/components/FilterAccordion.tsx` — `ACCORDION_MAX_WIDTH`, internal width check.
+- `frontend/app/(tabs)/schedule.tsx`, `index.tsx`, `calendar.tsx` — `useFilterAccordion`.
+- `frontend/components/Accordion.tsx` — scroll offset (`getScheduleScrollOffset`) now uses the accordion breakpoint instead of `< 768`, so anchor scrolling stays correct on tablets.
+- `frontend/docs/components/FilterAccordion.tsx.md`, `frontend/docs/components/Accordion.tsx.md` — docs updated.
+
 ## Changed: "Finalisation" also covers a live feed that went silent (`dataChangedAt`)
 
 ### Problem
