@@ -845,30 +845,24 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
       if (!teamsMap.has(game.homeTeamId)) {
         teamsMap.set(game.homeTeamId, {
           uniqueId: game.homeTeamId,
-          value: game.homeTeamId,
           id: game.homeTeamId,
           label: game.homeTeam,
           teamLogo: game.homeTeamLogo,
           teamCommonName: game.homeTeam,
           league: game.league,
           abbrev: game.homeTeamShort,
-          conferenceName: '',
-          divisionName: '',
           updateDate: '',
         });
       }
       if (!teamsMap.has(game.awayTeamId)) {
         teamsMap.set(game.awayTeamId, {
           uniqueId: game.awayTeamId,
-          value: game.awayTeamId,
           id: game.awayTeamId,
           label: game.awayTeam,
           teamLogo: game.awayTeamLogo,
           teamCommonName: game.awayTeam,
           league: game.league,
           abbrev: game.awayTeamShort,
-          conferenceName: '',
-          divisionName: '',
           updateDate: '',
         });
       }

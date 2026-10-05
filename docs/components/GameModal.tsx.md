@@ -18,7 +18,7 @@ The **GameModal** component displays a detailed game popup with team logos, reco
 - **Dark mode logos** — uses `homeTeamLogoDark`/`awayTeamLogoDark` when in dark theme
 - **Default logo fallback** — when a team has no logo (empty/`undefined`, e.g. games synced
   without logos), the bundled `assets/images/default_logo.png` shield is shown — the same
-  placeholder as `Cards`/`CardLarge`. The asset is a `require()` id (a number), so it is passed
+  placeholder as `CardLarge`. The asset is a `require()` id (a number), so it is passed
   directly to `source` and never through `{ uri: ... }`
 - **Translated text** — uses `translateWord()` for all labels
 - **Recent form row** — under each team (below its record), up to 5 **bare Ionicons icons** showing

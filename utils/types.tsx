@@ -23,7 +23,6 @@ export interface GameFormatted {
   gameDate: string;
   teamSelectedId: string;
   startTimeUTC: string;
-  show: boolean;
   selectedTeam: boolean;
   league: string;
   updateDate?: Date;
@@ -33,11 +32,8 @@ export interface GameFormatted {
    * Absent on documents synced before this field existed.
    */
   dataChangedAt?: string;
-  venueTimezone?: string;
   isActive?: boolean;
   urlLive?: string;
-  color: string;
-  backgroundColor: string;
   awayTeamColor: string;
   awayTeamBackgroundColor: string;
   homeTeamColor: string;
@@ -57,13 +53,10 @@ export interface League {
 
 export interface Team {
   uniqueId: string;
-  value: string;
   id: string;
   label: string;
   teamLogo: string;
   teamCommonName: string;
-  conferenceName: string;
-  divisionName: string;
   league: string;
   abbrev: string;
   updateDate: string;

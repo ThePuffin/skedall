@@ -2,6 +2,63 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Removed: `game.show`, `game.color`, `game.backgroundColor`, dead `Cards.tsx`, and `Team.value`
+
+### Problem
+
+A second field audit showed more dead code left behind by earlier refactors:
+
+- **`GameFormatted.show`** — always written as `homeTeam.abbrev === teamId`, i.e. an exact duplicate
+  of `selectedTeam`, and read by no component.
+- **`GameFormatted.color` / `backgroundColor`** — per-game copies of the team colors, only ever read
+  by the dead `Cards.tsx`; every live card uses `homeTeamColor`/`awayTeamColor` instead.
+- **`components/Cards.tsx`** — the small card variant, superseded by `CardLarge` (rendered by
+  `Accordion`/`GamesSelected`), was imported nowhere. Its 17 TypeScript errors were part of the
+  pre-existing error count.
+- **`Team.value`** — was always written as `value: uniqueId`, so it was a redundant alias of
+  `uniqueId`; the only reader was `Selector.tsx`'s league fallback.
+
+### Changes
+
+- **`frontend/utils/types.tsx`** — dropped `show`, `color`, `backgroundColor` from `GameFormatted`
+  and `value` from `Team` (`CardsProps` stays: it is the props interface used by `CardLarge`).
+- **`frontend/app/(tabs)/schedule.tsx`**, **`frontend/app/(tabs)/index.tsx`**,
+  **`frontend/components/FavModal.tsx`** — dropped the `value: …` initializers from the synthesized
+  `Team` literals (the "All" option, teams derived from games, and the favorites list).
+- **`frontend/components/Selector.tsx`** — the league fallback now uses `item.uniqueId` instead of
+  `item.value` (same value, since `value` was always `uniqueId`).
+- **`frontend/components/Cards.tsx`** — deleted (no importer). Its documentation file
+  `docs/components/Cards.tsx.md` was deleted with it.
+- **`frontend/components/__tests__/GameModal-test.tsx`** — fixture no longer sets `show`/`color`/
+  `backgroundColor`.
+- **`frontend/docs/types.tsx.md`**, **`frontend/docs/components/GameModal.tsx.md`** — table rows
+  and the `Cards`/`CardLarge` placeholder mention updated accordingly.
+
+**Impact:** none on behavior — `show` duplicated `selectedTeam`, `color`/`backgroundColor` were
+never rendered, `Cards.tsx` was unreachable, and `value === uniqueId` everywhere. Existing cached
+payloads may still carry the removed keys; they are simply ignored.
+
+## Removed: unused fields `divisionName`, `conferenceName` (Team) and `venueTimezone` (Game)
+
+### Problem
+
+The type audit showed `Team.divisionName`, `Team.conferenceName` and `Game.venueTimezone` were never
+read by any component: they were declared in `utils/types.tsx` and initialized to `''` in a few
+object literals, but no UI or logic consumed them. They have been dropped from the backend schemas at
+the same time.
+
+### Changes
+
+- **`frontend/utils/types.tsx`** — removed `conferenceName` and `divisionName` from `Team`, and
+  `venueTimezone?` from `GameFormatted`.
+- **`frontend/app/(tabs)/schedule.tsx`**, **`frontend/app/(tabs)/index.tsx`**,
+  **`frontend/components/FavModal.tsx`** — dropped the `conferenceName: ''` / `divisionName: ''`
+  initializers from the synthesized `Team` literals (the "All" option, teams derived from games, and
+  the favorites list).
+- **`frontend/docs/types.tsx.md`** — table rows removed accordingly.
+
+**Impact:** none on behavior — the fields were never rendered or filtered on.
+
 ## Feature: Filter accordions on tablets (breakpoint raised to 1024px)
 
 ### Problem
