@@ -2,6 +2,20 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fixed: dependency vulnerabilities via non-breaking `npm audit fix`
+
+`npm audit fix` (no `--force`) was run to avoid the breaking upgrades that `npm audit fix --force` would impose on an Expo/React Native project (it wants to jump `expo` 52 → 57 and `react-native` 0.76.7 → 0.75.5, which would break the Metro/babel toolchain).
+
+Result: **120 → 94 vulnerabilities**, and **criticals 4 → 1**:
+
+- ✅ removed criticals: `protobufjs` (arbitrary code execution), `shell-quote` (newline injection), `websocket-driver` (compression resource-limit bypass)
+- ✅ removed a large batch of highs (brace-expansion, semver-reDoS, `@react-navigation/*`, `@typescript-eslint/*`, `@grpc/grpc-js`, `nanoid`, etc.)
+- **no direct dependency version changed** (`expo ~52.0.38`, `react-native 0.76.7`, `react 18.3.1` all intact) — only transitive entries in `package-lock.json` were refreshed.
+
+The one remaining critical is **`tar <=7.5.20`** (hardlink path traversal). Its only listed fix is a nonsensical `expo@44.0.6` downgrade, so it is intentionally **not** applied. It comes in transitively through the Expo/React Native native build tooling (dev-time, not shipped to the app bundle). It will be resolved by a future `expo`/`expo-template` upgrade rather than a forced install here.
+
+> Note: `npx tsc --noEmit` reports ~21 pre-existing errors in `app/refresh.tsx`, `components/Accordion.tsx`, `components/Selector.tsx`, `utils/dateRange.test.ts`, etc. These are unrelated to this change (none reference `node_modules` or any package touched by the audit fix) and existed before it.
+
 ## Removed: `game.show`, `game.color`, `game.backgroundColor`, dead `Cards.tsx`, and `Team.value`
 
 ### Problem
