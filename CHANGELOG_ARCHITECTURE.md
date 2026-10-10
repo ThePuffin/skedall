@@ -2,6 +2,39 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Changed: filter accordions on every screen size, all open on large screens
+
+### Problem
+
+Filter sections (`FilterAccordion`) only rendered as collapsible accordions on medium screens (`width < ACCORDION_MAX_WIDTH`, 1024px). On large screens they rendered as **static, always-expanded** labelled sections (`Separator` label + content), so there was no way to collapse a filter on desktop.
+
+### Solution
+
+`FilterAccordion` now always renders the collapsible accordion, on every screen size. The screen-size dependency moved entirely to the **default open state**, decided by each screen:
+
+- **Large screens** (`width >= ACCORDION_MAX_WIDTH`): every filter accordion defaults to **open**.
+- **Medium screens** (`width < ACCORDION_MAX_WIDTH`): only one relevant filter is open by default:
+  - **index** (`Game of the Day`): only the **date** filter is open.
+  - **schedule** (`Focus Team`): only the **team/league** filter is open.
+  - **calendar**: both stay open (unchanged behaviour, both were already `defaultOpen`).
+
+### Changes
+
+1. `frontend/components/FilterAccordion.tsx` — removed the static-section branch (always renders the accordion), removed the now-unused `isSmallDevice` prop, and removed the `useWindowDimensions`/`Separator` imports that only served that branch. `ACCORDION_MAX_WIDTH` is kept as the medium/large threshold that screens use to pick their default open state.
+2. `frontend/app/(tabs)/index.tsx` — `leagueAccordionExpanded` initialised to `width >= ACCORDION_MAX_WIDTH` (closed on medium / open on large); the date accordion's `defaultOpen` changed from `false` to `true` (open everywhere). Dropped the three `isSmallDevice` props.
+3. `frontend/app/(tabs)/schedule.tsx` — `isDateAccordionOpen` initialised to `width >= ACCORDION_MAX_WIDTH` and the date/month accordion's `defaultOpen` changed from `false` to `width >= ACCORDION_MAX_WIDTH` (closed on medium / open on large). Dropped the four `isSmallDevice` props.
+4. `frontend/app/(tabs)/calendar.tsx` — dropped the two `isSmallDevice` props (both accordions already default to open).
+5. `frontend/components/Separator.tsx` — removed the now-unused `label` prop (its only caller was the deleted static branch of `FilterAccordion`); the component is now a plain full-width divider line.
+
+Each screen keeps its responsive *content* layout (stacked on medium, side-by-side on large) — only the accordion chrome is now uniform.
+
+### Files
+
+- `frontend/components/FilterAccordion.tsx` — always-accordion, removed `isSmallDevice` prop and static branch.
+- `frontend/components/Separator.tsx` — removed the now-unused `label` prop (docs: `docs/components/Separator.tsx.md`).
+- `frontend/app/(tabs)/index.tsx`, `schedule.tsx`, `calendar.tsx` — default open state from `width >= ACCORDION_MAX_WIDTH`, removed `isSmallDevice` props.
+- `frontend/docs/components/FilterAccordion.tsx.md`, `frontend/docs/index.tsx.md`, `frontend/docs/schedule.tsx.md`, `frontend/docs/calendar.tsx.md` — docs updated.
+
 ## Fixed: dependency vulnerabilities via non-breaking `npm audit fix`
 
 `npm audit fix` (no `--force`) was run to avoid the breaking upgrades that `npm audit fix --force` would impose on an Expo/React Native project (it wants to jump `expo` 52 → 57 and `react-native` 0.76.7 → 0.75.5, which would break the Metro/babel toolchain).

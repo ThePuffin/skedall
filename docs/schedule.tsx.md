@@ -36,8 +36,8 @@ Team selectors use stable callback identifiers (`teams` and `teamsFilter`). `Sel
 | `showPreviousScores`   | `boolean`     | Whether to show past results                |
 | `hasPreviousHistory`   | `boolean`     | Whether the `closest` route reported a `previousDate` for the current selection |
 | `closestRequestRef`    | `Ref<string>` | Dedupe key (`team:<id>` or `league:<code>`) of the last `closest` request |
-| `isTeamAccordionOpen`  | `boolean`     | Mobile accordion state for team filter      |
-| `isDateAccordionOpen`  | `boolean`     | Mobile accordion state for date filter      |
+| `isTeamAccordionOpen`  | `boolean`     | Accordion state for team filter. Defaults to `true` (open on every screen size) |
+| `isDateAccordionOpen`  | `boolean`     | Accordion state for date filter. Defaults to `width >= ACCORDION_MAX_WIDTH` — closed on medium screens (so only the team/league filter is open there), open on large screens |
 | `teamAccordionLabel`   | `string`      | Dynamic label for team/league accordion     |
 | `dateAccordionLabel`   | `string`      | Dynamic label for date/month accordion      |
 
@@ -154,3 +154,5 @@ The team/league and date/month accordions use `getFilterAccordionLabel` to show 
 - **Date/Month accordion** (`dateAccordionLabel`): shows `"Filter by date : <month>"` when a month is selected.
 
 When the accordion is open, the default translated label is shown. The `onExpandedChange` callbacks update `isTeamAccordionOpen` and `isDateAccordionOpen`.
+
+Both accordions render on every screen size. Default open state: the team/league accordion is **open everywhere** (`defaultOpen={true}`, `isTeamAccordionOpen` initialised to `true`); the date/month accordion is **closed on medium screens** and **open on large screens** (`defaultOpen={width >= ACCORDION_MAX_WIDTH}`, `isDateAccordionOpen` initialised to `width >= ACCORDION_MAX_WIDTH`). On large screens every filter therefore starts open.

@@ -687,7 +687,6 @@ export default function Calendar() {
               <FilterAccordion
                 label={teamAccordionLabel}
                 defaultOpen={true}
-                isSmallDevice={useFilterAccordion}
                 onExpandedChange={setIsTeamAccordionOpen}
               >
                 <ThemedElements>
@@ -776,7 +775,6 @@ export default function Calendar() {
               <FilterAccordion
                 label={dateAccordionLabel}
                 defaultOpen={true}
-                isSmallDevice={useFilterAccordion}
                 onExpandedChange={setIsDateAccordionOpen}
               >
                 <ThemedElements style={{ zIndex: 20 }}>

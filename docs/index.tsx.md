@@ -44,8 +44,8 @@ The team selector uses the stable callback identifier `teamsOfDay`. `Selector` c
 | `retryCount`              | `number`               | Auto-retry counter                                     |
 | `closestDates`            | `{ previousDate, nextDate }` | Closest days with games (from `closest` route) for the current filters |
 | `closestRequestRef`       | `Ref<string>`          | Dedupe key (date + leagues + team + filter) of the last `closest` request |
-| `dateAccordionExpanded`   | `boolean`              | Whether the date filter accordion is open (mobile)     |
-| `leagueAccordionExpanded` | `boolean`              | Whether the league filter accordion is open (mobile)   |
+| `dateAccordionExpanded`   | `boolean`              | Whether the date filter accordion is open. Defaults to `true` (open on every screen size) |
+| `leagueAccordionExpanded` | `boolean`              | Whether the league filter accordion is open. Defaults to `width >= ACCORDION_MAX_WIDTH` — closed on medium screens (so only the date filter is open there), open on large screens |
 | `leagueDayGroups`         | `LeagueDayGroup[]`     | League-grouped payload of a **past day** (from `/games/league-day`): one entry per league, plus a leading `FAVORITES` entry when a favorite team plays that day |
 | `favoriteTeamsRef`        | `Ref<string[]>`        | Mirror of `favoriteTeams` read at fetch time (the favorite team ids are sent to the backend, which builds the favorites section) |
 | `leagueDayFavoritesKeyRef`| `Ref<string>`          | Favorites key used by the last past-day fetch — prevents refetching the same day when the favorites did not change |
@@ -211,10 +211,10 @@ The favorites section of a past day is computed by the **backend**, so the favor
 
 The date filter accordion's label (the `<span>` containing the formatted date) is only shown when:
 
-- The device is **mobile** (`isSmallDevice` is `true`), **and**
+- The screen is **medium** (`useFilterAccordion` is `true`, i.e. `width < ACCORDION_MAX_WIDTH`), **and**
 - The accordion is **closed** (`dateAccordionExpanded` is `false`)
 
-When the accordion is open, or on desktop (no accordion), only the plain translated "Date" label is displayed. The `onExpandedChange` callback updates `dateAccordionExpanded` whenever the accordion toggles.
+When the accordion is open, or on a large screen (`width >= ACCORDION_MAX_WIDTH`), only the plain translated "Date" label is displayed. The `onExpandedChange` callback updates `dateAccordionExpanded` whenever the accordion toggles. The date accordion defaults to **open** on every screen size (`defaultOpen={true}`, `dateAccordionExpanded` initialised to `true`).
 
 ## League Accordion Label Behavior
 
@@ -222,9 +222,9 @@ The league filter accordion's label (`leagueAccordionLabel`) dynamically reflect
 
 - If a **team** is selected (`teamSelectedId` is set), the label shows `"Filter by league / team : <LEAGUE>/<team short name>"` (e.g. `MLB/CHC` for the Chicago Cubs).
 - If a **specific league** is selected (`activeFilter` is not `ALL`, `FAVORITES`, or `BOOKMARKS`), the label shows `"Filter by league / team : <league name>"`.
-- Otherwise, the default translated label ("League / Team" on mobile, "League" on desktop) is shown.
+- Otherwise, the default translated label ("League / Team" on medium screens, "League" on large screens) is shown.
 
-When the accordion is open, the default translated label is always shown. The `onExpandedChange` callback updates `leagueAccordionExpanded` whenever the accordion toggles.
+When the accordion is open, the default translated label is always shown. The `onExpandedChange` callback updates `leagueAccordionExpanded` whenever the accordion toggles. The league accordion is parent-controlled (`expanded={leagueAccordionExpanded}`) and defaults to **closed on medium screens** / **open on large screens** (`leagueAccordionExpanded` initialised to `width >= ACCORDION_MAX_WIDTH`).
 
 ## Date / Calendar Datepicker Behavior
 

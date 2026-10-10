@@ -88,7 +88,8 @@ export default function Schedule() {
     () => getCache<boolean>('showPreviousScores') || false,
   );
   const [isTeamAccordionOpen, setIsTeamAccordionOpen] = useState(true);
-  const [isDateAccordionOpen, setIsDateAccordionOpen] = useState(false);
+  // On medium screens the team/league filter is the open one; on large screens everything starts open
+  const [isDateAccordionOpen, setIsDateAccordionOpen] = useState(width >= ACCORDION_MAX_WIDTH);
 
   const isInternalChange = useRef(false);
   const handlePreviousScoreToggle = useCallback(
@@ -777,7 +778,6 @@ export default function Schedule() {
                   <FilterAccordion
                     label={teamAccordionLabel}
                     defaultOpen={true}
-                    isSmallDevice={true}
                     onExpandedChange={setIsTeamAccordionOpen}
                   >
                     <ThemedElements style={{ width: '100%' }}>
@@ -834,7 +834,7 @@ export default function Schedule() {
                   </FilterAccordion>
                 ) : (
                   <>
-                    <FilterAccordion label={translateFilterLabel('league')} defaultOpen={true} isSmallDevice={false}>
+                    <FilterAccordion label={translateFilterLabel('league')} defaultOpen={true}>
                       <ThemedElements style={{ width: '100%' }}>
                         <FilterSlider
                           selectedFilter={leagueOfSelectedTeam}
@@ -846,7 +846,6 @@ export default function Schedule() {
                     <FilterAccordion
                       label={translateFilterLabel('team')}
                       defaultOpen={true}
-                      isSmallDevice={false}
                       onExpandedChange={setIsTeamAccordionOpen}
                     >
                       <div
@@ -908,8 +907,7 @@ export default function Schedule() {
                 {visibleGamesByMonth.length > 1 && (
                   <FilterAccordion
                     label={dateAccordionLabel}
-                    defaultOpen={false}
-                    isSmallDevice={useFilterAccordion}
+                    defaultOpen={width >= ACCORDION_MAX_WIDTH}
                     onExpandedChange={setIsDateAccordionOpen}
                   >
                     <ThemedElements style={{ width: '100%' }}>

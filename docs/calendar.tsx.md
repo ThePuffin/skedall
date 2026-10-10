@@ -32,8 +32,8 @@ The **Calendar** tab (also called "Agenda") displays games for multiple selected
 | `dateRange`           | `{ startDate, endDate }` | Selected date range               |
 | `reorderModalVisible` | `boolean`                | Team reorder modal visibility     |
 | `gamesModalVisible`   | `boolean`                | Bookmarked games modal visibility |
-| `isTeamAccordionOpen` | `boolean`                | Team filter accordion state       |
-| `isDateAccordionOpen` | `boolean`                | Date range accordion state        |
+| `isTeamAccordionOpen` | `boolean`                | Team filter accordion state. Defaults to `true` (open on every screen size) |
+| `isDateAccordionOpen` | `boolean`                | Date range accordion state. Defaults to `true` (open on every screen size) |
 | `datepickerOpen`      | `boolean`                | Whether the calendar datepicker modal is open |
 
 ## Key Functions

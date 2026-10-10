@@ -152,7 +152,8 @@ const GameofTheDayContent = () => {
   const [activeFilter, setActiveFilter] = useState<string>('ALL');
   const [showScores, setShowScores] = useState<boolean>(false);
   const [dateAccordionExpanded, setDateAccordionExpanded] = useState<boolean>(true);
-  const [leagueAccordionExpanded, setLeagueAccordionExpanded] = useState<boolean>(false);
+  // On medium screens only the date filter is open by default; on large screens everything starts open
+  const [leagueAccordionExpanded, setLeagueAccordionExpanded] = useState<boolean>(width >= ACCORDION_MAX_WIDTH);
 
   const [leaguesAvailable, setLeaguesAvailable] = useState<string[]>([]);
   const [retryCount, setRetryCount] = useState(0);
@@ -1221,7 +1222,6 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
                     <FilterAccordion
                       label={leagueAccordionLabel}
                       defaultOpen={false}
-                      isSmallDevice={useFilterAccordion}
                       expanded={leagueAccordionExpanded}
                       onExpandedChange={setLeagueAccordionExpanded}
                     >
@@ -1258,7 +1258,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
 
                   {!useFilterAccordion && (
                     <ThemedElements>
-                      <FilterAccordion label={translateFilterLabel('team')} defaultOpen={true} isSmallDevice={false}>
+                      <FilterAccordion label={translateFilterLabel('team')} defaultOpen={true}>
                         {displayFilters()}
                       </FilterAccordion>
                     </ThemedElements>
@@ -1284,8 +1284,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
                           translateFilterLabel('date')
                         )
                       }
-                      defaultOpen={false}
-                      isSmallDevice={useFilterAccordion}
+                      defaultOpen={true}
                       onExpandedChange={handleDateAccordionExpanded}
                     >
                       <div>
