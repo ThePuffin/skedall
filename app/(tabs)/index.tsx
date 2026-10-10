@@ -31,8 +31,11 @@ import {
   fetchLeagues,
   fetchLiveScores,
   fetchTeams,
+  getOlympicTeamIds,
   getCache,
+  groupOlympicTeams,
   saveCache,
+  teamsMatchSelection,
 } from '../../utils/fetchData';
 import { GameFormatted, LeagueDayGroup, Team } from '../../utils/types';
 import { getFilterAccordionLabel, translateFilterLabel, translateWord } from '../../utils/utils';
@@ -390,6 +393,7 @@ const GameofTheDayContent = () => {
   }, [disabledLeagues, isAnyGameSelectedToday]);
 
   const visibleGamesByHour = useMemo(() => {
+    const selectedTeam = selectedTeamUniqueId || teamSelectedId;
     const sortGamesByFavorites = (gamesToSort: GameFormatted[]) => {
       return gamesToSort.sort((a, b) => {
         const aIsFavorite = favoriteTeams.includes(a.homeTeamId) || favoriteTeams.includes(a.awayTeamId);
@@ -417,9 +421,9 @@ const GameofTheDayContent = () => {
         (game) =>
           game.isActive &&
           selectLeagues.includes(game.league as League) &&
-          (!teamSelectedId ||
-            game.homeTeamId === teamSelectedId ||
-            game.awayTeamId === teamSelectedId ||
+          (!selectedTeam ||
+            teamsMatchSelection(game.homeTeamId, selectedTeam) ||
+            teamsMatchSelection(game.awayTeamId, selectedTeam) ||
             game.homeTeam === teamSelectedId ||
             game.awayTeam === teamSelectedId) &&
           (activeFilter !== 'FAVORITES' ||
@@ -494,19 +498,20 @@ const GameofTheDayContent = () => {
     }
 
     return groups;
-  }, [games, selectLeagues, teamSelectedId, activeFilter, favoriteTeams]);
+  }, [games, selectLeagues, teamSelectedId, selectedTeamUniqueId, activeFilter, favoriteTeams]);
 
   // Past days are rendered from the league groups built by the backend
   // (`/games/league-day`). Only the client-side filters are applied here
   // (selected leagues, team, favorites/bookmarks chips): the grouping, the
   // group order and the favorites section all come from the API.
   const visibleLeagueGroups = useMemo(() => {
+    const selectedTeam = selectedTeamUniqueId || teamSelectedId;
     const matchesFilters = (game: GameFormatted) =>
       game.isActive &&
       selectLeagues.includes(game.league as League) &&
-      (!teamSelectedId ||
-        game.homeTeamId === teamSelectedId ||
-        game.awayTeamId === teamSelectedId ||
+      (!selectedTeam ||
+        teamsMatchSelection(game.homeTeamId, selectedTeam) ||
+        teamsMatchSelection(game.awayTeamId, selectedTeam) ||
         game.homeTeam === teamSelectedId ||
         game.awayTeam === teamSelectedId) &&
       (activeFilter !== 'FAVORITES' ||
@@ -519,7 +524,7 @@ const GameofTheDayContent = () => {
       .filter((group) => activeFilter !== 'FAVORITES' || group.key === FAVORITES_GROUP_KEY)
       .map((group) => ({ ...group, games: group.games.filter(matchesFilters) }))
       .filter((group) => group.games.length > 0);
-  }, [leagueDayGroups, selectLeagues, teamSelectedId, activeFilter, favoriteTeams, gamesSelected]);
+  }, [leagueDayGroups, selectLeagues, teamSelectedId, selectedTeamUniqueId, activeFilter, favoriteTeams, gamesSelected]);
 
   // Sections actually rendered: one per league (leading with the favorites
   // section) for a past day, one per hour group otherwise.
@@ -684,13 +689,16 @@ const GameofTheDayContent = () => {
         // Reset to all leagues and clear team selection
         setSelectLeagues(userLeagues);
         setTeamSelectedId('');
+        setSelectedTeamUniqueId('');
       } else if (filter === 'FAVORITES' || filter === 'BOOKMARKS') {
         setSelectLeagues(allLeaguesList);
         setTeamSelectedId('');
+        setSelectedTeamUniqueId('');
       } else {
         // Specific league
         setSelectLeagues([filter as League]);
         setTeamSelectedId('');
+        setSelectedTeamUniqueId('');
       }
     },
     [allLeaguesList, userLeagues],
@@ -786,7 +794,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
         const useTeam = !!resolvedTeamId;
         const closest = useTeam
           ? await fetchClosestDates({
-              teamSelectedId: resolvedTeamId,
+                teamSelectedId: getOlympicTeamIds(resolvedTeamId).join(','),
               date: formatDateLocal(selectDate),
             })
           : await fetchClosestDates({
@@ -825,6 +833,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
       setActiveFilter('ALL');
       setSelectLeagues(userLeagues);
       setTeamSelectedId('');
+      setSelectedTeamUniqueId('');
     }
   }, [activeFilter, hasFavorites, isLoading, userLeagues]);
 
@@ -865,7 +874,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
       }
     });
 
-    return Array.from(teamsMap.values()).sort((a, b) => a.label.localeCompare(b.label));
+    return groupOlympicTeams(Array.from(teamsMap.values())).sort((a, b) => a.label.localeCompare(b.label));
   }, [games, selectLeagues]);
 
   const leagueAccordionLabel = useMemo(() => {
@@ -938,7 +947,11 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     const modalItemSelectedId = teamsOfTheDay.find((t) => t.uniqueId === teamSelectedId) ? teamSelectedId : '';
 
     const favoriteLabels = Array.from(
-      new Set(teamsOfTheDay.filter((t) => favoriteTeams.includes(t.uniqueId)).map((t) => t.label)),
+      new Set(
+        teamsOfTheDay
+          .filter((team) => getOlympicTeamIds(team.uniqueId).some((id) => favoriteTeams.includes(id)))
+          .map((team) => team.label),
+      ),
     );
 
     return (

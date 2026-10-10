@@ -1,4 +1,11 @@
-import { fetchRecentFormGames } from "./fetchData";
+import {
+  fetchRecentFormGames,
+  getCanonicalTeamId,
+  getOlympicTeamIds,
+  groupOlympicTeams,
+  teamsMatchSelection,
+} from "./fetchData";
+import { Team } from "./types";
 
 // --- localStorage mock (same shape as syncService.test.ts) ---
 class LocalStorageMock {
@@ -34,6 +41,17 @@ const mockSuccessfulFetch = (payload: unknown = FORM_PAYLOAD) => {
 const lastRequestedUrl = () =>
   mockFetch.mock.calls[mockFetch.mock.calls.length - 1][0] as string;
 
+const olympicTeam = (uniqueId: string, label: string, league: string): Team => ({
+  uniqueId,
+  id: uniqueId,
+  label,
+  teamLogo: "",
+  teamCommonName: label,
+  league,
+  abbrev: uniqueId.split("-").at(-1) ?? "",
+  updateDate: "",
+});
+
 beforeEach(() => {
   jest.clearAllMocks();
   localStorageMock.clear();
@@ -44,6 +62,40 @@ beforeEach(() => {
   Object.defineProperty(globalThis, "fetch", {
     value: mockFetch,
     writable: true,
+  });
+});
+
+describe("Olympic team identity helpers", () => {
+  it("expands one Olympic country id to its hockey and basketball ids", () => {
+    expect(getOlympicTeamIds("OLYMPICS-HOCKEY-MEN-FRA")).toEqual([
+      "OLYMPICS-HOCKEY-MEN-FRA",
+      "OLYMPICS-BASKETBALL-MEN-FRA",
+    ]);
+    expect(getOlympicTeamIds("OLYMPICS-BASKETBALL-WOMEN-USA")).toEqual([
+      "OLYMPICS-HOCKEY-WOMEN-USA",
+      "OLYMPICS-BASKETBALL-WOMEN-USA",
+    ]);
+    expect(getOlympicTeamIds("NHL-BOS")).toEqual(["NHL-BOS"]);
+  });
+
+  it("groups duplicate Olympic country entries while keeping gender variants separate", () => {
+    const teams = [
+      olympicTeam("OLYMPICS-HOCKEY-MEN-FRA", "France", "OLYMPICS-MEN"),
+      olympicTeam("OLYMPICS-BASKETBALL-MEN-FRA", "France", "OLYMPICS-MEN"),
+      olympicTeam("OLYMPICS-BASKETBALL-WOMEN-FRA", "France", "OLYMPICS-WOMEN"),
+      olympicTeam("NHL-FRA", "France", "NHL"),
+    ];
+
+    expect(groupOlympicTeams(teams).map((team) => team.uniqueId)).toEqual([
+      "OLYMPICS-BASKETBALL-MEN-FRA",
+      "OLYMPICS-BASKETBALL-WOMEN-FRA",
+      "NHL-FRA",
+    ]);
+    expect(getCanonicalTeamId("OLYMPICS-HOCKEY-MEN-FRA", teams)).toBe(
+      "OLYMPICS-BASKETBALL-MEN-FRA",
+    );
+    expect(teamsMatchSelection("OLYMPICS-HOCKEY-MEN-FRA", "OLYMPICS-BASKETBALL-MEN-FRA")).toBe(true);
+    expect(teamsMatchSelection("OLYMPICS-HOCKEY-MEN-FRA", "OLYMPICS-BASKETBALL-WOMEN-FRA")).toBe(false);
   });
 });
 

@@ -105,7 +105,7 @@ Called when the user changes the league/filter:
 
 ### `handleTeamSelectionChange(teamId)`
 
-Called when the user changes the team filter.
+Called when the user changes the team filter. Olympic hockey and basketball ids for the same country and gender are treated as one selection, so the day view filter follows that country across Olympic years.
 
 ### Empty day → `closest` date navigation
 
@@ -220,6 +220,8 @@ The league filter accordion's label (`leagueAccordionLabel`) dynamically reflect
 - Otherwise, the default translated combined "League / Team" label is shown at every screen size.
 
 The league and team filters are contained in this same accordion at every screen size. When it is open, the default translated label is shown. The `onExpandedChange` callback updates `leagueAccordionExpanded` whenever the accordion toggles. The accordion is parent-controlled (`expanded={leagueAccordionExpanded}`) and defaults to **closed on medium screens** / **open on large screens** (`leagueAccordionExpanded` initialised to `width >= ACCORDION_MAX_WIDTH`).
+
+Olympic country entries in the day team selector are grouped by gender across hockey and basketball. The selected country matches the corresponding sport-specific team id in both upcoming and past-day payloads.
 
 ## Date / Calendar Datepicker Behavior
 

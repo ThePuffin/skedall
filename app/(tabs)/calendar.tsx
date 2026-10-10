@@ -8,7 +8,16 @@ import { maxTeamsNumber } from '@/constants/Constants';
 import { useAuth } from '@/context/AuthContext';
 import { useHorizontalScroll } from '@/context/HorizontalScrollContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { fetchDateRangeFromApi, fetchTeams, getCache, saveCache } from '@/utils/fetchData';
+import {
+  fetchDateRangeFromApi,
+  fetchTeams,
+  getCanonicalTeamId,
+  getCache,
+  getOlympicTeamIds,
+  groupOlympicTeams,
+  saveCache,
+  teamsMatchSelection,
+} from '@/utils/fetchData';
 import { syncToFirestore } from '@/utils/syncService';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
@@ -259,9 +268,15 @@ export default function Calendar() {
 
   const storeTeamsSelected = useCallback(
     async (teamsSelectedIds: string[], teamsList?: Team[], syncToDB: boolean = true) => {
-      const filteredTeams = teamsSelectedIds.filter((teamId, i) => teamId && i < maxTeamsNumber);
-      setTeamsSelected(filteredTeams);
       const listToSearch = teamsList && teamsList.length > 0 ? teamsList : teams;
+      const filteredTeams = Array.from(
+        new Set(
+          teamsSelectedIds
+            .filter(Boolean)
+            .map((teamId) => getCanonicalTeamId(teamId, listToSearch)),
+        ),
+      ).slice(0, maxTeamsNumber);
+      setTeamsSelected(filteredTeams);
       const selectedTeams = filteredTeams
         .map((teamId) => {
           const team = listToSearch.find((team) => team.uniqueId === teamId);
@@ -274,7 +289,12 @@ export default function Calendar() {
       }
 
       const newGamesSelection = gamesSelected.filter(
-        (game) => filteredTeams.includes(game.homeTeamId) || filteredTeams.includes(game.awayTeamId),
+        (game) =>
+          filteredTeams.some(
+            (teamId) =>
+              teamsMatchSelection(game.homeTeamId, teamId) ||
+              teamsMatchSelection(game.awayTeamId, teamId),
+          ),
       );
       const selectionPruned = newGamesSelection.length !== gamesSelected.length;
 
@@ -311,8 +331,11 @@ export default function Calendar() {
           const favoriteTeams = getCache<string[]>('favoriteTeams')?.filter((team) => team !== '') || [];
           if (favoriteTeams.length) {
             for (const favTeamId of favoriteTeams) {
-              if (allTeams.some((team) => team.uniqueId === favTeamId)) {
-                selection.push(favTeamId);
+              const favoriteTeam = allTeams.find((team) =>
+                getOlympicTeamIds(team.uniqueId).includes(favTeamId),
+              );
+              if (favoriteTeam) {
+                selection.push(favoriteTeam.uniqueId);
               }
             }
           }
@@ -351,7 +374,7 @@ export default function Calendar() {
 
     try {
       // Try to fetch the global teams list from cache if state is empty
-      const allTeams = teams.length > 0 ? teams : getCache<Team[]>('teams') || [];
+      const allTeams = groupOlympicTeams(teams.length > 0 ? teams : getCache<Team[]>('teams') || []);
 
       if (allTeams.length > 0) {
         if (teams.length === 0) {
@@ -375,7 +398,7 @@ export default function Calendar() {
 
   const getTeamsFromApi = useCallback(async (): Promise<Team[]> => {
     try {
-      const allTeams = await fetchTeams();
+      const allTeams = groupOlympicTeams(await fetchTeams());
       saveCache('teams', allTeams);
       getSelectedTeams(allTeams, false);
       return allTeams;
@@ -396,10 +419,9 @@ export default function Calendar() {
         }
 
         try {
+          const expandedTeamIds = Array.from(new Set(teamsSelected.flatMap(getOlympicTeamIds)));
           const response = await fetch(
-            `${EXPO_PUBLIC_API_BASE_URL}/games/filter?startDate=${start}&endDate=${end}&teamSelectedIds=${teamsSelected.join(
-              ',',
-            )}`,
+            `${EXPO_PUBLIC_API_BASE_URL}/games/filter?startDate=${start}&endDate=${end}&teamSelectedIds=${expandedTeamIds.join(',')}`,
           );
           const gamesData = await response.json();
           saveCache('gamesData', gamesData);
@@ -579,8 +601,8 @@ export default function Calendar() {
       const gamesForDate = games[date].filter(
         (g) =>
           g.isActive !== false &&
-          filteredTeamsSelected.includes(g.teamSelectedId) &&
-          !hiddenTeams.includes(g.teamSelectedId),
+          filteredTeamsSelected.some((teamId) => teamsMatchSelection(g.teamSelectedId, teamId)) &&
+          !hiddenTeams.some((teamId) => teamsMatchSelection(g.teamSelectedId, teamId)),
       );
 
       if (gamesForDate.length === 0) return null;

@@ -111,6 +111,52 @@ const isCacheContentValid = (data: unknown): boolean => {
   return true;
 };
 
+export const getOlympicTeamGroupKey = (teamId: string): string | null => {
+  const match = teamId.toUpperCase().match(/^OLYMPICS-(?:HOCKEY|BASKETBALL)-(MEN|WOMEN)-(.+)$/);
+  return match ? `OLYMPICS-${match[1]}-${match[2]}` : null;
+};
+
+export const getOlympicTeamIds = (teamId: string): string[] => {
+  const groupKey = getOlympicTeamGroupKey(teamId);
+  if (!groupKey) return [teamId];
+
+  const match = groupKey.match(/^OLYMPICS-(MEN|WOMEN)-(.+)$/);
+  if (!match) return [teamId];
+  const [, gender, country] = match;
+  return [`OLYMPICS-HOCKEY-${gender}-${country}`, `OLYMPICS-BASKETBALL-${gender}-${country}`];
+};
+
+export const getTeamIdentityKey = (teamId: string): string => getOlympicTeamGroupKey(teamId) ?? teamId;
+
+export const teamsMatchSelection = (teamId: string, selectedTeamId: string): boolean =>
+  getTeamIdentityKey(teamId) === getTeamIdentityKey(selectedTeamId);
+
+export const groupOlympicTeams = (teams: Team[]): Team[] => {
+  const representatives = new Map<string, Team>();
+  teams.forEach((team) => {
+    const groupKey = getOlympicTeamGroupKey(team.uniqueId);
+    if (!groupKey) return;
+    const existing = representatives.get(groupKey);
+    if (!existing || team.uniqueId.localeCompare(existing.uniqueId) < 0) {
+      representatives.set(groupKey, team);
+    }
+  });
+
+  return teams.filter((team) => {
+    const groupKey = getOlympicTeamGroupKey(team.uniqueId);
+    return !groupKey || representatives.get(groupKey)?.uniqueId === team.uniqueId;
+  });
+};
+
+export const getCanonicalTeamId = (teamId: string, teams: Team[]): string => {
+  const groupKey = getOlympicTeamGroupKey(teamId);
+  if (!groupKey) return teamId;
+  return (
+    groupOlympicTeams(teams).find((team) => getOlympicTeamGroupKey(team.uniqueId) === groupKey)?.uniqueId ??
+    teamId
+  );
+};
+
 // Helper to add timeout to fetch (accepts RequestInit options)
 const fetchWithTimeout = (
   url: string,

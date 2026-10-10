@@ -67,6 +67,10 @@ Fetches games for the selected teams within the date range from the API:
 GET /games/filter?startDate=...&endDate=...&teamSelectedIds=id1,id2,...
 ```
 
+Olympic teams are offered once per country/gender. The request expands each selected Olympic id
+to its hockey and basketball ids; returned rows are matched to the selected country regardless
+of which sport-specific id the game uses.
+
 ### `handleDateChange(startDate, endDate)`
 
 Called when the user changes the date range. Fetches games, prunes bookmarked games outside the range, syncs to Firestore.
@@ -109,6 +113,8 @@ Only horizontal swipes are captured (ignores vertical scroll) via `onMoveShouldS
 ### `filteredTeamsSelected`
 
 Teams selected that are in the user's allowed leagues.
+Olympic sport-specific ids are treated as one country/gender identity when filtering returned
+games and hidden teams.
 
 ### `filteredGamesSelected`
 

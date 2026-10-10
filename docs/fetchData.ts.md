@@ -69,13 +69,20 @@ Fetches available leagues. Cached for 24 hours.
 
 Fetches all teams. Cached for 24 hours.
 
+### Olympic team identity helpers
+
+- `getOlympicTeamIds(teamId)` maps a hockey or basketball Olympic team id to both sport-specific ids for the same country and gender. Non-Olympic ids are returned unchanged as a one-element array.
+- `groupOlympicTeams(teams)` keeps one selector entry per Olympic country/gender while preserving separate men's and women's entries.
+- `getCanonicalTeamId(teamId, teams)` resolves an old sport-specific selection to the visible representative from the team list.
+- `getTeamIdentityKey(teamId)` and `teamsMatchSelection(teamId, selectedTeamId)` compare Olympic hockey and basketball entries as the same country/gender; other leagues remain exact-id matches.
+
 ### `fetchRemainingGamesByTeam(teamSelected, startDate?)`
 
-Fetches remaining games for a team. Uses the team games cache (6-minute TTL). If `startDate` is provided, skips cache.
+Fetches remaining games for a team. Olympic country selections are expanded server-side to the matching hockey and basketball ids. Uses the team games cache (6-minute TTL). If `startDate` is provided, skips cache.
 
 ### `fetchResultsByTeam(teamSelected, startDate?)`
 
-Fetches past results for a team.
+Fetches past results for a team, including both Olympic sports for the selected country/gender.
 
 ### `fetchRecentFormGames(teamSelected, before?, limit = 5)`
 

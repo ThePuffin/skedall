@@ -2,6 +2,20 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fixed: Olympic team filters group countries across hockey and basketball
+
+Olympic hockey and basketball have separate provider team ids, which made a country selection
+show only one sport and produced duplicate country choices. The Schedule, Game of the Day, and
+Calendar screens now treat ids for the same Olympic country/gender as one identity. Schedule
+and Calendar selectors group the roster into one country entry, while game and closest-date
+filters include the matching hockey and basketball ids. The backend performs the same expansion
+for team-based upcoming, result, date-range, and closest-date queries, so available sports are
+found across Olympic years; the Olympic gender and country are retained, but the sport does not
+restrict the result. Non-Olympic league behavior is unchanged.
+
+Updated the Schedule, Game of the Day, Calendar and fetchData documentation, plus backend
+`games.service` documentation.
+
 ## Fixed: burger-menu scroll buttons showed as disabled after opening a page
 
 `ActionButton` kept `canScrollToTop` / `canScrollToBottom` in sync only through `onScroll` events, both initialized to `false`. Opening a page at the top never emits a scroll event (the focus `scrollTo({ y: 0 })` is a no-op there), and the page content is often still being fetched at that moment: when the fetch completes, the content grows without emitting an event either. The scroll-to-top / scroll-to-bottom buttons in the burger menu therefore stayed dimmed and disabled even though the page could scroll — most visible right after opening a page.

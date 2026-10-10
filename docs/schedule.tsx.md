@@ -27,7 +27,7 @@ Team selectors use stable callback identifiers (`teams` and `teamsFilter`). `Sel
 | `results`              | `FilterGames` | Past results keyed by date                  |
 | `teams`                | `Team[]`      | All teams from API                          |
 | `teamSelected`         | `string`      | Currently selected team ID                  |
-| `gamesTeamId`          | `string`      | Team ID used for the games data             |
+| `gamesTeamIds`         | `string[]`    | Team IDs used for the games data (both sport ids for an Olympic country) |
 | `teamFilter`           | `string`      | Opponent filter (VS) value                  |
 | `monthFilter`          | `string[]`    | Selected month(s), format: `"January 2026"` |
 | `leagueTeams`          | `Team[]`      | Teams available in the selected league      |
@@ -72,9 +72,11 @@ Called when the user changes the league. Resets filters, updates URL params, sel
 Fetches games from the API:
 
 - If `teamSelected === 'all'`: fetches all games for the league
-- Otherwise: fetches remaining games for the specific team
+- Otherwise: fetches remaining games for the selected team; Olympic country ids cover both hockey and basketball for the same gender
 - If `showPreviousScores`: also fetches results
 - Caches data in localStorage via `saveCache('scheduleData', ...)`
+
+The Olympic team selector groups hockey and basketball roster entries by country and gender into a single option. The opponent selector uses the same country/gender identity so choosing a country applies to either sport.
 
 ### Empty schedule → `closest` history button
 
@@ -82,7 +84,7 @@ When `visibleGamesByMonth` is empty (no upcoming games) and history is not alrea
 enabled (`showPreviousScores === false`), the screen calls `fetchClosestDates`:
 
 - If `teamSelected === 'all'`: sends `{ league: leagueOfSelectedTeam }`
-- Otherwise: sends `{ teamSelectedId: teamSelected }`
+- Otherwise: sends `{ teamSelectedId: teamSelected }`; the backend expands Olympic ids to both hockey and basketball team ids
 
 If the response contains a `previousDate`, an "Enable history" button
 (`translateWord('enableHistory')`, `MaterialIcons` `history` icon) is rendered
@@ -97,7 +99,7 @@ to enable the history. Hidden while loading or once history is enabled.
 Groups games by month (`"January 2026"` format). Applies:
 
 1. `teamFilter` (opponent filter) — filters games where home or away team matches
-2. `gamesTeamId` — filters to games involving the selected team (keeps ALL games
+2. `gamesTeamIds` — filters to games involving any sport-specific id for the selected team (keeps ALL games
    of the day for that team via `filter`, so doubleheaders with 2 games the same
    day both display)
 3. Returns `[{ month, games }]` array, filtered to months with games
@@ -107,7 +109,7 @@ Groups games by month (`"January 2026"` format). Applies:
 Builds a list of unique opponent teams from games, **respecting the `monthFilter`**:
 
 - If `teamSelected === 'all'` and no month filter: returns all teams in the league
-- Otherwise: iterates games, filters by selected month (using `monthKey = "${month} ${year}"`), and collects unique home/away teams (excluding the selected team)
+- Otherwise: iterates games, filters by selected month (using `monthKey = "${month} ${year}"`), and collects unique home/away teams (excluding the selected team). Olympic hockey/basketball opponents from the same country and gender are shown once.
 
 ### `showTeamFilter`
 
