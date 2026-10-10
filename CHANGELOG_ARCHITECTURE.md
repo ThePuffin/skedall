@@ -2,6 +2,12 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Changed: floating actions menu
+
+The bottom-right floating button now opens a burger menu with separate scroll-to-top, scroll-to-bottom, and favorites actions stacked above it. The burger becomes a close button while the actions are expanded. Scroll actions are dimmed and disabled at their respective ends, and scrolling the screen closes the menu. All menu buttons adapt their background, border, and icon colors to the current light or dark theme.
+
+Updated `frontend/components/ActionButton.tsx`, its per-file documentation, and the burger/close icon mappings in `frontend/components/ui/IconSymbol.tsx`.
+
 ## Fixed: all pre-existing TypeScript errors (`tsc --noEmit` now clean)
 
 `npx tsc --noEmit` went from **20 errors** to **0** (the project builds with Metro/Babel, so these never blocked bundling, but they are now resolved). Changes are type-level only, except where noted:
