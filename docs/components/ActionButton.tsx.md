@@ -8,7 +8,8 @@ The **ActionButton** component is a floating action button (FAB) fixed at the bo
 
 - **Expandable actions menu** — opens separate scroll-to-top, scroll-to-bottom, and favorites buttons
 - **Scroll state** — disables and dims scroll actions at their respective ends
-- **Theme-aware buttons** — dark background, light border and icons in dark mode; inverse colors in light mode
+- **Fresh scroll state** — re-measures the scroll view when the burger menu opens (and on every render while it stays open) so the buttons reflect the actual scrollability even before any scroll event fires — e.g. when the page content finishes loading after the initial data fetch
+- **Theme-aware buttons** — uses the shared `Colors` palette for button backgrounds, borders, and icons
 - **Menu toggle** — changes between burger and close icons
 - **Imperative handle** — exposes `handleScroll` and `openFavModal` to parent via ref
 - **Favorites persistence** — reads/writes `favoriteTeams` from cache via `getCache`/`saveCache`
@@ -45,6 +46,10 @@ The **ActionButton** component is a floating action button (FAB) fixed at the bo
 Reads the scroll offset, content height, and viewport height to enable each scroll action only when movement in that direction is possible.
 Closes the actions menu whenever the parent scroll view scrolls.
 
+### `refreshScrollState()`
+
+Reads the current scroll position and sizes directly from the scrollable node (`getScrollableNode()` on web: `scrollTop` / `scrollHeight` / `clientHeight`) and updates `canScrollToTop` / `canScrollToBottom` **without** closing the menu. Called when the burger menu opens and on every render while the menu stays open, so state that went stale (no scroll event after a data fetch) is corrected. No-op when the scrollable node is unavailable (e.g. native), keeping the event-driven behavior.
+
 ### `scrollToTop()`
 
 Collapses the actions menu and scrolls the parent `ScrollView` back to `y: 0` with animation.
@@ -67,7 +72,7 @@ Updates the favorite teams state, saves to cache, and dispatches the `favoritesU
 2. If no favorites → `FavModal` auto-opens
 3. Parent screen passes a `ScrollView` ref and forwards scroll events to `handleScroll`
 4. Parent screen forwards scroll events to update whether either scroll action is enabled and collapse the menu
-5. User taps the burger → the scroll-to-top, scroll-to-bottom, and favorites actions appear above it
+5. User taps the burger → the scroll state is re-measured from the scroll view, then the scroll-to-top, scroll-to-bottom, and favorites actions appear above it
 6. User taps the close icon → the actions menu collapses
 7. User selects an action → it performs its action and collapses the menu
 8. Saving teams → updates cache and dispatches the `favoritesUpdated` window event

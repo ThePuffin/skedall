@@ -124,10 +124,6 @@ const pruneOldGamesCache = (cache: { [key: string]: GameFormatted[] }) => {
 
 const GameofTheDayContent = () => {
   const { width } = useWindowDimensions();
-  const isSmallDevice = width < 768;
-  // Filter sections collapse into accordions on phones AND tablets (portrait), so the
-  // games list keeps enough vertical room on smaller screens
-  const useFilterAccordion = width < ACCORDION_MAX_WIDTH;
   const { user, firestoreReady } = useAuth();
   const router = useRouter();
   const { date: dateParam } = useLocalSearchParams<{ date: string }>();
@@ -878,7 +874,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
       : null;
     const { prefix, value } = getFilterAccordionLabel({
       prefix: translateFilterLabel('league_team'),
-      fallbackLabel: translateFilterLabel(useFilterAccordion ? 'league_team' : 'league'),
+      fallbackLabel: translateFilterLabel('league_team'),
       activeFilter,
       selectedTeam,
       expanded: leagueAccordionExpanded,
@@ -894,7 +890,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
       );
     }
     return prefix;
-  }, [teamSelectedId, teamsOfTheDay, activeFilter, useFilterAccordion, leagueAccordionExpanded]);
+  }, [teamSelectedId, teamsOfTheDay, activeFilter, leagueAccordionExpanded]);
 
   const displayScoreToggle = useCallback(() => {
     return <PageHeader rightElement={<ScoreToggle value={showScores} onValueChange={handleScoreToggle} />} />;
@@ -1207,7 +1203,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
                 {displayScoreToggle()}
                 <div
                   style={
-                    !useFilterAccordion
+                    width >= ACCORDION_MAX_WIDTH
                       ? {
                           width: windowWidth < 1200 ? '95%' : '100%',
                           margin: '0 auto',
@@ -1246,28 +1242,17 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
                         ]}
                         disabledValues={disabledFilters}
                       />
-                      {useFilterAccordion && (
-                        <div style={{ marginTop: 10, marginBottom: 10 }}>
-                          <Separator />
-                        </div>
-                      )}
-
-                      {useFilterAccordion && displayFilters()}
+                      <div style={{ marginTop: 10, marginBottom: 10 }}>
+                        <Separator />
+                      </div>
+                      {displayFilters()}
                     </FilterAccordion>
                   </ThemedElements>
-
-                  {!useFilterAccordion && (
-                    <ThemedElements>
-                      <FilterAccordion label={translateFilterLabel('team')} defaultOpen={true}>
-                        {displayFilters()}
-                      </FilterAccordion>
-                    </ThemedElements>
-                  )}
 
                   <ThemedElements>
                     <FilterAccordion
                       label={
-                        useFilterAccordion && !dateAccordionExpanded ? (
+                        !dateAccordionExpanded ? (
                           <span>
                             {translateFilterLabel('date')} :{' '}
                             <i>

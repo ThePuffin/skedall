@@ -1,7 +1,8 @@
 import FavModal from '@/components/FavModal';
-import { getCache, saveCache } from '@/utils/fetchData';
+import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import React, { forwardRef, useImperativeHandle, useState } from 'react';
+import { getCache, saveCache } from '@/utils/fetchData';
+import React, { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 import {
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -33,10 +34,12 @@ const ActionButtonWithRef: React.ForwardRefRenderFunction<ActionButtonRef, Actio
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [canScrollToTop, setCanScrollToTop] = useState(false);
   const [canScrollToBottom, setCanScrollToBottom] = useState(false);
-  const isDarkMode = useColorScheme() === 'dark';
-  const buttonColors = isDarkMode
-    ? { backgroundColor: '#1c1c1e', borderColor: '#f5f5f5', iconColor: '#f5f5f5' }
-    : { backgroundColor: '#ffffff', borderColor: '#000000', iconColor: '#000000' };
+  const colorScheme = useColorScheme() ?? 'light';
+  const buttonColors = {
+    backgroundColor: Colors[colorScheme].background,
+    borderColor: Colors[colorScheme].text,
+    iconColor: Colors[colorScheme].text,
+  };
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
@@ -45,6 +48,31 @@ const ActionButtonWithRef: React.ForwardRefRenderFunction<ActionButtonRef, Actio
     setCanScrollToBottom(maxScrollY > 1 && contentOffset.y < maxScrollY - 1);
     setIsMenuOpen(false);
   };
+
+  // Re-measure the scroll view directly instead of relying only on scroll
+  // events. When a page opens, `canScrollToTop/Bottom` stay at their initial
+  // `false` until an `onScroll` fires — but the page content is often still
+  // being fetched at that moment: the initial `scrollTo({ y: 0 })` emits no
+  // event, and when the fetch completes the content grows without emitting
+  // one either. The scroll buttons then wrongly appear disabled. On web,
+  // `getScrollableNode()` returns the scrollable DOM node exposing
+  // `scrollTop` / `scrollHeight` / `clientHeight`.
+  const refreshScrollState = () => {
+    const scrollableNode = (scrollViewRef.current as any)?.getScrollableNode?.() as
+      | { scrollTop?: number; scrollHeight?: number; clientHeight?: number }
+      | null
+      | undefined;
+    if (!scrollableNode || typeof scrollableNode.scrollTop !== 'number') return;
+    const maxScrollY = (scrollableNode.scrollHeight ?? 0) - (scrollableNode.clientHeight ?? 0);
+    setCanScrollToTop(scrollableNode.scrollTop > 1);
+    setCanScrollToBottom(maxScrollY > 1 && scrollableNode.scrollTop < maxScrollY - 1);
+  };
+
+  // Keep the menu accurate while it stays open: if the data fetch finishes in
+  // the meantime, the content grows without producing a scroll event.
+  useEffect(() => {
+    if (isMenuOpen) refreshScrollState();
+  });
 
   useImperativeHandle(ref, () => ({
     handleScroll,
@@ -131,7 +159,12 @@ const ActionButtonWithRef: React.ForwardRefRenderFunction<ActionButtonRef, Actio
           accessibilityRole="button"
           accessibilityLabel={isMenuOpen ? 'Close actions menu' : 'Open actions menu'}
           accessibilityState={{ expanded: isMenuOpen }}
-          onPress={() => setIsMenuOpen((isOpen) => !isOpen)}
+          onPress={() => {
+            // Re-measure before showing the actions so the buttons reflect the
+            // current scrollability (e.g. content loaded after the page fetch).
+            if (!isMenuOpen) refreshScrollState();
+            setIsMenuOpen((isOpen) => !isOpen);
+          }}
           style={[styles.button, buttonColors, styles.menuButton]}
         >
           <IconSymbol

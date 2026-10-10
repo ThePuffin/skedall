@@ -17,6 +17,7 @@ The **Calendar** tab (also called "Agenda") displays games for multiple selected
   remove that single game from the favorites; the bookmark pill on the card removes it
   directly. The header trash button still clears the whole selection.
 - **Firestore sync** — teams, games, and date range synced to user account
+- **Uniform top bar** — the `PageHeader` is rendered inside the sticky filter zone (the `ThemedView` painted with the page `backgroundColor`: `#F0F0F0` light / `#121212` dark), exactly like `index.tsx` and `schedule.tsx`. It previously sat directly on the root `ThemedView`, so the area behind the logo bar used the raw theme background (`#fff` / `#151718`) and looked lighter than on the other tabs.
 
 ## State Variables
 

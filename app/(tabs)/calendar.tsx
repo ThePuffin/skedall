@@ -675,7 +675,6 @@ export default function Calendar() {
 
   return (
     <ThemedView style={{ flex: 1 }}>
-      <PageHeader rightElement={<HomeGameToggle value={homeGameVisibility} onValueChange={handleHomeGameToggle} />} />
       <ScrollView
         ref={scrollViewRef}
         onScroll={(event) => ActionButtonRef.current?.handleScroll(event)}
@@ -683,12 +682,11 @@ export default function Calendar() {
       >
         <div style={{ position: 'sticky', top: 0, zIndex: 10 }}>
           <ThemedView style={{ backgroundColor }}>
+            <PageHeader
+              rightElement={<HomeGameToggle value={homeGameVisibility} onValueChange={handleHomeGameToggle} />}
+            />
             <div style={{ width: '100%', padding: useFilterAccordion ? 0 : 10, boxSizing: 'border-box' }}>
-              <FilterAccordion
-                label={teamAccordionLabel}
-                defaultOpen={true}
-                onExpandedChange={setIsTeamAccordionOpen}
-              >
+              <FilterAccordion label={teamAccordionLabel} defaultOpen={true} onExpandedChange={setIsTeamAccordionOpen}>
                 <ThemedElements>
                   <div
                     style={{
@@ -772,19 +770,30 @@ export default function Calendar() {
                   </div>
                 </ThemedElements>
               </FilterAccordion>
-              <FilterAccordion
-                label={dateAccordionLabel}
-                defaultOpen={true}
-                onExpandedChange={setIsDateAccordionOpen}
-              >
+              <FilterAccordion label={dateAccordionLabel} defaultOpen={true} onExpandedChange={setIsDateAccordionOpen}>
                 <ThemedElements style={{ zIndex: 20 }}>
                   <div style={{ position: 'relative' }}>
-                    <DateRangePicker dateRange={dateRange} onDateChange={handleDateChange} onOpenChange={setDatepickerOpen} title={translateWord('selectYourDates')} />
+                    <DateRangePicker
+                      dateRange={dateRange}
+                      onDateChange={handleDateChange}
+                      onOpenChange={setDatepickerOpen}
+                      title={translateWord('selectYourDates')}
+                    />
                   </div>
                 </ThemedElements>
               </FilterAccordion>
               {!useFilterAccordion || isDateAccordionOpen ? (
-                <ThemedElements style={{ paddingTop: 10, paddingBottom: 10 , zIndex: 50, opacity: datepickerOpen ? 0 : 1, transition: 'opacity 200ms ease-in-out' } as any}>
+                <ThemedElements
+                  style={
+                    {
+                      paddingTop: 10,
+                      paddingBottom: 10,
+                      zIndex: 50,
+                      opacity: datepickerOpen ? 0 : 1,
+                      transition: 'opacity 200ms ease-in-out',
+                    } as any
+                  }
+                >
                   <Separator opacity={datepickerOpen ? 0 : undefined} />
                 </ThemedElements>
               ) : null}

@@ -2,11 +2,39 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fixed: burger-menu scroll buttons showed as disabled after opening a page
+
+`ActionButton` kept `canScrollToTop` / `canScrollToBottom` in sync only through `onScroll` events, both initialized to `false`. Opening a page at the top never emits a scroll event (the focus `scrollTo({ y: 0 })` is a no-op there), and the page content is often still being fetched at that moment: when the fetch completes, the content grows without emitting an event either. The scroll-to-top / scroll-to-bottom buttons in the burger menu therefore stayed dimmed and disabled even though the page could scroll — most visible right after opening a page.
+
+`ActionButton` now re-measures the scroll view directly from the scrollable node (`getScrollableNode()` on web) when the burger menu opens, and on every render while the menu stays open, so the buttons always reflect the current scrollability.
+
+Updated `frontend/components/ActionButton.tsx` and `frontend/docs/components/ActionButton.tsx.md`.
+
+## Fixed: calendar top bar background now matches the other tabs
+
+On the calendar screen, the `PageHeader` was rendered directly on the root `ThemedView`, so the area behind the logo bar was painted with the raw theme background (`#151718` dark / `#fff` light). On `index.tsx` and `schedule.tsx`, the `PageHeader` sits **inside** the sticky `ThemedView` that uses the page background (`#121212` dark / `#F0F0F0` light). Result: the calendar's top bar looked lighter than the other tabs (and slightly different from its own filter bands below).
+
+The `PageHeader` is now the first child of that sticky zone on `calendar.tsx`, exactly like the other two screens, so the header and the filter bands share one uniform background.
+
+Updated `frontend/app/(tabs)/calendar.tsx` and `frontend/docs/calendar.tsx.md`.
+
 ## Changed: floating actions menu
 
-The bottom-right floating button now opens a burger menu with separate scroll-to-top, scroll-to-bottom, and favorites actions stacked above it. The burger becomes a close button while the actions are expanded. Scroll actions are dimmed and disabled at their respective ends, and scrolling the screen closes the menu. All menu buttons adapt their background, border, and icon colors to the current light or dark theme.
+The bottom-right floating button now opens a burger menu with separate scroll-to-top, scroll-to-bottom, and favorites actions stacked above it. The burger becomes a close button while the actions are expanded. Scroll actions are dimmed and disabled at their respective ends, and scrolling the screen closes the menu. All menu buttons use the shared `Colors` palette for their theme-aware background, border, and icon colors.
 
 Updated `frontend/components/ActionButton.tsx`, its per-file documentation, and the burger/close icon mappings in `frontend/components/ui/IconSymbol.tsx`.
+
+## Changed: combined league and team filter accordions
+
+The index and schedule screens now place the league and team filters inside one accordion at every viewport size. On the schedule screen, team and opponent selectors remain side by side on wide screens.
+
+Updated `frontend/app/(tabs)/index.tsx`, `frontend/app/(tabs)/schedule.tsx`, and their per-screen documentation.
+
+## Removed: obsolete non-accordion filter branches
+
+Removed the leftover screen-size checks that assumed filters were not accordions on wide screens. Dynamic date labels now work on all screen sizes, and the schedule sticky-header offset accounts for accordions everywhere.
+
+Updated `frontend/app/(tabs)/index.tsx`, `frontend/app/(tabs)/schedule.tsx`, and their per-screen documentation.
 
 ## Fixed: all pre-existing TypeScript errors (`tsc --noEmit` now clean)
 
