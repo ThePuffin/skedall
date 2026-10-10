@@ -2,6 +2,32 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fixed: all pre-existing TypeScript errors (`tsc --noEmit` now clean)
+
+`npx tsc --noEmit` went from **20 errors** to **0** (the project builds with Metro/Babel, so these never blocked bundling, but they are now resolved). Changes are type-level only, except where noted:
+
+1. `utils/utils.tsx` — typed the implicit-`any` parameters: `randomNumber(max: number)`, `brightenColor(color: string, amount?)` and its inner `.map((c: string) => …)`.
+2. `utils/dateRange.ts` + `utils/fetchData.ts` — **implemented the league-scoped date-range feature that the test and `docs/dateRange.ts.md` already described** but which was never written:
+   - `getDateRangeLimits(leagues?)` / `fetchDateRangeLimits(leagues?, force?)` accept an optional leagues array and use a scoped cache key (`dateRangeLimits` globally, `dateRangeLimits_<LEAGUES>` otherwise).
+   - `fetchDateRangeFromApi(leagues?, force?)` sends `?leagues=…` and, when `force = true`, bypasses the 24h API cache. Fully backward compatible (all args optional). `utils/dateRange.test.ts` (7 tests) passes against the real implementation.
+3. `app/refresh.tsx` — replaced invalid RN string style values with numbers: `padding: '20px'` → `20`, and three `fontSize: '16px'` → `16` (React Native `ViewStyle`/`TextStyle` require numeric lengths).
+4. `components/Accordion.tsx` — `homeGameVisibility` default `false` → `'all'` to match its `HomeGameFilter` type.
+5. `components/ExternalLink.tsx` — cast `href` to `ComponentProps<typeof Link>['href']` (expo-router typed routes reject a plain `string`).
+6. `components/FilterAccordion.tsx` — removed the invalid `underlayColor` prop (not part of `ListItemAccordionProps`).
+7. `components/Selector.tsx` — removed the dead `styles.leagueChipText` reference (the style never existed; the inline `{ color }`/selected styles already cover it).
+8. `components/SliderDatePicker.tsx` — `fontWeight: 'bolder'` → `'bold'` (`'bolder'` is not a valid RN `fontWeight`).
+9. `components/ui/IconSymbol.tsx` — `style` prop type `StyleProp<ViewStyle>` → `StyleProp<TextStyle>` to match what `MaterialIcons` accepts.
+
+### Verification
+
+- `npx tsc --noEmit` → exit 0, 0 errors.
+- `npx jest` → 8 suites, 105 tests, all passing.
+
+### Files
+
+- `utils/utils.tsx`, `utils/dateRange.ts`, `utils/fetchData.ts`, `app/refresh.tsx`, `components/Accordion.tsx`, `components/ExternalLink.tsx`, `components/FilterAccordion.tsx`, `components/Selector.tsx`, `components/SliderDatePicker.tsx`, `components/ui/IconSymbol.tsx`.
+- Docs updated: `docs/dateRange.ts.md` (already described the feature), `docs/fetchData.ts.md` (`fetchDateRangeFromApi` signature), `docs/components/Accordion.tsx.md` (`homeGameVisibility` default).
+
 ## Changed: filter accordions on every screen size, all open on large screens
 
 ### Problem

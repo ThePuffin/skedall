@@ -126,9 +126,12 @@ Fetches games for a specific date (no cache).
 
 Fetches live scores for a batch of game IDs (POST, 15s timeout).
 
-### `fetchDateRangeFromApi()`
+### `fetchDateRangeFromApi(leagues?, force?)`
 
-Fetches min/max date limits. Cached for 24 hours.
+Fetches min/max date limits from `GET /games/dates/range`. An optional `leagues?`
+array is sent as the `leagues` query param (joined with `+`) and scopes the 24h
+cache key (`date_range_limits_<LEAGUES>`). Passing `force = true` bypasses the
+24h cache and always hits the API.
 
 ### `fetchClosestDates({ league?, teamSelectedId?, date? })`
 

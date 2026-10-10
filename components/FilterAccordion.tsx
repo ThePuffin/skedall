@@ -106,7 +106,6 @@ export default function FilterAccordion({
           paddingTop: 10,
           paddingBottom: 10,
         }}
-        underlayColor="transparent"
       >
         <div style={{ width: '100%', paddingTop: 10, paddingBottom: 10 }}>{children}</div>
       </ListItem.Accordion>

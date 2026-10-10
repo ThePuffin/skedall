@@ -627,11 +627,20 @@ export const fetchClosestDates = async (params: {
   );
 };
 
-export const fetchDateRangeFromApi = async () => {
+export const fetchDateRangeFromApi = async (leagues?: string[], force = false) => {
   try {
-    const cacheKey = "date_range_limits";
+    const params = new URLSearchParams();
+    if (leagues && leagues.length > 0) {
+      params.append("leagues", leagues.join("+"));
+    }
+    const qs = params.toString();
+    const scope =
+      leagues && leagues.length > 0
+        ? `_${leagues.join("+").toUpperCase().replace(/[^A-Z0-9+]/g, "")}`
+        : "";
+    const cacheKey = `date_range_limits${scope}`;
 
-    if (isCacheValid(cacheKey, 24)) {
+    if (!force && isCacheValid(cacheKey, 24)) {
       const cached = getCache<{
         minDate: string | null;
         maxDate: string | null;
@@ -643,7 +652,7 @@ export const fetchDateRangeFromApi = async () => {
       minDate: string | null;
       maxDate: string | null;
     }>(
-      `${EXPO_PUBLIC_API_BASE_URL}/games/dates/range`,
+      `${EXPO_PUBLIC_API_BASE_URL}/games/dates/range${qs ? `?${qs}` : ""}`,
       cacheKey,
       { minDate: null, maxDate: null },
       undefined,

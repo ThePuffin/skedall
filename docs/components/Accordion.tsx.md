@@ -31,7 +31,7 @@ The **Accordion** component displays a collapsible section with a title, an even
 | `showTime`            | `boolean`         | `false` | Show time on cards                     |
 | `forceShowScores`     | `boolean`         | `false` | Always show scores                     |
 | `filtersHeaderHeight` | `number`          | `0`     | Sticky header height for scroll offset |
-| `homeGameVisibility`  | `HomeGameFilter`  | `false` | Home/away filter                       |
+| `homeGameVisibility`  | `HomeGameFilter`  | `'all'` | Home/away filter                       |
 | `hideEventCount`      | `boolean`         | `false` | Hide the count badge and divider bar   |
 
 ## Key Functions

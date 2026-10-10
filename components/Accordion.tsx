@@ -26,7 +26,7 @@ export default function Accordion({
   showTime = false,
   forceShowScores = false,
   filtersHeaderHeight = 0,
-  homeGameVisibility = false,
+  homeGameVisibility = 'all',
   hideEventCount = false,
 }: Readonly<
   AccordionProps & {
