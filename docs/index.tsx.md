@@ -24,7 +24,7 @@ The team selector uses the stable callback identifier `teamsOfDay`. `Selector` c
 - **Favorite teams sorting** — favorite team games appear first
 - **Bookmark selection** — select up to 10 games
 - **Retry mechanism** — auto-retries fetching when no games are found
-- **Cache management** — caches games by day, prunes old days
+- **Cache management** — caches games by day and removes persisted entries older than yesterday both when restoring the cache and before saving it
 
 ## State Variables
 
@@ -74,7 +74,7 @@ Fetches games for the next 5 days (used for prefetching/caching).
 
 ### `pruneOldGamesCache(cache)`
 
-Removes cached games older than yesterday.
+Removes cached games older than yesterday. The restored `gamesDay` cache is pruned during initialization and saved back only if stale date entries were removed; updates to the cache are pruned before being persisted.
 
 ### `fetchAndMergeLiveScores(currentGames)`
 

@@ -2,6 +2,24 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fixed: stale past days are pruned from the Game of the Day cache
+
+The persisted `gamesDay` cache is now pruned on restore and before cache updates are saved. Days older than yesterday no longer remain stored just because the user did not trigger the prefetch path.
+
+Updated `frontend/app/(tabs)/index.tsx` and its documentation.
+
+## Changed: long team names scale down consistently in the game modal
+
+The two team names now share a font size determined by the longer name in the matchup. Longer names use a smaller size, with earlier reductions on compact screens, to reduce line wrapping while keeping the two sides visually balanced.
+
+Updated `frontend/components/GameModal.tsx`, its tests, and component documentation.
+
+## Fixed: favorite stars no longer shift wrapped team names on compact screens
+
+The GameModal favorite star is a separate button from the team-name text. On compact screens (width ≤ 600 px), it is centered below the name; on wider screens, symmetric side slots keep wrapped names centered.
+
+Updated `frontend/components/GameModal.tsx`, its tests, and component documentation.
+
 ## Fixed: Schedule requests include both Olympic sports
 
 Schedule team-game and team-result requests now send both hockey and basketball team ids for an Olympic country selection. This avoids relying on the deployed backend to expand a single sport-specific id. The remaining-games cache is keyed by the full ID set, so an older hockey-only cache entry cannot mask basketball games.

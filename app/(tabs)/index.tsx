@@ -195,6 +195,13 @@ const GameofTheDayContent = () => {
 
   const [teamSelectedId, setTeamSelectedId] = useState<string>('');
   const gamesDayCache = useRef<{ [key: string]: GameFormatted[] }>({});
+  const persistPrunedGamesCache = useCallback(
+    (cache: { [key: string]: GameFormatted[] } = gamesDayCache.current) => {
+      gamesDayCache.current = pruneOldGamesCache(cache);
+      saveCache('gamesDay', gamesDayCache.current);
+    },
+    [],
+  );
   const scrollViewRef = useRef<ScrollView>(null);
   const ActionButtonRef = useRef<ActionButtonRef>(null);
   const dateRangePickerRef = useRef<DatePickerHandle>(null);
@@ -551,6 +558,7 @@ const GameofTheDayContent = () => {
       const today = formatDateLocal(new Date());
 
       if (YYYYMMDD < today) {
+        persistPrunedGamesCache();
         if (gamesDayCache.current[YYYYMMDD]) {
           delete gamesDayCache.current[YYYYMMDD];
           saveCache('gamesDay', gamesDayCache.current);
@@ -626,25 +634,25 @@ const GameofTheDayContent = () => {
 
         if (YYYYMMDD === today) {
           getNextGamesFromApi(dateToFetch).then((nextFetchedGames) => {
-            gamesDayCache.current = pruneOldGamesCache({ ...gamesDayCache.current, ...nextFetchedGames });
-            saveCache('gamesDay', gamesDayCache.current);
+            persistPrunedGamesCache({
+              ...gamesDayCache.current,
+              ...nextFetchedGames,
+            });
           });
         } else {
           // For other days, save the cache that was updated in the if/else block
-          saveCache('gamesDay', gamesDayCache.current);
+          persistPrunedGamesCache();
         }
       } catch (error: unknown) {
         console.error(error);
         if (!cachedGames) {
           gamesDayCache.current[YYYYMMDD] = [];
-          const prunedEmpty = pruneOldGamesCache({ ...(gamesDayCache.current || {}) });
-          gamesDayCache.current = prunedEmpty;
-          saveCache('gamesDay', prunedEmpty);
+          persistPrunedGamesCache();
           setGames([]);
         }
       }
     },
-    [fetchAndMergeLiveScores],
+    [fetchAndMergeLiveScores, persistPrunedGamesCache],
   );
 
   const handleDateChange = useCallback(
@@ -1096,7 +1104,11 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
       // restore persisted games cache (current day + next 5 days)
       const localStorageGamesDay = getCache<{ [key: string]: GameFormatted[] }>('gamesDay');
       if (localStorageGamesDay) {
-        gamesDayCache.current = localStorageGamesDay;
+        const cachedGameDays = Object.keys(localStorageGamesDay);
+        gamesDayCache.current = pruneOldGamesCache(localStorageGamesDay);
+        if (Object.keys(gamesDayCache.current).length !== cachedGameDays.length) {
+          saveCache('gamesDay', gamesDayCache.current);
+        }
       }
       const storedLeagues = getCache<string[]>('leagues');
       const storedLeaguesSelected = getCache<League[]>('leaguesSelected');

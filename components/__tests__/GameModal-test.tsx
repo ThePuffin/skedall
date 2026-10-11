@@ -49,6 +49,7 @@ jest.mock("../../utils/fetchData", () => ({
  * Must start with `mock` so jest allows referencing it inside `jest.mock`.
  */
 let mockColorScheme: "light" | "dark" = "light";
+let mockWindowWidth = 390;
 
 // `react-native` exposes `useColorScheme` as a getter re-exporting this module's
 // default export, so mocking the source module is enough (mocking the whole
@@ -56,6 +57,16 @@ let mockColorScheme: "light" | "dark" = "light";
 jest.mock("react-native/Libraries/Utilities/useColorScheme", () => ({
   __esModule: true,
   default: () => mockColorScheme,
+}));
+
+jest.mock("react-native/Libraries/Utilities/useWindowDimensions", () => ({
+  __esModule: true,
+  default: () => ({
+    width: mockWindowWidth,
+    height: 844,
+    scale: 1,
+    fontScale: 1,
+  }),
 }));
 
 /** The bundled placeholder used for teams without a logo. */
@@ -234,6 +245,82 @@ describe("GameModal team logos", () => {
       { uri: "https://cdn.example.com/away.png" },
       { uri: "https://cdn.example.com/home.png" },
     ]);
+  });
+});
+
+describe("GameModal team names and favorite stars", () => {
+  it("places favorite stars below centered names on compact screens", () => {
+    mockWindowWidth = 390;
+    const tree = renderModal(
+      buildGame({
+        awayTeam: "New York Giants",
+        homeTeam: "Washington Commanders",
+      }),
+    );
+
+    const awayLayout = tree.root.findByProps({
+      testID: "team-name-layout-away-id",
+    });
+    const homeLayout = tree.root.findByProps({
+      testID: "team-name-layout-home-id",
+    });
+
+    expect(tree.root.findByProps({ testID: "team-name-away-id" }).props.children).toBe(
+      "New York\nGiants",
+    );
+    expect(tree.root.findByProps({ testID: "team-name-home-id" }).props.children).toBe(
+      "Washington\nCommanders",
+    );
+    expect(tree.root.findByProps({ testID: "favorite-star-away-id" })).toBeTruthy();
+    expect(tree.root.findByProps({ testID: "favorite-star-home-id" })).toBeTruthy();
+    expect(awayLayout.props.style).toMatchObject({ alignItems: "center" });
+    expect(homeLayout.props.style).toMatchObject({ alignItems: "center" });
+    expect(
+      tree.root.findByProps({ testID: "team-name-away-id" }).parent?.props.testID,
+    ).toBe("team-name-layout-away-id");
+    expect(
+      tree.root.findByProps({ testID: "favorite-star-away-id" }).parent?.props.testID,
+    ).toBe("team-name-layout-away-id");
+    expect(
+      tree.root.findByProps({ testID: "team-name-home-id" }).parent?.props.testID,
+    ).toBe("team-name-layout-home-id");
+    expect(
+      tree.root.findByProps({ testID: "favorite-star-home-id" }).parent?.props.testID,
+    ).toBe("team-name-layout-home-id");
+
+    const renderedTeamNameIds = tree.root
+      .findAll((node) =>
+        [
+          "team-name-away-id",
+          "favorite-star-away-id",
+          "team-name-home-id",
+          "favorite-star-home-id",
+        ].includes(node.props.testID),
+      )
+      .map((node) => node.props.testID);
+    expect(renderedTeamNameIds.indexOf("team-name-away-id")).toBeLessThan(
+      renderedTeamNameIds.indexOf("favorite-star-away-id"),
+    );
+    expect(renderedTeamNameIds.indexOf("team-name-home-id")).toBeLessThan(
+      renderedTeamNameIds.indexOf("favorite-star-home-id"),
+    );
+  });
+
+  it("reduces both team-name font sizes based on the longer name", () => {
+    mockWindowWidth = 390;
+    const tree = renderModal(
+      buildGame({
+        awayTeam: "Northern Michigan Wildcats",
+        homeTeam: "Michigan State Spartans",
+      }),
+    );
+
+    expect(
+      tree.root.findByProps({ testID: "team-name-away-id" }).props.style,
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ fontSize: 14 })]));
+    expect(
+      tree.root.findByProps({ testID: "team-name-home-id" }).props.style,
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ fontSize: 14 })]));
   });
 });
 

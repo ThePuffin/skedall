@@ -37,6 +37,7 @@ import {
   TouchableOpacity,
   View,
   useColorScheme,
+  useWindowDimensions,
 } from "react-native";
 
 /**
@@ -53,6 +54,16 @@ const DOT_FADE_MS = 260;
  * before the sequence restarts and reads as a loop rather than a flicker.
  */
 const LOADER_CYCLE_MS = 1400;
+const COMPACT_TEAM_LAYOUT_MAX_WIDTH = 600;
+
+const getTeamNameFontSize = (teamNames: string[], isCompact: boolean) => {
+  const longestNameLength = Math.max(...teamNames.map((name) => name.length));
+  const thresholds = isCompact ? [19, 25, 32] : [27, 35, 43];
+  if (longestNameLength > thresholds[2]) return 12;
+  if (longestNameLength > thresholds[1]) return 14;
+  if (longestNameLength > thresholds[0]) return 16;
+  return 18;
+};
 
 const defaultLogo = require("../assets/images/default_logo.png");
 
@@ -116,6 +127,8 @@ export default function GameModal({
   showScores = true,
   onRemoveFromFavorites,
 }: Readonly<GameModalProps>) {
+  const { width } = useWindowDimensions();
+  const useCompactTeamLayout = width <= COMPACT_TEAM_LAYOUT_MAX_WIDTH;
   const [liveGame, setLiveGame] = useState<GameFormatted | null>(null);
   // Last results of each team, oldest → newest, for the form dots row.
   const [awayForm, setAwayForm] = useState<GameOutcome[]>([]);
@@ -250,6 +263,11 @@ export default function GameModal({
     gamePeriod,
     dataChangedAt,
   } = displayData;
+
+  const teamNameFontSize = getTeamNameFontSize(
+    [awayTeam ?? "", homeTeam ?? ""],
+    useCompactTeamLayout,
+  );
 
   const hasScore = homeTeamScore != null && awayTeamScore != null;
   const status = getGamesStatus(displayData);
@@ -484,6 +502,72 @@ export default function GameModal({
     );
   };
 
+  const renderTeamName = (teamName: string, teamId: string) => {
+    const isFavorite = favoriteTeams.includes(teamId);
+    const canToggleFavorite = isFavorite || favoriteTeams.length < maxFavoritesNumber;
+
+    return (
+      <View
+        style={useCompactTeamLayout ? styles.teamNameStack : styles.teamNameRow}
+        testID={`team-name-layout-${teamId}`}
+      >
+        {!useCompactTeamLayout && (
+          <View
+            style={styles.teamNameSideSlot}
+            testID={`team-name-left-slot-${teamId}`}
+          />
+        )}
+        <ThemedText
+          lightColor="#0f172a"
+          darkColor="#ffffff"
+          style={[styles.modalTeamName, { fontSize: teamNameFontSize }]}
+          testID={`team-name-${teamId}`}
+        >
+          {teamName ? teamName.replace(/ (?=[^ ]*$)/, "\n") : ""}
+        </ThemedText>
+        {useCompactTeamLayout ? (
+          canToggleFavorite && (
+            <TouchableOpacity
+              style={styles.compactFavoriteButton}
+              accessibilityRole="button"
+              accessibilityLabel={`${isFavorite ? "Remove" : "Add"} ${teamName} ${isFavorite ? "from" : "to"} favorites`}
+              testID={`favorite-star-${teamId}`}
+              onPress={() => addFavoriteTeam(favoriteTeams, teamId)}
+            >
+              <Icon
+                name={isFavorite ? "star" : "star-o"}
+                type="font-awesome"
+                size={14}
+                color={isFavorite ? "#FFD700" : "#94a3b8"}
+              />
+            </TouchableOpacity>
+          )
+        ) : (
+          <View
+            style={styles.teamNameSideSlot}
+            testID={`team-name-right-slot-${teamId}`}
+          >
+            {canToggleFavorite && (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`${isFavorite ? "Remove" : "Add"} ${teamName} ${isFavorite ? "from" : "to"} favorites`}
+                testID={`favorite-star-${teamId}`}
+                onPress={() => addFavoriteTeam(favoriteTeams, teamId)}
+              >
+                <Icon
+                  name={isFavorite ? "star" : "star-o"}
+                  type="font-awesome"
+                  size={14}
+                  color={isFavorite ? "#FFD700" : "#94a3b8"}
+                />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      </View>
+    );
+  };
+
   const renderStatusText = () => {
     if (isLive) {
       if (
@@ -618,30 +702,7 @@ export default function GameModal({
                     resizeMode="contain"
                   />
                 </TouchableOpacity>
-                <ThemedText
-                  lightColor="#0f172a"
-                  darkColor="#ffffff"
-                  style={styles.modalTeamName}
-                >
-                  {awayTeam ? awayTeam.replace(/ (?=[^ ]*$)/, "\n") : ""}
-                  {(favoriteTeams.includes(awayTeamId) ||
-                    favoriteTeams.length < maxFavoritesNumber) && (
-                    <Icon
-                      onPress={() => addFavoriteTeam(favoriteTeams, awayTeamId)}
-                      name={
-                        favoriteTeams.includes(awayTeamId) ? "star" : "star-o"
-                      }
-                      type="font-awesome"
-                      size={14}
-                      color={
-                        favoriteTeams.includes(awayTeamId)
-                          ? "#FFD700"
-                          : "#94a3b8"
-                      }
-                      style={{ marginLeft: 5 }}
-                    />
-                  )}
-                </ThemedText>
+                {renderTeamName(awayTeam, awayTeamId)}
                 {awayTeamRecord && (
                   <ThemedText
                     lightColor="#475569"
@@ -705,30 +766,7 @@ export default function GameModal({
                     resizeMode="contain"
                   />
                 </TouchableOpacity>
-                <ThemedText
-                  lightColor="#0f172a"
-                  darkColor="#ffffff"
-                  style={styles.modalTeamName}
-                >
-                  {homeTeam ? homeTeam.replace(/ (?=[^ ]*$)/, "\n") : ""}
-                  {(favoriteTeams.includes(homeTeamId) ||
-                    favoriteTeams.length < maxFavoritesNumber) && (
-                    <Icon
-                      onPress={() => addFavoriteTeam(favoriteTeams, homeTeamId)}
-                      name={
-                        favoriteTeams.includes(homeTeamId) ? "star" : "star-o"
-                      }
-                      type="font-awesome"
-                      size={14}
-                      color={
-                        favoriteTeams.includes(homeTeamId)
-                          ? "#FFD700"
-                          : "#94a3b8"
-                      }
-                      style={{ marginLeft: 5 }}
-                    />
-                  )}
-                </ThemedText>
+                {renderTeamName(homeTeam, homeTeamId)}
                 {homeTeamRecord && (
                   <ThemedText
                     lightColor="#475569"
@@ -990,7 +1028,29 @@ const styles = StyleSheet.create({
     height: 60,
     marginBottom: 10,
   },
+  teamNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    width: "100%",
+  },
+  teamNameStack: {
+    alignItems: "center",
+    width: "100%",
+  },
+  teamNameSideSlot: {
+    width: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  compactFavoriteButton: {
+    width: 24,
+    height: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2,
+  },
   modalTeamName: {
+    flex: 1,
     fontSize: 18,
     fontWeight: "bold",
     textAlign: "center",
