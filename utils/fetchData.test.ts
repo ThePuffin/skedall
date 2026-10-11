@@ -1,5 +1,8 @@
 import {
+  fetchRemainingGamesByTeam,
   fetchRecentFormGames,
+  fetchResultsByTeam,
+  fetchGamesByLeagueDay,
   getCanonicalTeamId,
   getOlympicTeamIds,
   groupOlympicTeams,
@@ -59,6 +62,10 @@ beforeEach(() => {
     value: localStorageMock,
     writable: true,
   });
+  Object.defineProperty(globalThis, "sessionStorage", {
+    value: localStorageMock,
+    writable: true,
+  });
   Object.defineProperty(globalThis, "fetch", {
     value: mockFetch,
     writable: true,
@@ -91,11 +98,64 @@ describe("Olympic team identity helpers", () => {
       "OLYMPICS-BASKETBALL-WOMEN-FRA",
       "NHL-FRA",
     ]);
+    expect(groupOlympicTeams(teams).map((team) => team.label)).toEqual(["France", "France", "France"]);
+    expect(groupOlympicTeams(groupOlympicTeams(teams)).map((team) => team.label)).toEqual([
+      "France",
+      "France",
+      "France",
+    ]);
     expect(getCanonicalTeamId("OLYMPICS-HOCKEY-MEN-FRA", teams)).toBe(
       "OLYMPICS-BASKETBALL-MEN-FRA",
     );
     expect(teamsMatchSelection("OLYMPICS-HOCKEY-MEN-FRA", "OLYMPICS-BASKETBALL-MEN-FRA")).toBe(true);
     expect(teamsMatchSelection("OLYMPICS-HOCKEY-MEN-FRA", "OLYMPICS-BASKETBALL-WOMEN-FRA")).toBe(false);
+  });
+});
+
+describe("Olympic team schedule requests", () => {
+  it("requests remaining games for both Olympic sports", async () => {
+    mockSuccessfulFetch({ "2026-02-12": [{ uniqueId: "hockey-game" }, { uniqueId: "basketball-game" }] });
+
+    const result = await fetchRemainingGamesByTeam("OLYMPICS-HOCKEY-MEN-FRA");
+
+    expect(result).toEqual({
+      "2026-02-12": [{ uniqueId: "hockey-game" }, { uniqueId: "basketball-game" }],
+    });
+    expect(lastRequestedUrl()).toContain(
+      "/games/team/OLYMPICS-HOCKEY-MEN-FRA,OLYMPICS-BASKETBALL-MEN-FRA?clean=true",
+    );
+  });
+
+  it("requests results for both Olympic sports", async () => {
+    mockSuccessfulFetch({ "2024-08-08": [{ uniqueId: "basketball-game" }] });
+
+    const result = await fetchResultsByTeam("OLYMPICS-HOCKEY-MEN-FRA");
+
+    expect(result).toEqual({ "2024-08-08": [{ uniqueId: "basketball-game" }] });
+    expect(lastRequestedUrl()).toContain(
+      "/games/team/OLYMPICS-HOCKEY-MEN-FRA,OLYMPICS-BASKETBALL-MEN-FRA/results",
+    );
+  });
+
+  it("keeps non-Olympic team requests unchanged", async () => {
+    mockSuccessfulFetch({});
+
+    await fetchResultsByTeam("NHL-BOS");
+
+    expect(lastRequestedUrl()).toContain("/games/team/NHL-BOS/results");
+  });
+});
+
+describe("fetchGamesByLeagueDay", () => {
+  it("expands Olympic favorite ids so both sports appear in the favorites section", async () => {
+    mockSuccessfulFetch({ groups: [] });
+
+    await fetchGamesByLeagueDay("2024-08-08", undefined, undefined, ["OLYMPICS-HOCKEY-MEN-FRA"]);
+
+    const requestUrl = new URL(lastRequestedUrl(), "https://localhost");
+    expect(requestUrl.searchParams.get("favoriteTeams")).toBe(
+      "OLYMPICS-HOCKEY-MEN-FRA+OLYMPICS-BASKETBALL-MEN-FRA",
+    );
   });
 });
 

@@ -58,6 +58,7 @@ Fetches games for a specific date, grouped by hour. Uses sessionStorage with 2-m
 Fetches games for a specific date, **grouped by league** (`GET /games/league-day/:gameDate`), used by the day view for **past dates**. Returns `LeagueDayGroup[]` (the `groups` array of the response) where the first entry may be the special `FAVORITES` key (favorite-team games, also kept in their league group) followed by one entry per league in alphabetical order (games oldest-to-newest within each group).
 
 - Query params: `leagues` (from the `leaguesSelected` cache, `+`-joined), `maxResults`, `skip`, `favoriteTeams` (`+`-joined team uniqueIds)
+- Olympic favorite-team ids are expanded to both hockey and basketball ids before the request, so the backend's past-day FAVORITES section includes games from both sports.
 - sessionStorage cache (2-minute TTL) keyed on the date **and** all params, so a favorites change gets its own entry
 - Returns `[]` when the request fails and no cache is available (the strategy caches the raw `{ groups }` object, which the helper unwraps)
 
@@ -72,17 +73,17 @@ Fetches all teams. Cached for 24 hours.
 ### Olympic team identity helpers
 
 - `getOlympicTeamIds(teamId)` maps a hockey or basketball Olympic team id to both sport-specific ids for the same country and gender. Non-Olympic ids are returned unchanged as a one-element array.
-- `groupOlympicTeams(teams)` keeps one selector entry per Olympic country/gender while preserving separate men's and women's entries.
+- `groupOlympicTeams(teams)` keeps one selector entry per Olympic country/gender while preserving separate men's and women's entries. The displayed label remains the country name only; grouping is stable if an already-grouped list is processed again.
 - `getCanonicalTeamId(teamId, teams)` resolves an old sport-specific selection to the visible representative from the team list.
 - `getTeamIdentityKey(teamId)` and `teamsMatchSelection(teamId, selectedTeamId)` compare Olympic hockey and basketball entries as the same country/gender; other leagues remain exact-id matches.
 
 ### `fetchRemainingGamesByTeam(teamSelected, startDate?)`
 
-Fetches remaining games for a team. Olympic country selections are expanded server-side to the matching hockey and basketball ids. Uses the team games cache (6-minute TTL). If `startDate` is provided, skips cache.
+Fetches remaining games for a team. Olympic country selections send both matching hockey and basketball ids in the team route parameter, so the result does not depend on the backend deployment having Olympic-id expansion enabled. The cache key uses the full selected id set, preventing reuse of older single-sport cache entries. Uses the team games cache (6-minute TTL). If `startDate` is provided, skips cache.
 
 ### `fetchResultsByTeam(teamSelected, startDate?)`
 
-Fetches past results for a team, including both Olympic sports for the selected country/gender.
+Fetches past results for a team. Olympic country selections send both matching hockey and basketball ids in the team route parameter, including both sports for the selected country/gender.
 
 ### `fetchRecentFormGames(teamSelected, before?, limit = 5)`
 

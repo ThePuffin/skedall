@@ -62,6 +62,13 @@ const groupGamesByHour = (games: GameFormatted[]) => {
   return grouped;
 };
 
+const getFavoriteGameIndex = (game: GameFormatted, favoriteTeams: string[]) =>
+  favoriteTeams.findIndex(
+    (teamId) =>
+      teamsMatchSelection(game.homeTeamId, teamId) ||
+      teamsMatchSelection(game.awayTeamId, teamId),
+  );
+
 // Special key of the leading favorites section returned by the backend
 // (`/games/league-day`): those games are also listed in their league group.
 const FAVORITES_GROUP_KEY = 'FAVORITES';
@@ -175,10 +182,9 @@ const GameofTheDayContent = () => {
     fetchDateRangeLimits().then(setDateLimits);
   }, []);
 
-  // Preload the 'teams' cache (24h) on mount to guarantee that getCache<Team[]>('teams')
-  // is available when the user filters by team through the slider (label → uniqueId resolution).
+  // Preload the 'teams' cache (24h) for label → uniqueId resolution.
   useEffect(() => {
-    fetchTeams().catch(() => {});
+    fetchTeams().catch((error) => console.error('Failed to preload teams for the day filter', error));
   }, []);
 
   const { minDate, maxDate } = dateLimits;
@@ -396,20 +402,16 @@ const GameofTheDayContent = () => {
     const selectedTeam = selectedTeamUniqueId || teamSelectedId;
     const sortGamesByFavorites = (gamesToSort: GameFormatted[]) => {
       return gamesToSort.sort((a, b) => {
-        const aIsFavorite = favoriteTeams.includes(a.homeTeamId) || favoriteTeams.includes(a.awayTeamId);
-        const bIsFavorite = favoriteTeams.includes(b.homeTeamId) || favoriteTeams.includes(b.awayTeamId);
+        const aFavoriteIndex = getFavoriteGameIndex(a, favoriteTeams);
+        const bFavoriteIndex = getFavoriteGameIndex(b, favoriteTeams);
+        const aIsFavorite = aFavoriteIndex !== -1;
+        const bIsFavorite = bFavoriteIndex !== -1;
 
         if (aIsFavorite && !bIsFavorite) return -1;
         if (!aIsFavorite && bIsFavorite) return 1;
 
         if (aIsFavorite && bIsFavorite) {
-          const getFavoriteIndex = (game: GameFormatted) => {
-            const homeIndex = favoriteTeams.indexOf(game.homeTeamId);
-            const awayIndex = favoriteTeams.indexOf(game.awayTeamId);
-            const validIndexes = [homeIndex, awayIndex].filter((i) => i > -1);
-            return Math.min(...validIndexes);
-          };
-          return getFavoriteIndex(a) - getFavoriteIndex(b);
+          return aFavoriteIndex - bFavoriteIndex;
         }
 
         return 0;
@@ -427,8 +429,7 @@ const GameofTheDayContent = () => {
             game.homeTeam === teamSelectedId ||
             game.awayTeam === teamSelectedId) &&
           (activeFilter !== 'FAVORITES' ||
-            favoriteTeams.includes(game.homeTeamId) ||
-            favoriteTeams.includes(game.awayTeamId)) &&
+            getFavoriteGameIndex(game, favoriteTeams) !== -1) &&
           (activeFilter !== 'BOOKMARKS' ||
             gamesSelected.some((g) => g.uniqueId === game.uniqueId || g._id === game._id)),
       )
@@ -515,8 +516,7 @@ const GameofTheDayContent = () => {
         game.homeTeam === teamSelectedId ||
         game.awayTeam === teamSelectedId) &&
       (activeFilter !== 'FAVORITES' ||
-        favoriteTeams.includes(game.homeTeamId) ||
-        favoriteTeams.includes(game.awayTeamId)) &&
+        getFavoriteGameIndex(game, favoriteTeams) !== -1) &&
       (activeFilter !== 'BOOKMARKS' ||
         gamesSelected.some((g) => g.uniqueId === game.uniqueId || g._id === game._id));
 

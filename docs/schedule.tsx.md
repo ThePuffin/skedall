@@ -76,7 +76,7 @@ Fetches games from the API:
 - If `showPreviousScores`: also fetches results
 - Caches data in localStorage via `saveCache('scheduleData', ...)`
 
-The Olympic team selector groups hockey and basketball roster entries by country and gender into a single option. The opponent selector uses the same country/gender identity so choosing a country applies to either sport.
+The Olympic team selector groups hockey and basketball roster entries by country and gender into a single option labelled with the country name only. The opponent selector uses the same country/gender identity so choosing a country applies to either sport.
 
 ### Empty schedule → `closest` history button
 

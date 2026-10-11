@@ -2,6 +2,22 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fixed: Schedule requests include both Olympic sports
+
+Schedule team-game and team-result requests now send both hockey and basketball team ids for an Olympic country selection. This avoids relying on the deployed backend to expand a single sport-specific id. The remaining-games cache is keyed by the full ID set, so an older hockey-only cache entry cannot mask basketball games.
+
+Updated `frontend/utils/fetchData.ts`, its tests, and `frontend/docs/fetchData.ts.md`.
+
+## Fixed: Olympic favorites include both sports in the day view
+
+The index screen now matches Olympic favorites by country/gender identity when sorting and filtering games. Past-day favorite requests also send both sport-specific ids so the backend's FAVORITES section includes both hockey and basketball games.
+
+Updated `frontend/app/(tabs)/index.tsx`, `frontend/utils/fetchData.ts`, their documentation, and fetchData tests.
+
+## Changed: Olympic team filter labels
+
+Olympic team options remain grouped by country and gender, and display the country name only.
+
 ## Fixed: Olympic team filters group countries across hockey and basketball
 
 Olympic hockey and basketball have separate provider team ids, which made a country selection

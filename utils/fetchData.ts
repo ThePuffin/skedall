@@ -145,6 +145,10 @@ export const groupOlympicTeams = (teams: Team[]): Team[] => {
   return teams.filter((team) => {
     const groupKey = getOlympicTeamGroupKey(team.uniqueId);
     return !groupKey || representatives.get(groupKey)?.uniqueId === team.uniqueId;
+  }).map((team) => {
+    if (!getOlympicTeamGroupKey(team.uniqueId)) return team;
+    const countryLabel = team.label.replace(/\s+\(Hockey \+ Basketball\)$/, "");
+    return { ...team, label: countryLabel };
   });
 };
 
@@ -299,7 +303,9 @@ export const fetchGamesByLeagueDay = async (
     cacheKey += `_skip_${skip}`;
   }
 
-  const favoriteTeamsParam = (favoriteTeams || []).filter(Boolean);
+  const favoriteTeamsParam = Array.from(
+    new Set((favoriteTeams || []).filter(Boolean).flatMap(getOlympicTeamIds)),
+  );
   if (favoriteTeamsParam.length > 0) {
     const favorites = favoriteTeamsParam.join("+");
     params.append("favoriteTeams", favorites);
@@ -380,15 +386,17 @@ export const fetchRemainingGamesByTeam = async (
   teamSelected: string,
   startDate?: string,
 ) => {
+  const teamIds = getOlympicTeamIds(teamSelected);
+  const cacheTeamId = teamIds.join(",");
   const teamGamesCache = loadTeamGamesCache();
-  const cachedEntry = teamGamesCache[teamSelected];
+  const cachedEntry = teamGamesCache[cacheTeamId];
 
   if (!startDate && isTeamGamesEntryFresh(cachedEntry)) {
-    console.info(`Using cached games for team ${teamSelected}`);
+    console.info(`Using cached games for team ${cacheTeamId}`);
     return cachedEntry.data;
   }
 
-  let url = `${EXPO_PUBLIC_API_BASE_URL}/games/team/${teamSelected}?clean=true`;
+  let url = `${EXPO_PUBLIC_API_BASE_URL}/games/team/${cacheTeamId}?clean=true`;
   if (startDate) {
     url += `&startDate=${startDate}`;
   }
@@ -402,12 +410,12 @@ export const fetchRemainingGamesByTeam = async (
       if (startDate) {
         return null; // Don't use cache if filtering by date
       }
-      return teamGamesCache[teamSelected]?.data || null;
+      return teamGamesCache[cacheTeamId]?.data || null;
     },
     // Custom setter: only save to cache if we fetched the full schedule (no startDate).
     (data) => {
       if (!startDate) {
-        teamGamesCache[teamSelected] = { data, timestamp: Date.now() };
+        teamGamesCache[cacheTeamId] = { data, timestamp: Date.now() };
         persistTeamGamesCache(teamGamesCache);
       }
     },
@@ -487,7 +495,8 @@ export const fetchResultsByTeam = async (
   teamSelected: string,
   startDate?: string,
 ) => {
-  let url = `${EXPO_PUBLIC_API_BASE_URL}/games/team/${teamSelected}/results`;
+  const teamIds = getOlympicTeamIds(teamSelected);
+  let url = `${EXPO_PUBLIC_API_BASE_URL}/games/team/${teamIds.join(",")}/results`;
   if (startDate) {
     url += `?startDate=${startDate}`;
   }

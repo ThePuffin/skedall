@@ -107,6 +107,8 @@ Called when the user changes the league/filter:
 
 Called when the user changes the team filter. Olympic hockey and basketball ids for the same country and gender are treated as one selection, so the day view filter follows that country across Olympic years.
 
+When both Olympic sports are represented, their team entries are grouped by country/gender and displayed as a single option using the country name only.
+
 ### Empty day → `closest` date navigation
 
 When `visibleGroupCount` is 0 (no section to display for the day + current filter) and loading is finished, the screen calls `fetchClosestDates` with the displayed date as boundary (`date: YYYY-MM-DD`):
@@ -145,6 +147,8 @@ Filters and groups games **for today / upcoming dates**:
 3. Categorizes games: `inProgress`, `scheduled`, `final`, `finished`
 4. Groups scheduled games by hour
 5. Sorts favorite team games first
+
+Olympic favorites match hockey and basketball ids for the same country/gender, so a favorite saved from one sport also highlights and filters the other sport's games.
 
 ### `visibleLeagueGroups`
 

@@ -59,6 +59,8 @@ Restores teams and games from cache on load.
 
 Fetches all teams from the API and caches them.
 
+Olympic hockey and basketball teams are grouped into one selector option per country/gender, labelled with the country name only.
+
 ### `getGamesFromApi(startDate?, endDate?)`
 
 Fetches games for the selected teams within the date range from the API:
