@@ -12,7 +12,9 @@ The **GamesSelected** component renders a responsive grid of selected (bookmarke
 - **Click handling** — forwards selection to `onAction(game)`
 - **Favorites mode** — when `onRemoveFromFavorites` is provided, each card is put in
   favorites-details mode: tapping the card opens `GameModal` (whose trash button removes the
-  game) instead of calling `onAction`
+  game) instead of calling `onAction`; games whose start time has passed are shown at 55% opacity
+- **Bulk selection** — when `onToggleBulkSelection` is provided, a checkbox by the league logo
+  toggles bulk-selected state; other card taps continue to open game details
 - **Centered single card** — a single selected team's card is centered at 33% width on desktop
 - **Unique keys** — uses `uniqueId` or `_id` for card keys
 
@@ -23,6 +25,8 @@ The **GamesSelected** component renders a responsive grid of selected (bookmarke
 | `data`                  | `GameFormatted[]`       | `[]`    | Games to display                                        |
 | `onAction`              | `(game) => void`        | —       | Called when a card is selected                          |
 | `onRemoveFromFavorites` | `(game) => void`        | —       | Favorites modal: card press opens details, removal button |
+| `onToggleBulkSelection` | `(game) => void` | —       | Enables card selection for bulk removal                   |
+| `isBulkSelected`        | `(game) => boolean` | —    | Reports whether a game is selected for bulk removal      |
 | `teamNumber`            | `number`                | `1`     | Number of selected teams (drives column count)          |
 
 ## Key Memoized / Computed Values

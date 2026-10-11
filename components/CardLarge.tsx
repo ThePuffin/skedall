@@ -54,6 +54,8 @@ export default function CardLarge({
   forceShowScores = false,
   onSelection,
   onRemoveFromFavorites,
+  onToggleBulkSelection,
+  isBulkSelected = false,
   isSelected: propIsSelected,
   animateExit = false,
   animateEntry = false,
@@ -726,7 +728,7 @@ export default function CardLarge({
   );
 
   const bookmarkElement =
-    status === GameStatus.SCHEDULED && (isSelected || (isOneTeamInSelection && gamesSelected.length < 10)) ? (
+    isSelected || (isOneTeamInSelection && gamesSelected.length < 10) ? (
       <TouchableOpacity
         onPress={(e) => {
           e.stopPropagation();
@@ -813,12 +815,32 @@ export default function CardLarge({
           <View style={[{ padding: isSmallCard ? 5 : 15, borderRadius: 20 }, gradientStyle]}>
             <div style={isEmptyCard ? styles.invisible : {}}>
               {/* Header: League Logo & Live Badge */}
-              <View style={[styles.headerRow, isSmallCard && { justifyContent: 'flex-end' }]}>
-                {!isSmallCard && (
-                  <View style={[styles.leagueBadge, isSmallCard && { paddingHorizontal: 0 }]}>
-                    <Image source={leagueLogo} style={[styles.leagueIcon, leagueLogoStyle]} resizeMode="contain" />
-                  </View>
-                )}
+              <View style={styles.headerRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {!isSmallCard && (
+                    <View style={styles.leagueBadge}>
+                      <Image source={leagueLogo} style={[styles.leagueIcon, leagueLogoStyle]} resizeMode="contain" />
+                    </View>
+                  )}
+                  {onToggleBulkSelection && (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={isBulkSelected ? translateWord('deselectGame') : translateWord('selectGame')}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        onToggleBulkSelection(data);
+                      }}
+                      style={{ paddingHorizontal: 7, paddingVertical: 5 }}
+                    >
+                      <Icon
+                        name={isBulkSelected ? 'check-square' : 'square-o'}
+                        type="font-awesome"
+                        size={21}
+                        color={isBulkSelected ? '#22c55e' : mutedTextColor}
+                      />
+                    </TouchableOpacity>
+                  )}
+                </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   {isLive && (
                     <View style={[styles.liveBadge, isSmallCard && { paddingHorizontal: 0 }]}>

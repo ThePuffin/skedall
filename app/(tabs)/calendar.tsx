@@ -81,6 +81,7 @@ export default function Calendar() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [teamsSelected, setTeamsSelected] = useState<string[]>([]);
   const [gamesSelected, setGamesSelected] = useState<GameFormatted[]>([]);
+  const [bulkSelectedGames, setBulkSelectedGames] = useState<GameFormatted[]>([]);
   const [homeGameVisibility, setHomeGameVisibility] = useState<HomeGameFilter>('all');
 
   const scrollViewRef = useRef<ScrollView>(null);
@@ -386,10 +387,7 @@ export default function Calendar() {
         setGames(getStoredGames() as FilterGames);
 
         const storedGamesSelected = getCache<GameFormatted[]>('gameSelected') ?? [];
-        const today = new Date().toISOString().split('T')[0];
-        const gamesSelectedFromStorage = storedGamesSelected.filter((game) => game.gameDate >= today);
-        setGamesSelected(gamesSelectedFromStorage);
-        saveCache('gameSelected', gamesSelectedFromStorage);
+        setGamesSelected(storedGamesSelected);
       }
     } finally {
       isRestoringSelectionRef.current = false;
@@ -530,8 +528,39 @@ export default function Calendar() {
     [gamesSelected, user],
   );
 
+  const isBulkSelected = useCallback(
+    (game: GameFormatted) => bulkSelectedGames.some((selected) => isSameGame(selected, game)),
+    [bulkSelectedGames],
+  );
+
+  const handleToggleBulkSelection = useCallback((game: GameFormatted) => {
+    setBulkSelectedGames((selectedGames) =>
+      selectedGames.some((selected) => isSameGame(selected, game))
+        ? selectedGames.filter((selected) => !isSameGame(selected, game))
+        : [...selectedGames, game],
+    );
+  }, []);
+
+  const handleRemoveBulkSelection = useCallback(async () => {
+    if (bulkSelectedGames.length === 0) return;
+    const newSelection = gamesSelected.filter(
+      (game) => !bulkSelectedGames.some((selected) => isSameGame(selected, game)),
+    );
+
+    setGamesSelected(newSelection);
+    setBulkSelectedGames([]);
+    saveCache('gameSelected', newSelection);
+    if (globalThis.window !== undefined) {
+      globalThis.window.dispatchEvent(new Event('gamesSelectedUpdated'));
+    }
+    if (user) {
+      syncToFirestore(user.uid, { gameSelected: newSelection });
+    }
+  }, [bulkSelectedGames, gamesSelected, user]);
+
   const handleClearGamesSelection = useCallback(async () => {
     setGamesSelected([]);
+    setBulkSelectedGames([]);
     saveCache('gameSelected', []);
     if (globalThis.window !== undefined) {
       globalThis.window.dispatchEvent(new Event('gamesSelectedUpdated'));
@@ -542,6 +571,11 @@ export default function Calendar() {
       syncToFirestore(user.uid, { gameSelected: [] });
     }
   }, [user]);
+
+  const closeGamesModal = useCallback(() => {
+    setGamesModalVisible(false);
+    setBulkSelectedGames([]);
+  }, []);
 
   useEffect(() => {
     const refreshData = () => {
@@ -583,9 +617,9 @@ export default function Calendar() {
 
   useEffect(() => {
     if (gamesModalVisible && filteredGamesSelected.length === 0) {
-      setGamesModalVisible(false);
+      closeGamesModal();
     }
-  }, [filteredGamesSelected, gamesModalVisible]);
+  }, [filteredGamesSelected, gamesModalVisible, closeGamesModal]);
 
   const displayAccordions = () => {
     if (!games || Object.keys(games).length === 0) return null;
@@ -861,9 +895,9 @@ export default function Calendar() {
         animationType="fade"
         transparent={true}
         visible={gamesModalVisible}
-        onRequestClose={() => setGamesModalVisible(false)}
+        onRequestClose={closeGamesModal}
       >
-        <Pressable style={styles.centeredView} onPress={() => setGamesModalVisible(false)}>
+        <Pressable style={styles.centeredView} onPress={closeGamesModal}>
           <Pressable
             style={[styles.modalView, { backgroundColor: modalBackgroundColor, maxHeight: '80%', minWidth: '75%' }]}
             onPress={(e) => e.stopPropagation()}
@@ -877,29 +911,49 @@ export default function Calendar() {
                 alignItems: 'center',
               }}
             >
-              <TouchableOpacity
-                onPress={() => {
-                  handleClearGamesSelection();
-                  setGamesModalVisible(false);
-                }}
-                style={{
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  borderRadius: 15,
-                  borderWidth: 1,
-                  borderColor: iconColor,
-                  width: 30,
-                  height: 30,
-                  backgroundColor: 'transparent',
-                }}
-              >
-                <Ionicons name="trash" size={16} color={iconColor} />
-              </TouchableOpacity>
+              <View style={{ width: 30 }} />
               <Text style={[styles.modalText, { color: textColor, marginBottom: 0 }]}>
                 {translateWord('favorites')}
               </Text>
-              <TouchableOpacity onPress={() => setGamesModalVisible(false)}>
+              <TouchableOpacity accessibilityRole="button" onPress={closeGamesModal}>
                 <Ionicons name="close" size={24} color={iconColor} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.favoriteModalDeleteActions}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`${translateWord('deleteSelection')} (${bulkSelectedGames.length})`}
+                disabled={bulkSelectedGames.length === 0}
+                onPress={handleRemoveBulkSelection}
+                style={[
+                  styles.favoriteModalDeleteButton,
+                  { backgroundColor: '#ef4444' },
+                  bulkSelectedGames.length === 0 && { opacity: 0.4 },
+                ]}
+              >
+                <Ionicons name="trash" size={15} color="#fff" />
+                <Text style={styles.favoriteModalDeleteButtonText}>
+                  {translateWord('deleteSelection')} ({bulkSelectedGames.length})
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={translateWord('deleteAllFavorites')}
+                disabled={gamesSelected.length === 0}
+                onPress={() => {
+                  handleClearGamesSelection();
+                  closeGamesModal();
+                }}
+                style={[
+                  styles.favoriteModalDeleteButton,
+                  { backgroundColor: '#475569' },
+                  gamesSelected.length === 0 && { opacity: 0.4 },
+                ]}
+              >
+                <Ionicons name="trash" size={15} color="#fff" />
+                <Text style={styles.favoriteModalDeleteButtonText}>
+                  {translateWord('deleteAllFavorites')}
+                </Text>
               </TouchableOpacity>
             </View>
             <ScrollView style={{ width: '100%' }}>
@@ -911,6 +965,8 @@ export default function Calendar() {
                   gamesSelected={filteredGamesSelected}
                   onSelection={handleGamesSelection}
                   onRemoveFromFavorites={handleRemoveGameSelection}
+                  onToggleBulkSelection={handleToggleBulkSelection}
+                  isBulkSelected={isBulkSelected}
                   disableToggle={true}
                   hideEventCount={true}
                 />
@@ -918,6 +974,8 @@ export default function Calendar() {
                 <GamesSelected
                   onAction={handleGamesSelection}
                   onRemoveFromFavorites={handleRemoveGameSelection}
+                  onToggleBulkSelection={handleToggleBulkSelection}
+                  isBulkSelected={isBulkSelected}
                   data={filteredGamesSelected}
                   teamNumber={filteredGamesSelected.length}
                 />
@@ -938,6 +996,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  favoriteModalDeleteActions: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+  },
+  favoriteModalDeleteButton: {
+    flex: 1,
+    minHeight: 36,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  favoriteModalDeleteButtonText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600',
+    textAlign: 'center',
+    flexShrink: 1,
   },
   modalView: {
     margin: 20,

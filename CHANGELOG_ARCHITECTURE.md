@@ -2,6 +2,26 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Changed: Calendar favorites support bulk selection and removal
+
+The FAVORIS modal now has a checkbox next to each card's league logo so users can select individual games without changing the normal card press behavior. The two delete buttons are explicitly labelled as deleting the selection or all favorites, and all new action labels are translated in the supported languages.
+
+Updated Calendar, `CardLarge`, `GamesSelected`, shared component types, and their documentation.
+
+The bulk-selection checkbox icon and touch target have been slightly enlarged for easier tapping.
+
+## Changed: past games can be bookmarked from game cards
+
+The card's top-right bookmark control is now available for past games too, so users can add or remove a past game from favorites using the same interaction as an upcoming game.
+
+Updated `frontend/components/CardLarge.tsx` and its documentation.
+
+## Changed: Calendar favorites retain and dim past games
+
+Calendar no longer deletes bookmarked games from its persisted selection simply because their date is before today. Past games remain in the FAVORIS modal and their cards are rendered at reduced opacity.
+
+Updated `calendar.tsx`, `GamesSelected.tsx`, `Accordion.tsx`, and their documentation.
+
 ## Fixed: stale past days are pruned from the Game of the Day cache
 
 The persisted `gamesDay` cache is now pruned on restore and before cache updates are saved. Days older than yesterday no longer remain stored just because the user did not trigger the prefetch path.
