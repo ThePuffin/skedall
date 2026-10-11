@@ -9,6 +9,7 @@ The FAVORIS modal now has a checkbox next to each card's league logo so users ca
 Updated Calendar, `CardLarge`, `GamesSelected`, shared component types, and their documentation.
 
 The bulk-selection checkbox icon and touch target have been slightly enlarged for easier tapping.
+Its color now matches the game's bookmark icon in both light and dark themes.
 
 ## Changed: past games can be bookmarked from game cards
 
@@ -30,13 +31,19 @@ Updated `frontend/app/(tabs)/index.tsx` and its documentation.
 
 ## Changed: long team names scale down consistently in the game modal
 
-The two team names now share a font size determined by the longer name in the matchup. Longer names use a smaller size, with earlier reductions on compact screens, to reduce line wrapping while keeping the two sides visually balanced.
+On compact screens, the two team names share a font size determined by the longer name in the matchup. Wider screens keep the normal font size and the centered names with symmetric favorite-star side slots.
 
 Updated `frontend/components/GameModal.tsx`, its tests, and component documentation.
 
-## Fixed: favorite stars no longer shift wrapped team names on compact screens
+## Fixed: favorite stars sit beside both second name lines
 
-The GameModal favorite star is a separate button from the team-name text. On compact screens (width ≤ 600 px), it is centered below the name; on wider screens, symmetric side slots keep wrapped names centered.
+In GameModal, both teams' favorite stars now sit immediately beside the last word on the second name line. Compact screens retain the matchup-based smaller font size; wider screens keep the normal size.
+
+## Changed: restore responsive team-name and favorite-star layout
+
+Compact screens place each favorite star below its team name, with both names sharing a font size based on the longer name and using the available team-column width. Text scales down as needed to stay within two lines. Wider screens restore the prior inline star placement beside the team name.
+
+Updated `frontend/components/GameModal.tsx`, its tests, and component documentation.
 
 Updated `frontend/components/GameModal.tsx`, its tests, and component documentation.
 

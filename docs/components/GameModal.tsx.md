@@ -9,7 +9,7 @@ The **GameModal** component displays a detailed game popup with team logos, reco
 - **Detailed game view** — team logos, names, records, score or `@` separator
 - **Live score fetch** — polls `fetchLiveScores` for games within -15min to +5h of start
 - **Live status** — detects in-progress games and displays clock/period text
-- **Favorite toggle** — star buttons to add teams to favorites (respects `maxFavoritesNumber`). On compact screens (width ≤ 600 px), the star is centered below the team name so it cannot affect wrapping; on wider screens it sits in a fixed, symmetric side slot beside the centered name. Both team names use the same font size, reduced according to the longer name in the matchup to limit excessive wrapping without making the two sides look uneven
+- **Favorite toggle** — star buttons to add teams to favorites (respects `maxFavoritesNumber`). On compact screens, the star sits below the team name; both names use the same font size based on the longer name in the matchup, fill their team column's available width, and shrink as needed to stay within two lines. Wider screens keep the historical inline star placement and normal font size
 - **Action buttons** — game details (ESPN), standings (ESPN/PWHL), ICS download, map link
 - **Remove from favorites** — when `onRemoveFromFavorites` is passed (favorites modal), the
   "locate arena" button is **replaced** by a trash button labelled `removeFromFavorites`

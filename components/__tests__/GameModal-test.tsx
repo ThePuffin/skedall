@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Image, Linking, TouchableOpacity } from "react-native";
+import { Animated, Image, Linking, TouchableOpacity } from "react-native";
 import renderer from "react-test-renderer";
 
 import GameModal from "../GameModal";
@@ -43,6 +43,14 @@ jest.mock("../../utils/fetchData", () => ({
   fetchLiveScores: jest.fn().mockResolvedValue([]),
   fetchRecentFormGames: jest.fn().mockResolvedValue([]),
 }));
+
+// The modal's skeleton animation is irrelevant to these tests. Preventing its
+// native loop avoids leaving animation timers running between renderer updates.
+jest.spyOn(Animated, "loop").mockReturnValue({
+  start: jest.fn(),
+  stop: jest.fn(),
+  reset: jest.fn(),
+});
 
 /**
  * Color scheme returned by the mocked `useColorScheme` hook below.
@@ -122,6 +130,27 @@ const buildGame = (overrides: Partial<GameFormatted> = {}): GameFormatted => ({
   ...overrides,
 });
 
+/** Tracks mounted modals so looping form animations are stopped after each test. */
+const renderedTrees: renderer.ReactTestRenderer[] = [];
+
+const trackTree = (tree: renderer.ReactTestRenderer) => {
+  renderedTrees.push(tree);
+  return tree;
+};
+
+const unmountTree = (tree: renderer.ReactTestRenderer) => {
+  const index = renderedTrees.indexOf(tree);
+  if (index >= 0) renderedTrees.splice(index, 1);
+  renderer.act(() => tree.unmount());
+};
+
+const unmountRenderedTrees = () => {
+  while (renderedTrees.length) {
+    const tree = renderedTrees.pop();
+    if (tree) renderer.act(() => tree.unmount());
+  }
+};
+
 const renderModal = (data: GameFormatted): renderer.ReactTestRenderer => {
   let tree: renderer.ReactTestRenderer | undefined;
   renderer.act(() => {
@@ -135,8 +164,10 @@ const renderModal = (data: GameFormatted): renderer.ReactTestRenderer => {
       />,
     );
   });
-  return tree as renderer.ReactTestRenderer;
+  return trackTree(tree as renderer.ReactTestRenderer);
 };
+
+afterEach(unmountRenderedTrees);
 
 /** Sources of the away then home team logo images, in render order. */
 const logoSources = (tree: renderer.ReactTestRenderer) =>
@@ -249,7 +280,7 @@ describe("GameModal team logos", () => {
 });
 
 describe("GameModal team names and favorite stars", () => {
-  it("places favorite stars below centered names on compact screens", () => {
+  it("places favorite stars below two-line names on compact screens", () => {
     mockWindowWidth = 390;
     const tree = renderModal(
       buildGame({
@@ -265,45 +296,39 @@ describe("GameModal team names and favorite stars", () => {
       testID: "team-name-layout-home-id",
     });
 
-    expect(tree.root.findByProps({ testID: "team-name-away-id" }).props.children).toBe(
-      "New York\nGiants",
-    );
-    expect(tree.root.findByProps({ testID: "team-name-home-id" }).props.children).toBe(
-      "Washington\nCommanders",
-    );
-    expect(tree.root.findByProps({ testID: "favorite-star-away-id" })).toBeTruthy();
-    expect(tree.root.findByProps({ testID: "favorite-star-home-id" })).toBeTruthy();
+    const awayName = tree.root.findByProps({ testID: "team-name-away-id" });
+    const homeName = tree.root.findByProps({ testID: "team-name-home-id" });
+    const awayStar = tree.root.findByProps({ testID: "favorite-star-away-id" });
+    const homeStar = tree.root.findByProps({ testID: "favorite-star-home-id" });
+
+    expect(awayName.props.children).toBe("New York\nGiants");
+    expect(homeName.props.children).toBe("Washington\nCommanders");
+    for (const teamName of [awayName, homeName]) {
+      expect(teamName.props.numberOfLines).toBe(2);
+      expect(teamName.props.adjustsFontSizeToFit).toBe(true);
+      expect(teamName.props.minimumFontScale).toBe(0.75);
+      expect(teamName.props.style).toEqual(
+        expect.arrayContaining([expect.objectContaining({ width: "100%" })]),
+      );
+    }
     expect(awayLayout.props.style).toMatchObject({ alignItems: "center" });
     expect(homeLayout.props.style).toMatchObject({ alignItems: "center" });
-    expect(
-      tree.root.findByProps({ testID: "team-name-away-id" }).parent?.props.testID,
-    ).toBe("team-name-layout-away-id");
-    expect(
-      tree.root.findByProps({ testID: "favorite-star-away-id" }).parent?.props.testID,
-    ).toBe("team-name-layout-away-id");
-    expect(
-      tree.root.findByProps({ testID: "team-name-home-id" }).parent?.props.testID,
-    ).toBe("team-name-layout-home-id");
-    expect(
-      tree.root.findByProps({ testID: "favorite-star-home-id" }).parent?.props.testID,
-    ).toBe("team-name-layout-home-id");
+    expect(awayName.parent.props.testID).toBe(awayLayout.props.testID);
+    expect(awayStar.parent.props.testID).toBe(awayLayout.props.testID);
+    expect(homeName.parent.props.testID).toBe(homeLayout.props.testID);
+    expect(homeStar.parent.props.testID).toBe(homeLayout.props.testID);
 
-    const renderedTeamNameIds = tree.root
-      .findAll((node) =>
-        [
-          "team-name-away-id",
-          "favorite-star-away-id",
-          "team-name-home-id",
-          "favorite-star-home-id",
-        ].includes(node.props.testID),
-      )
-      .map((node) => node.props.testID);
-    expect(renderedTeamNameIds.indexOf("team-name-away-id")).toBeLessThan(
-      renderedTeamNameIds.indexOf("favorite-star-away-id"),
-    );
-    expect(renderedTeamNameIds.indexOf("team-name-home-id")).toBeLessThan(
-      renderedTeamNameIds.indexOf("favorite-star-home-id"),
-    );
+    for (const [layout, name, star] of [
+      [awayLayout, awayName, awayStar],
+      [homeLayout, homeName, homeStar],
+    ]) {
+      const testIdsInLayout = layout
+        .findAll((node) => typeof node.props.testID === "string")
+        .map((node) => node.props.testID);
+      expect(testIdsInLayout.indexOf(name.props.testID)).toBeLessThan(
+        testIdsInLayout.indexOf(star.props.testID),
+      );
+    }
   });
 
   it("reduces both team-name font sizes based on the longer name", () => {
@@ -321,6 +346,37 @@ describe("GameModal team names and favorite stars", () => {
     expect(
       tree.root.findByProps({ testID: "team-name-home-id" }).props.style,
     ).toEqual(expect.arrayContaining([expect.objectContaining({ fontSize: 14 })]));
+  });
+
+  it("keeps the normal name size and appends each star to the name on wider screens", () => {
+    mockWindowWidth = 900;
+    const tree = renderModal(
+      buildGame({
+        awayTeam: "Northern Michigan Wildcats",
+        homeTeam: "Michigan State Spartans",
+      }),
+    );
+
+    const awayName = tree.root.findByProps({ testID: "team-name-away-id" });
+    const homeName = tree.root.findByProps({ testID: "team-name-home-id" });
+    expect(awayName.props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ fontSize: 18 })]),
+    );
+    expect(homeName.props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ fontSize: 18 })]),
+    );
+    expect(awayName.props.children).toEqual(
+      expect.arrayContaining([
+        "Northern Michigan\nWildcats",
+        expect.objectContaining({ props: expect.objectContaining({ testID: "favorite-star-away-id" }) }),
+      ]),
+    );
+    expect(homeName.props.children).toEqual(
+      expect.arrayContaining([
+        "Michigan State\nSpartans",
+        expect.objectContaining({ props: expect.objectContaining({ testID: "favorite-star-home-id" }) }),
+      ]),
+    );
   });
 });
 
@@ -520,19 +576,6 @@ const pastGame = (
 
 const mockedFetchResults = fetchRecentFormGames as jest.Mock;
 
-/**
- * Every tree rendered through the helpers below, unmounted after each test.
- * The form skeleton runs a looping `Animated` value; leaving the tree mounted
- * lets its timers fire after the test and produce "update not wrapped in act"
- * warnings.
- */
-const renderedTrees: renderer.ReactTestRenderer[] = [];
-
-const trackTree = (tree: renderer.ReactTestRenderer) => {
-  renderedTrees.push(tree);
-  return tree;
-};
-
 /** Renders the modal and lets the form effect settle. */
 const renderModalWithForm = async (game: GameFormatted) => {
   let tree: renderer.ReactTestRenderer | undefined;
@@ -586,12 +629,9 @@ describe("GameModal recent form (last 5 results)", () => {
   });
 
   afterEach(() => {
+    unmountRenderedTrees();
     mockedFetchResults.mockReset();
     jest.useRealTimers();
-    // Stop the looping form-skeleton animations.
-    while (renderedTrees.length) {
-      renderedTrees.pop()?.unmount();
-    }
   });
 
   it("renders one dot per finished game, oldest first", async () => {
@@ -890,7 +930,7 @@ describe("GameModal recent form (last 5 results)", () => {
 
       let tree: renderer.ReactTestRenderer | undefined;
       await renderer.act(async () => {
-        tree = renderer.create(
+        tree = trackTree(renderer.create(
           <GameModal
             visible
             onClose={() => {}}
@@ -898,7 +938,7 @@ describe("GameModal recent form (last 5 results)", () => {
             gradientStyle={{}}
             favoriteTeams={[]}
           />,
-        );
+        ));
       });
 
       // One skeleton per team (away + home), 5 dots each.
@@ -908,7 +948,7 @@ describe("GameModal recent form (last 5 results)", () => {
 
       // Stop the looping animation before the test ends, otherwise its timers
       // keep updating the tree outside `act()` and fail the run.
-      (tree as renderer.ReactTestRenderer).unmount();
+      unmountTree(tree as renderer.ReactTestRenderer);
 
       // Let the request settle: the skeleton must give way to the real row.
       mockedFetchResults.mockResolvedValue([]);
@@ -922,7 +962,7 @@ describe("GameModal recent form (last 5 results)", () => {
 
       let tree: renderer.ReactTestRenderer | undefined;
       await renderer.act(async () => {
-        tree = renderer.create(
+        tree = trackTree(renderer.create(
           <GameModal
             visible
             onClose={() => {}}
@@ -930,7 +970,7 @@ describe("GameModal recent form (last 5 results)", () => {
             gradientStyle={{}}
             favoriteTeams={[]}
           />,
-        );
+        ));
       });
 
       expect(skeletonDots(tree as renderer.ReactTestRenderer)).toHaveLength(0);

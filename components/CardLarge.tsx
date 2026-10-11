@@ -526,6 +526,7 @@ export default function CardLarge({
   const shouldHide = (homeGameVisibility === 'home' && !isHomeGame) || (homeGameVisibility === 'away' && !isAwayGame);
   const isEmptyCard = emptyCard || shouldHide;
   const isDark = theme === 'dark';
+  const bookmarkIconColor = isDark ? '#ffffff' : '#0f172a';
   const baseColor = isDark ? (isSelectedTeam ? '#0f172a' : '#1e293b') : isSelectedTeam ? '#e2e8f0' : '#f1f5f9';
   const revertColor = isDark ? (isSelectedTeam ? '#1e293b' : '#0f172a') : isSelectedTeam ? '#cbd5e1' : '#e2e8f0';
 
@@ -749,7 +750,7 @@ export default function CardLarge({
           name={isSelected ? 'bookmark' : 'bookmark-o'}
           type="font-awesome"
           size={20}
-          color={isDark ? '#ffffff' : '#0f172a'}
+          color={bookmarkIconColor}
           style={
             isSelected
               ? {
@@ -836,7 +837,7 @@ export default function CardLarge({
                         name={isBulkSelected ? 'check-square' : 'square-o'}
                         type="font-awesome"
                         size={21}
-                        color={isBulkSelected ? '#22c55e' : mutedTextColor}
+                        color={bookmarkIconColor}
                       />
                     </TouchableOpacity>
                   )}

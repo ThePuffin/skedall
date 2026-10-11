@@ -35,7 +35,8 @@ The **CardLarge** component displays a single game as a card with team logos, sc
 - **Bulk favorites selection** — when `onToggleBulkSelection` is provided, a checkbox appears
   beside the league logo in the top-left header, with an enlarged icon and touch target, and
   toggles selection; tapping elsewhere on the card continues to open game details.
-  `isBulkSelected` controls the checkbox state
+  `isBulkSelected` controls the checkbox shape. Its color matches the game bookmark beside it
+  (`#0f172a` in light mode and `#ffffff` in dark mode).
 
 ## Props
 
