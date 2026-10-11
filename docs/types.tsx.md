@@ -35,8 +35,8 @@ Represents a formatted game object returned by the API:
 | `startTimeUTC`            | `string`         | Start time in UTC                        |
 | `selectedTeam`            | `boolean`        | Whether the team is selected             |
 | `league`                  | `string`         | League name                              |
-| `updateDate?`             | `Date`           | Last update timestamp                    |
-| `dataChangedAt?`          | `string`         | Last time the clock/scores/status actually **changed value** (absent on documents synced before it existed); drives the "Finalisation" staleness rule |
+| `updateDate?`             | `Date \| string` | Last provider update timestamp; compared with the remaining game clock when deciding if a match could have ended |
+| `dataChangedAt?`          | `string`         | Last time the clock/scores/status actually **changed value** (absent on documents synced before it existed); not used to infer that a positive game clock has expired |
 | `isActive?`               | `boolean`        | Whether the game is active               |
 | `urlLive?`                | `string`         | Live stream URL                          |
 | `awayTeamColor`           | `string`         | Away team color                          |

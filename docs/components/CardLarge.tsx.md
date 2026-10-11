@@ -102,7 +102,7 @@ Ensures a color starts with `#`.
 
 The `timeText` is determined by game status:
 
-1. **Finalization** (no score, live status, expected end passed **and** the feed gives nothing more: no time left on the clock or a feed frozen since `dataChangedAt`) → `"Finalisation"`
+1. **Finalization** (no score, live status, expected end passed **and** either no clock time is left or at least the displayed clock time has elapsed since `updateDate`) → `"Finalisation"`; missing/invalid update timestamps do not cause a positive clock to be considered expired
 2. **Postponed** → `"Match reporté"`
 3. **Interrupted/Delayed** (rain delay, suspended) → `"Match interrompu"` (translated `delayedGame`)
 4. **Finished/Final with score** → date/time or `"Détails du match"`

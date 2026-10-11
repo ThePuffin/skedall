@@ -19,7 +19,7 @@ The team selector uses the stable callback identifier `teamsOfDay`. `Selector` c
 - **League filter** via `FilterSlider` (ALL, specific leagues, BOOKMARKS)
 - **Team filter** via `TeamFilter` (search icon + slider)
 - **Live score updates** every 30 seconds via `fetchLiveScores`
-- **Games grouped by hour** with status sections (In Progress, Scheduled, Final, Ended) — for **today and upcoming** dates
+- **Games grouped by hour** with status sections (In Progress, Finalisation, Scheduled, Ended) — for **today and upcoming** dates. A positive game clock is checked against the elapsed time since `updateDate`; uncertain Finalisation games appear immediately after In Progress, not immediately before Ended.
 - **Games grouped by league** — for **past** dates, with a **separate favorites section first** (games kept in their league section)
 - **Favorite teams sorting** — favorite team games appear first
 - **Bookmark selection** — select up to 10 games

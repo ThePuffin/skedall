@@ -1,10 +1,10 @@
 import {
+  getGamesStatus,
   getRecentForm,
   hasNoTimeLeftOnClock,
   isGameAwaitingFinalization,
-  isLiveFeedStale,
-  STALE_FEED_MINUTES,
 } from "@/utils/date";
+import { GameStatus } from "@/constants/enum";
 import type { GameFormatted } from "@/utils/types";
 
 // Default fixture: the queried team (NHL-A) is away and WINS 2-1.
@@ -20,6 +20,53 @@ const game = (over: Partial<GameFormatted> = {}): GameFormatted =>
     uniqueId: "NHL-A-1",
     ...over,
   }) as GameFormatted;
+
+describe("getGamesStatus", () => {
+  it("keeps a live game in progress when the last update is newer than its remaining clock", () => {
+    const now = new Date("2026-10-11T17:00:00.000Z");
+    expect(
+      getGamesStatus(
+        game({
+          league: "NFL",
+          startTimeUTC: "2026-10-11T13:30:00.000Z",
+          gameStatus: "10:30 - 4th Quarter",
+          gameClock: "10:30",
+          gamePeriod: 4,
+          updateDate: "2026-10-11T16:55:00.000Z",
+        }),
+        now,
+      ),
+    ).toBe(GameStatus.IN_PROGRESS);
+  });
+
+  it("does not trust a clock beyond the time elapsed since its last update", () => {
+    const now = new Date("2026-10-11T17:00:00.000Z");
+    expect(
+      getGamesStatus(
+        game({
+          league: "NFL",
+          startTimeUTC: "2026-10-11T13:30:00.000Z",
+          gameStatus: "10:30 - 4th Quarter",
+          gameClock: "10:30",
+          updateDate: "2026-10-11T16:35:00.000Z",
+        }),
+        now,
+      ),
+    ).toBe(GameStatus.FINAL);
+  });
+
+  it("keeps terminal provider statuses authoritative", () => {
+    expect(
+      getGamesStatus(
+        game({
+          league: "NFL",
+          startTimeUTC: "2020-10-11T13:30:00.000Z",
+          gameStatus: "Final",
+        }),
+      ),
+    ).toBe(GameStatus.FINISHED);
+  });
+});
 
 describe("getRecentForm", () => {
   it("returns the outcomes oldest first, the most recent on the right", () => {
@@ -201,6 +248,36 @@ describe("isGameAwaitingFinalization", () => {
     ).toBe(false);
   });
 
+  it("does not treat a recent last update as final before the displayed clock runs out", () => {
+    const now = new Date("2026-10-11T17:00:00.000Z");
+    expect(
+      isGameAwaitingFinalization(
+        {
+          startTimeUTC: "2026-10-11T13:30:00.000Z",
+          league: "NFL",
+          gameClock: "10:30",
+          updateDate: "2026-10-11T16:55:00.000Z",
+        },
+        now,
+      ),
+    ).toBe(false);
+  });
+
+  it("allows finalization when more than the remaining clock time elapsed since the last update", () => {
+    const now = new Date("2026-10-11T17:00:00.000Z");
+    expect(
+      isGameAwaitingFinalization(
+        {
+          startTimeUTC: "2026-10-11T13:30:00.000Z",
+          league: "NFL",
+          gameClock: "10:30",
+          updateDate: "2026-10-11T16:35:00.000Z",
+        },
+        now,
+      ),
+    ).toBe(true);
+  });
+
   it("is false before the expected end of the match", () => {
     expect(
       isGameAwaitingFinalization({
@@ -214,77 +291,6 @@ describe("isGameAwaitingFinalization", () => {
   it("is false on an invalid start time", () => {
     expect(
       isGameAwaitingFinalization({ startTimeUTC: "not-a-date", gameClock: "" }),
-    ).toBe(false);
-  });
-});
-
-describe("isLiveFeedStale", () => {
-  const now = new Date("2025-01-15T20:00:00.000Z");
-  const minutesAgo = (minutes: number) =>
-    new Date(now.getTime() - minutes * 60 * 1000).toISOString();
-
-  it("is false while the data keeps changing", () => {
-    expect(isLiveFeedStale(minutesAgo(1), now)).toBe(false);
-    expect(isLiveFeedStale(minutesAgo(STALE_FEED_MINUTES), now)).toBe(false);
-  });
-
-  it("is true once the data is frozen past the threshold", () => {
-    expect(isLiveFeedStale(minutesAgo(STALE_FEED_MINUTES + 1), now)).toBe(true);
-  });
-
-  it("is false without a timestamp, so a missing field is not a guess", () => {
-    expect(isLiveFeedStale(undefined, now)).toBe(false);
-    expect(isLiveFeedStale("", now)).toBe(false);
-    expect(isLiveFeedStale("not-a-date", now)).toBe(false);
-  });
-});
-
-describe("isGameAwaitingFinalization with a silent feed", () => {
-  const hoursAgo = (hours: number) =>
-    new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
-  const minutesAgo = (minutes: number) =>
-    new Date(Date.now() - minutes * 60 * 1000).toISOString();
-
-  it("is true when the clock is frozen past the threshold", () => {
-    expect(
-      isGameAwaitingFinalization({
-        startTimeUTC: hoursAgo(4),
-        league: "NHL",
-        gameClock: "02:00",
-        dataChangedAt: minutesAgo(STALE_FEED_MINUTES + 1),
-      }),
-    ).toBe(true);
-  });
-
-  it("stays false on a frozen clock inside the threshold", () => {
-    expect(
-      isGameAwaitingFinalization({
-        startTimeUTC: hoursAgo(4),
-        league: "NHL",
-        gameClock: "02:00",
-        dataChangedAt: minutesAgo(2),
-      }),
-    ).toBe(false);
-  });
-
-  it("stays false on a frozen clock before the expected end of the match", () => {
-    expect(
-      isGameAwaitingFinalization({
-        startTimeUTC: hoursAgo(1),
-        league: "NHL",
-        gameClock: "02:00",
-        dataChangedAt: minutesAgo(STALE_FEED_MINUTES + 5),
-      }),
-    ).toBe(false);
-  });
-
-  it("never invents staleness without a dataChangedAt", () => {
-    expect(
-      isGameAwaitingFinalization({
-        startTimeUTC: hoursAgo(4),
-        league: "NHL",
-        gameClock: "02:00",
-      }),
     ).toBe(false);
   });
 });

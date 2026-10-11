@@ -499,7 +499,13 @@ const GameofTheDayContent = () => {
       return timeA - timeB;
     });
     if (final.length > 0) {
-      groups.push({ hour: translateWord('final'), games: sortGamesByFavorites(final) });
+      const inProgressIndex = groups.findIndex(
+        (group) => group.hour === translateWord('inProgress'),
+      );
+      groups.splice(inProgressIndex >= 0 ? inProgressIndex + 1 : 0, 0, {
+        hour: translateWord('final'),
+        games: sortGamesByFavorites(final),
+      });
     }
     if (finished.length > 0) {
       groups.push({ hour: translateWord('ended'), games: sortGamesByFavorites(finished) });

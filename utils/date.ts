@@ -35,8 +35,42 @@ export const addDays = (date: string | Date, nbDay: number) => {
   return day.toString();
 };
 
-export const getGamesStatus = (game: GameFormatted) => {
-  const now = new Date();
+const isActiveGameStatus = (status?: string): boolean =>
+  !!status &&
+  /(^|[^A-Z])(TOP|BOT|MID|END|1ST|2ND|3RD|4TH|OT|HALF)([^A-Z]|$)|\bIN SO\b|\d+['’]/i.test(
+    status,
+  );
+
+const getClockSeconds = (gameClock?: string): number | undefined => {
+  const match = gameClock?.trim().match(/^(\d+):([0-5]?\d)$/);
+  if (!match) return undefined;
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
+/**
+ * Whether the clock value from the last provider update could still be running.
+ * Missing/invalid timestamps are treated conservatively as live: without a
+ * reliable update time we cannot conclude that the displayed clock has expired.
+ */
+const clockCouldStillBeRunning = (
+  gameClock?: string,
+  updateDate?: Date | string,
+  now: Date = new Date(),
+): boolean => {
+  const clockSeconds = getClockSeconds(gameClock);
+  if (clockSeconds === undefined || clockSeconds <= 0) return false;
+  if (!updateDate) return true;
+
+  const updatedAt =
+    updateDate instanceof Date
+      ? updateDate.getTime()
+      : new Date(updateDate).getTime();
+  if (Number.isNaN(updatedAt)) return true;
+
+  return now.getTime() - updatedAt < clockSeconds * 1000;
+};
+
+export const getGamesStatus = (game: GameFormatted, now: Date = new Date()) => {
   const startTime = new Date(game.startTimeUTC);
   const duration =
     timeDurationEnum[game.league as keyof typeof timeDurationEnum] ?? 2.5;
@@ -62,6 +96,21 @@ export const getGamesStatus = (game: GameFormatted) => {
     gameStatus?.includes("WEATHER")
   ) {
     return GameStatus.DELAYED;
+  }
+
+  // Trust live provider data only while its displayed clock could still be
+  // running since the last update. Missing timestamps remain conservative.
+  const clockMayStillBeRunning = clockCouldStillBeRunning(
+    game.gameClock,
+    game.updateDate,
+    now,
+  );
+  if (
+    clockMayStillBeRunning ||
+    (isActiveGameStatus(game.gameStatus) &&
+      getClockSeconds(game.gameClock) === undefined)
+  ) {
+    return GameStatus.IN_PROGRESS;
   }
 
   if (now > endTime) {
@@ -93,40 +142,10 @@ export const hasNoTimeLeftOnClock = (gameClock?: string): boolean => {
 };
 
 /**
- * How long a live feed may report the exact same clock/score before we consider it
- * gone silent. 15 minutes is deliberate: a live clock never legitimately stands
- * still that long once a game is past its expected end, while the app itself polls
- * every 30 s, so a much shorter threshold would fire on a slow provider rather
- * than on a stuck one.
- */
-export const STALE_FEED_MINUTES = 15;
-
-/**
- * Whether the provider's live data has been frozen for longer than
- * `STALE_FEED_MINUTES`, based on `dataChangedAt` — the instant the clock, period,
- * scores or status last actually changed value (`updateDate` is refreshed on every
- * sync and therefore says nothing about staleness).
- *
- * Returns `false` when `dataChangedAt` is absent (games synced before the field
- * existed): absence is not evidence of a stuck feed, so the UI keeps trusting the
- * clock instead of guessing.
- */
-export const isLiveFeedStale = (
-  dataChangedAt?: string,
-  now: Date = new Date(),
-): boolean => {
-  if (!dataChangedAt) return false;
-  const lastChange = new Date(dataChangedAt);
-  if (Number.isNaN(lastChange.getTime())) return false;
-  return now.getTime() - lastChange.getTime() > STALE_FEED_MINUTES * 60 * 1000;
-};
-
-/**
  * A game is *awaiting finalization* when the expected end of the match has passed
- * **and** the feed no longer gives us anything to show: either it reports no time
- * left on the clock (clock at zero, or no clock at all for clock-less sports), or
- * it has gone silent (`isLiveFeedStale`). Only then may the UI fall back to the
- * "Finalisation" label, which means: the provider never sent the score.
+ * **and** there is no time left on its clock (or it has no running clock). A
+ * running clock always wins over an old update timestamp: stale data alone must
+ * never make a game look finished while its clock is still counting down.
  *
  * The expected end time alone is never enough — a match in overtime, on a rain
  * delay or with extra periods runs past its duration and is still being played.
@@ -135,18 +154,21 @@ export const isGameAwaitingFinalization = (game: {
   startTimeUTC: string;
   league?: string;
   gameClock?: string;
-  dataChangedAt?: string;
-}): boolean => {
+  updateDate?: Date | string;
+}, now: Date = new Date()): boolean => {
   const startTime = new Date(game.startTimeUTC);
   if (Number.isNaN(startTime.getTime())) return false;
   const duration =
     timeDurationEnum[game.league as keyof typeof timeDurationEnum] ?? 2.5;
   const endTime = new Date(startTime);
   endTime.setHours(endTime.getHours() + duration);
-  if (new Date() <= endTime) return false;
+  if (now <= endTime) return false;
+  if (clockCouldStillBeRunning(game.gameClock, game.updateDate, now)) {
+    return false;
+  }
   return (
     hasNoTimeLeftOnClock(game.gameClock) ||
-    isLiveFeedStale(game.dataChangedAt)
+    getClockSeconds(game.gameClock) !== undefined
   );
 };
 

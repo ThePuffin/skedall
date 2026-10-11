@@ -25,11 +25,12 @@ export interface GameFormatted {
   startTimeUTC: string;
   selectedTeam: boolean;
   league: string;
-  updateDate?: Date;
+  updateDate?: Date | string;
   /**
    * ISO timestamp of the last time `gameClock` / `gamePeriod` / scores / status
    * actually changed value (as opposed to `updateDate`, refreshed on every sync).
-   * Absent on documents synced before this field existed.
+   * Absent on documents synced before this field existed. Does not override a
+   * running clock when determining whether a game may be finished.
    */
   dataChangedAt?: string;
   isActive?: boolean;

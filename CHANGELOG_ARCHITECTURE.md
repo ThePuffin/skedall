@@ -2,6 +2,23 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fixed: live games stay out of the Finalisation group after the estimated duration
+
+`getGamesStatus()` previously marked a game `FINAL` as soon as its league's estimated runtime
+elapsed, even when ESPN still reported an active period such as `4th Quarter`. The Game of the Day
+view then placed that live game under **Finalisation**.
+
+For a positive running clock, the app compares the time elapsed since `updateDate` with the displayed
+remaining time. A `10:30` clock updated 5 minutes ago therefore remains **In Progress**, while one
+whose last update is older than 10 minutes 30 seconds can fall through to the expected-duration
+classification. Missing/invalid update timestamps are treated conservatively as live. Explicit
+terminal statuses (`FINAL`, `FINISHED`, `ENDED`) and interruption statuses remain authoritative.
+
+Uncertain **Finalisation** games are placed directly after **In Progress**, rather than immediately
+before **Ended**. Regression tests cover the elapsed-time comparison and the NFL 4th-quarter case.
+
+Updated `frontend/utils/date.ts`, `frontend/app/(tabs)/index.tsx`, component callers, tests, and docs.
+
 ## Changed: missing team palettes
 
 Replaced the supplied university and professional-team placeholder palettes,
