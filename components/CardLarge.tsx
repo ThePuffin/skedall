@@ -90,7 +90,7 @@ export default function CardLarge({
     gameStatus,
     gameClock,
     gamePeriod,
-    updateDate,
+    dataChangedAt,
   } = data;
 
   if (league.includes('OLYMPICS')) {
@@ -427,8 +427,7 @@ export default function CardLarge({
       gameStatus !== 'ENDED');
   // "Finalisation" (the provider never sent a score) is only shown once the
   // expected end of the match has passed AND the feed tells us nothing more:
-  // The last update timestamp is compared with the remaining clock before
-  // deciding that an unscored game may be finished.
+  // no time left on the clock, or a feed frozen since `dataChangedAt`.
   const showFinalization =
     !hasScore &&
     serviceReportsNotTerminated &&
@@ -436,7 +435,7 @@ export default function CardLarge({
       startTimeUTC,
       league,
       gameClock,
-      updateDate,
+      dataChangedAt,
     });
 
   if (showFinalization) {

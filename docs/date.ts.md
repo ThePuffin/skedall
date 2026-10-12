@@ -34,15 +34,11 @@ Determines the status of a game based on the current time and the game's league 
 
 1. If `gameStatus` contains `FINAL`, `FINISHED`, or `ENDED` → `GameStatus.FINISHED`
 2. If `gameStatus` contains `DELAY`/`SUSPEND`/`RAIN`/`WEATHER` (temporarily interrupted) → `GameStatus.DELAYED`
-3. If an active period/phase marker (for example `4th Quarter`) or positive `gameClock` was updated less than the displayed clock time ago → `GameStatus.IN_PROGRESS`
-4. If current time > end time (start + league duration) → `GameStatus.FINAL`
-5. If current time >= start time → `GameStatus.IN_PROGRESS`
-6. Otherwise → `GameStatus.SCHEDULED`
+3. If current time > end time (start + league duration) → `GameStatus.FINAL`
+4. If current time >= start time → `GameStatus.IN_PROGRESS`
+5. Otherwise → `GameStatus.SCHEDULED`
 
-Uses `timeDurationEnum[game.league]` to determine the game duration (defaults to 2.5 hours). A
-positive clock is compared with `updateDate`: it is trusted while the elapsed time since that update
-is less than the remaining clock. Missing/invalid update timestamps are treated conservatively as
-live rather than concluding the game is over.
+Uses `timeDurationEnum[game.league]` to determine the game duration (defaults to 2.5 hours).
 
 ### `hasNoTimeLeftOnClock(gameClock?)`
 
@@ -51,20 +47,37 @@ sport has no running clock (golf, tennis, racing...) and counts as "no time left
 (`"Final"`) does too. A clock matching `M:SS` counts as "no time left" only when both parts are `0`
 (`"00:00"`, `"0:00"`); any other value (`"12:34"`, `"0:01"`) is a running clock.
 
-### `isGameAwaitingFinalization({ startTimeUTC, league?, gameClock?, updateDate? })`
+### `STALE_FEED_MINUTES`
+
+`15` — how long a live feed may keep reporting the exact same clock/score before it is considered gone
+silent. 15 minutes is deliberate: a live clock never legitimately stands still that long once a game is
+past its expected end, while the app polls every 30 s, so a much shorter threshold would fire on a slow
+provider rather than on a stuck one.
+
+### `isLiveFeedStale(dataChangedAt?, now = new Date())`
+
+Whether the provider's data has been frozen for longer than `STALE_FEED_MINUTES`, based on
+`dataChangedAt` — the instant `gameClock` / `gamePeriod` / scores / status last **actually changed
+value** (`updateDate` is rewritten on every sync and therefore says nothing about staleness).
+
+Returns `false` when `dataChangedAt` is absent or unparsable (documents synced before the field
+existed): absence is not evidence of a stuck feed, so the UI keeps trusting the clock instead of
+guessing.
+
+### `isGameAwaitingFinalization({ startTimeUTC, league?, gameClock?, dataChangedAt? })`
 
 `true` when **both** conditions hold:
 
 1. the **expected end of the match** has passed — `now > startTimeUTC + timeDurationEnum[league]`
    (defaults to 2.5 h), with the same duration table as `getGamesStatus()`;
-2. **the clock could have run out since the last update**: either there is no clock/it is zero, or
-   the time elapsed since `updateDate` is at least the displayed clock time. For example, a reported
-   `"10:30"` clock with an update from 5 minutes ago cannot be considered finished; with an update
-   older than 10 minutes 30 seconds, it may be.
+2. **the feed tells us nothing more**, i.e. either `hasNoTimeLeftOnClock(gameClock)` is `true`
+   (clock at zero, or no clock at all for clock-less sports) **or** `isLiveFeedStale(dataChangedAt)`
+   is `true` (the clock is frozen at `"02:00"` because the provider stopped updating).
 
 Returns `false` on an unparsable `startTimeUTC`. This is what gates the `"Finalisation"` label (the
-provider never sent a score) in `CardLarge` and `GameModal`. An absent/unparsable `updateDate` is
-treated conservatively: a positive clock is not assumed to have run out.
+provider never sent a score) in `CardLarge` and `GameModal`: a game still running its overtime or
+interrupted by a rain delay past its duration is **not** awaiting finalization, and neither is a game
+whose feed simply updated 2 minutes ago.
 
 ### `getRecentForm(results, teamId, limit = RECENT_FORM_LENGTH, excludeUniqueId?)`
 

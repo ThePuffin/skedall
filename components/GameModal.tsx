@@ -263,7 +263,7 @@ export default function GameModal({
     gameStatus,
     gameClock,
     gamePeriod,
-    updateDate,
+    dataChangedAt,
   } = displayData;
 
   const teamNameFontSize = getTeamNameFontSize(
@@ -330,8 +330,7 @@ export default function GameModal({
       gameStatus.toUpperCase() !== "ENDED");
   // "Finalisation" (the provider never sent a score) is only shown once the
   // expected end of the match has passed AND the feed tells us nothing more:
-  // The last update timestamp is compared with the remaining clock before
-  // deciding that an unscored game may be finished.
+  // no time left on the clock, or a feed frozen since `dataChangedAt`.
   const showFinalization =
     !hasScore &&
     serviceReportsNotTerminated &&
@@ -339,7 +338,7 @@ export default function GameModal({
       startTimeUTC,
       league,
       gameClock,
-      updateDate,
+      dataChangedAt,
     });
 
   const dateOptions: Intl.DateTimeFormatOptions = {
