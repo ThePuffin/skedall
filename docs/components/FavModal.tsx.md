@@ -35,12 +35,19 @@ The **FavModal** component is a modal dialog that lets users manage their favori
 | `showScores`            | `boolean`  | Whether scores should be displayed                  |
 | `isLeagueSelectorOpen`  | `boolean`  | Whether the league selector dropdown is open        |
 | `forceOpenTeamSelector` | `boolean`  | Forces the first team selector to open (save guard) |
+| `allTeams`              | `Team[]`   | Full team catalog (`fetchTeams()`, 24 h-cached)      |
+| `selectableTeams`       | `Team[]`   | Teams pickable as favorites (`fetchSelectableTeams()`) |
 
 ## Key Memoized / Computed Values
 
 - `hasFavorites` — `favoriteTeams.length > 0`
 - `hasSelection` — at least one non-empty team in `localFavorites`
-- `teamsForFavorites` — maps `TeamsEnum` entries into `Team[]` objects for the team selector
+- `teamsForFavorites` — the full catalog narrowed to the selectable teams by
+  `restrictToSelectableTeams(allTeams, selectableTeams, localFavorites)`: a team must have more
+  than `selectableMinGames` official (non-preseason) games to be newly picked, while the user's
+  **existing** favorites always stay in the list so they remain visible and removable. Replaces the
+  former static `TeamsEnum` mapping, which offered the whole catalog regardless of whether a team
+  ever plays.
 
 ## Key Functions
 
@@ -54,7 +61,7 @@ Toggle the league selector dropdown open state so the team selectors can hide wh
 
 ## Data Flow
 
-1. Modal opens → reads `favoriteTeams`, `showScores`, `leaguesSelected`, `allLeagues` from cache; fetches fresh league list from API
+1. Modal opens → reads `favoriteTeams`, `showScores`, `leaguesSelected`, `allLeagues` from cache; fetches fresh league list from API, plus the full team catalog and the selectable-teams list (both 24 h-cached)
 2. User edits favorites, leagues, and score toggle
 3. On save → filters to allowed leagues, persists to cache, syncs to Firestore (if user), dispatches events, closes
 4. Backdrop/hardware-back closes only when the user already has favorites (`hasFavorites`)

@@ -1,3 +1,4 @@
+import { selectableMinGames } from "@/constants/Constants";
 import {
   FilterGames,
   GameFormatted,
@@ -380,6 +381,91 @@ export const fetchTeams = async () => {
     undefined,
     60000,
   );
+};
+
+/**
+ * Cache key of the selectable-teams list. Versioned (`_v3`) so that any change
+ * to the selection rules — raising `selectableMinGames`, or the backend
+ * excluding retired (`isActive: false`) teams — invalidates every previously
+ * stored list instead of keeping a stale one for 24 h, the same trick used by
+ * the recent-form cache.
+ */
+const SELECTABLE_TEAMS_CACHE_KEY = `teams_selectable_v3`;
+
+/**
+ * Fetches the teams a user is allowed to **pick**: global favorites, Calendar
+ * teams and the Schedule team filter.
+ *
+ * Backed by `GET /teams?minGames=<selectableMinGames>`, so the backend returns
+ * only the teams having at least that many active games (past or upcoming) and
+ * still active — retired/historical teams (`isActive: false`) are never
+ * offered. The long tail of teams that never plays is therefore never
+ * offered either. Cached for 24 h under its own key, separate from
+ * `fetchTeams()`.
+ *
+ * **This is not the list of teams that can be displayed.** Opponents must stay
+ * unrestricted: a game always shows both of its teams, so screens keep using
+ * `fetchTeams()` (or the game's own payload) for anything read-only — names,
+ * logos, colors, the opponent filter. See `restrictToSelectableTeams()`.
+ *
+ * Returns `[]` when the request fails and no cache is available: callers must
+ * treat an empty list as "not loaded yet" rather than "no team is selectable",
+ * so a failed fetch can never lock a user out of every selector.
+ */
+export const fetchSelectableTeams = async (): Promise<Team[]> => {
+  const cacheKey = SELECTABLE_TEAMS_CACHE_KEY;
+
+  if (isCacheValid(cacheKey, 24)) {
+    const cached = getCache<Team[]>(cacheKey);
+    if (cached) {
+      console.info("Using cached selectable teams");
+      return cached;
+    }
+  }
+
+  return fetchWithCacheStrategy<Team[]>(
+    `${EXPO_PUBLIC_API_BASE_URL}/teams?minGames=${selectableMinGames}`,
+    cacheKey,
+    [],
+    undefined,
+    undefined,
+    60000,
+  );
+};
+
+/**
+ * Narrows a roster down to the teams that may be selected, using an
+ * already-loaded selectable list.
+ *
+ * Keeping the filtering explicit (rather than only ever fetching the restricted
+ * list) matters for two reasons: a screen that already holds the full roster can
+ * filter it without a second request, and — crucially — the **current selection
+ * is always preserved**, even if the team has since dropped below the threshold.
+ * Without that, a user's stored favorite would silently vanish from the modal the
+ * moment its team stopped having games (off-season), and the row would render
+ * blank instead of removable.
+ *
+ * @param teams            roster to narrow (may be the full catalog)
+ * @param selectableTeams  result of `fetchSelectableTeams()`; when empty the
+ *                         roster is returned untouched (fetch failed / not loaded)
+ * @param keepIds          ids to always keep regardless of the threshold
+ */
+export const restrictToSelectableTeams = (
+  teams: Team[],
+  selectableTeams: Team[] | null | undefined,
+  keepIds: string[] = [],
+): Team[] => {
+  if (!selectableTeams || selectableTeams.length === 0) return teams;
+
+  const allowed = new Set(selectableTeams.map((team) => team.uniqueId));
+  // A stored favorite/selection may use an Olympic sport-specific id while the
+  // roster exposes its sibling; both must survive the filter.
+  for (const id of keepIds) {
+    if (!id) continue;
+    for (const expanded of getOlympicTeamIds(id)) allowed.add(expanded);
+  }
+
+  return teams.filter((team) => allowed.has(team.uniqueId));
 };
 
 export const fetchRemainingGamesByTeam = async (

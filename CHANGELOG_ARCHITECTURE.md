@@ -2,6 +2,19 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Changed: team selectors only offer teams that actually play
+
+The three **selection** surfaces — the global favorites modal, the Calendar team picker and the main team filter of the Schedule screen — now only offer teams having more than `selectableMinGames` official games (`frontend/constants/Constants.js`, currently `4`) **and still active** (teams marked `isActive: false` are retired/historical and never pickable), so the long tail of franchises that never plays (or only plays preseason exhibitions) can no longer be picked.
+
+- **`frontend/utils/fetchData.ts`** — new `fetchSelectableTeams()` (calls `GET /teams?minGames=…`, which also excludes retired teams, 24 h-cached under `teams_selectable_v3`, versioned so any change to the selection rules invalidates stored lists, returns `[]` on failure) and `restrictToSelectableTeams(teams, selectableTeams, keepIds)`, which narrows a roster while **always keeping the ids in `keepIds`**: an existing favorite or current selection stays visible and removable instead of rendering as a blank row, and an empty selectable list (fetch failed / not loaded) leaves the roster untouched so a failed request can never lock the user out of every selector.
+- **`frontend/components/FavModal.tsx`** — the static `TeamsEnum` constant is gone; the modal builds `teamsForFavorites` from `fetchTeams()` (full catalog, for labels/logos) narrowed by `fetchSelectableTeams()`. Existing favorites are passed as `keepIds`.
+- **`frontend/app/(tabs)/calendar.tsx`** — `teamsAvailableForReorder` is narrowed the same way, with `teamsSelected` as `keepIds`.
+- **`frontend/app/(tabs)/schedule.tsx`** — new `selectableTeamsForSelector` memo narrows the team chips and the search selector (`keepIds = [teamSelected, 'all']`, so the `'all'` pseudo-team is pinned). `teamsForSelector` stays the **full** roster on purpose: it resolves the metadata of the **opponents** listed by `uniqueTeamsFromGames`, and the opponent (VS) filter remains unrestricted — a game always displays both of its teams.
+
+Only selection is restricted; display never is. The backend-side threshold (and its preseason exclusion) lives in `backend/CHANGELOG_ARCHITECTURE.md`.
+
+Updated `fetchData.ts`, `FavModal.tsx`, `calendar.tsx`, `schedule.tsx`, `Constants.js`, and their documentation.
+
 ## Changed: missing team palettes
 
 Replaced the supplied university and professional-team placeholder palettes,
