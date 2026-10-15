@@ -119,6 +119,30 @@ const FavModal = ({
     };
   }, [isOpen]);
 
+  // Refresh the favorites catalog when the background API refresh completes.
+  useEffect(() => {
+    const onTeamsUpdated = async () => {
+      if (!isOpen) return;
+      const [catalog, selectable] = await Promise.all([
+        fetchTeams(),
+        fetchSelectableTeams(),
+      ]);
+      setAllTeams(catalog);
+      setSelectableTeams(selectable);
+    };
+    if (globalThis.window !== undefined) {
+      globalThis.window.addEventListener(
+        'teamsSessionUpdated',
+        onTeamsUpdated,
+      );
+      return () =>
+        globalThis.window.removeEventListener(
+          'teamsSessionUpdated',
+          onTeamsUpdated,
+        );
+    }
+  }, [isOpen]);
+
   const teamsForFavorites: Team[] = restrictToSelectableTeams(
     allTeams,
     selectableTeams,

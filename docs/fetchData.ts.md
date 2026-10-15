@@ -11,7 +11,7 @@ The **fetchData** utility provides all API fetching functions with caching, comp
 - **Fetch timeout** — aborts requests after a configurable timeout
 - **Retry logic** — retries after 10s if cache is invalid
 - **Team games cache** — short-TTL cache (6 minutes) for team schedules
-- **Session storage** — used for hourly game data (short-lived)
+- **Session storage** — used for hourly game data (short-lived) and for the full team catalog (24 h TTL, key `teams_session`)
 
 ## Cache Helpers
 
@@ -68,10 +68,15 @@ Fetches available leagues. Cached for 24 hours.
 
 ### `fetchTeams()`
 
-Fetches all teams. Cached for 24 hours.
+Returns the full team catalog, optimized for cold start:
 
-**Keep using this one for anything read-only** — opponent names/logos/colors, resolving a stored
-selection, enriching a game. It is the full catalog on purpose.
+1. **Session storage (< 24 h)** — returns immediately, no network.
+2. **`Teams.tsx` fallback** — on a totally cold start (no session cache), returns the static `TeamsEnum` list instantly so the user never waits on the network. `Teams.tsx` is generated backend-side and only contains teams that actually play: at least **10 active games** for regular leagues, or **1 active game** for Olympic teams (`OLYMPICS-*` ids), so country delegations are never empty.
+3. **Background API refresh** — `GET /teams?minGames=10` (regular teams) and `GET /teams?minGames=1` (Olympic teams) run in the background, the results are merged, the session-storage copy is replaced, and a `teamsSessionUpdated` window event is dispatched so already-mounted screens can re-render with real metadata (logos, colors, …).
+
+The result is also written to `localStorage` under key `teams` (via callers such as `_layout.tsx`) for compatibility with code paths that read the local cache directly.
+
+**Keep using this one for anything read-only** — opponent names/logos/colors, resolving a stored selection, enriching a game. It is the full catalog on purpose.
 
 ### `fetchSelectableTeams()` / `restrictToSelectableTeams()`
 

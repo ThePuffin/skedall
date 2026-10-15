@@ -1,4 +1,5 @@
 import { selectableMinGames } from "@/constants/Constants";
+import { TeamsEnum } from "@/constants/Teams";
 import {
   FilterGames,
   GameFormatted,
@@ -21,6 +22,12 @@ type TeamGamesCache = Record<string, TeamGamesCacheEntry>;
 const TEAM_GAMES_CACHE_KEY = "games_team_map";
 const TEAM_GAMES_CACHE_TTL_HOURS = 0.1;
 const TEAM_GAMES_CACHE_TTL_MS = TEAM_GAMES_CACHE_TTL_HOURS * 60 * 60 * 1000;
+
+// Session-storage cache for the full team catalog. Populated once at app start
+// (first from Teams.tsx for an instant render, then refreshed from the API in
+// the background) and valid for 24 h so cold starts never wait on the network.
+const SESSION_TEAMS_CACHE_KEY = "teams_session";
+const SESSION_TEAMS_TTL_HOURS = 24;
 
 let teamGamesCacheStore: TeamGamesCache | null = null;
 
@@ -45,6 +52,81 @@ const pruneTeamGamesCache = (cache: TeamGamesCache): void => {
     if (now - cache[teamId].timestamp >= TEAM_GAMES_CACHE_TTL_MS) {
       delete cache[teamId];
     }
+  }
+};
+
+/**
+ * Converts the static `TeamsEnum` constant (uniqueId -> label) into a `Team[]`
+ * so the app can render an exhaustive team list instantly on cold start,
+ * without waiting for the network. Fields not present in the constant get
+ * sensible defaults; the API refresh later fills in the real metadata.
+ */
+const teamsEnumToTeamArray = (): Team[] => {
+  return Object.entries(TeamsEnum).map(([uniqueId, label]) => ({
+    uniqueId,
+    id: uniqueId,
+    label,
+    league: uniqueId.split("-")[0] ?? "",
+    teamLogo: "",
+    teamLogoDark: "",
+    teamCommonName: "",
+    abbrev: "",
+    color: "",
+    backgroundColor: "",
+    updateDate: "",
+  }));
+};
+
+/**
+ * Returns true when the session-storage team cache is still fresh (< 24 h).
+ */
+const isSessionCacheValid = (
+  maxDurationHours: number = SESSION_TEAMS_TTL_HOURS,
+): boolean => {
+  const timestamp = sessionStorage.getItem(
+    `${SESSION_TEAMS_CACHE_KEY}_timestamp`,
+  );
+  if (!timestamp) return false;
+  const cached = Number.parseInt(timestamp, 10);
+  const now = Date.now();
+  const ttlMs = maxDurationHours * 60 * 60 * 1000;
+  return now - cached < ttlMs;
+};
+
+/**
+ * Writes a team array to session storage with compression and a timestamp,
+ * mirroring `saveCache()` but targeting sessionStorage.
+ */
+const saveSessionCache = (data: unknown): void => {
+  const jsonString = JSON.stringify(data);
+  const compressed = fflate.compressSync(fflate.strToU8(jsonString));
+  const storableString = fflate.strFromU8(compressed, true);
+  sessionStorage.setItem(SESSION_TEAMS_CACHE_KEY, storableString);
+  sessionStorage.setItem(
+    `${SESSION_TEAMS_CACHE_KEY}_timestamp`,
+    Date.now().toString(),
+  );
+};
+
+/**
+ * Reads and decompresses the team array from session storage.
+ */
+const getSessionCache = <T>(): T | null => {
+  const storableString = sessionStorage.getItem(SESSION_TEAMS_CACHE_KEY);
+  if (!storableString) return null;
+  try {
+    const compressed = fflate.strToU8(storableString, true);
+    const decompressed = fflate.decompressSync(compressed);
+    const jsonString = fflate.strFromU8(decompressed);
+    return JSON.parse(jsonString) as T;
+  } catch (e) {
+    console.error(
+      `Failed to parse or decompress session cache for ${SESSION_TEAMS_CACHE_KEY}`,
+      e,
+    );
+    sessionStorage.removeItem(SESSION_TEAMS_CACHE_KEY);
+    sessionStorage.removeItem(`${SESSION_TEAMS_CACHE_KEY}_timestamp`);
+    return null;
   }
 };
 
@@ -362,25 +444,68 @@ export const fetchLeagues = async (
   return data;
 };
 
-export const fetchTeams = async () => {
-  const cacheKey = "teams";
-
-  if (isCacheValid(cacheKey, 24)) {
-    const cached = getCache<Team[]>(cacheKey);
+export const fetchTeams = async (): Promise<Team[]> => {
+  // 1. Session storage still fresh (< 24 h) → return immediately, no network.
+  if (isSessionCacheValid(SESSION_TEAMS_TTL_HOURS)) {
+    const cached = getSessionCache<Team[]>();
     if (cached) {
-      console.info("Using cached teams");
+      console.info("Using session-cached teams");
       return cached;
     }
   }
 
-  return fetchWithCacheStrategy<Team[]>(
-    `${EXPO_PUBLIC_API_BASE_URL}/teams`,
-    cacheKey,
-    [],
-    undefined,
-    undefined,
-    60000,
-  );
+  // 2. Instant fallback from Teams.tsx: the user sees a filtered team list
+  //    right away (≥10 active games, ≥1 for Olympic teams) without waiting
+  //    for the network. The backend already applied this filter when
+  //    generating Teams.tsx.
+  const teamsFromConstants = teamsEnumToTeamArray();
+
+  // 3. Background refresh from the API (non-blocking):
+  //    - regular teams: at least 10 active games  (minGames=10)
+  //    - Olympic teams: at least 1 active game    (minGames=1)
+  //    The two lists are merged (Olympic entries are taken only from the
+  //    minGames=1 call so a single match is enough for a country delegation).
+  //    The result replaces the session-storage copy and notifies
+  //    already-mounted screens so they can re-render with real metadata.
+  void (async () => {
+    try {
+      const [regular, olympic] = await Promise.all([
+        fetchWithCacheStrategy<Team[]>(
+          `${EXPO_PUBLIC_API_BASE_URL}/teams?minGames=10`,
+          "teams",
+          [],
+          undefined,
+          undefined,
+          60000,
+        ),
+        fetchWithCacheStrategy<Team[]>(
+          `${EXPO_PUBLIC_API_BASE_URL}/teams?minGames=1`,
+          "teams_olympics",
+          [],
+          undefined,
+          undefined,
+          60000,
+        ),
+      ]);
+      const merged = [
+        ...regular,
+        ...olympic.filter((t) =>
+          String(t.uniqueId || "").startsWith("OLYMPICS-"),
+        ),
+      ];
+      if (merged && merged.length > 0) {
+        saveSessionCache(merged);
+        saveCache("teams", merged);
+        if (globalThis.window !== undefined) {
+          globalThis.window.dispatchEvent(new Event("teamsSessionUpdated"));
+        }
+      }
+    } catch (error) {
+      console.error("Background teams refresh failed", error);
+    }
+  })();
+
+  return teamsFromConstants;
 };
 
 /**

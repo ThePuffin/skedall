@@ -278,6 +278,28 @@ export default function Schedule() {
     fetchTeamsAndRestore();
   }, [leagueParam, teamParam, firestoreReady]);
 
+  // Refresh the local teams list when the background API refresh completes,
+  // so screens already mounted show real metadata (logos, colors, …) instead
+  // of the Teams.tsx placeholder.
+  useEffect(() => {
+    const onTeamsUpdated = async () => {
+      const teamsData = await fetchTeams();
+      setTeams(teamsData);
+      saveCache("teams", teamsData);
+    };
+    if (globalThis.window !== undefined) {
+      globalThis.window.addEventListener(
+        "teamsSessionUpdated",
+        onTeamsUpdated,
+      );
+      return () =>
+        globalThis.window.removeEventListener(
+          "teamsSessionUpdated",
+          onTeamsUpdated,
+        );
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       setFocusCount((c) => c + 1);

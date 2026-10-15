@@ -720,6 +720,25 @@ export default function Calendar() {
     };
   }, [firestoreReady]);
 
+  // Refresh the local teams list when the background API refresh completes.
+  useEffect(() => {
+    const onTeamsUpdated = async () => {
+      const teamsData = await getTeamsFromApi();
+      setTeams(teamsData);
+    };
+    if (globalThis.window !== undefined) {
+      globalThis.window.addEventListener(
+        "teamsSessionUpdated",
+        onTeamsUpdated,
+      );
+      return () =>
+        globalThis.window.removeEventListener(
+          "teamsSessionUpdated",
+          onTeamsUpdated,
+        );
+    }
+  }, [getTeamsFromApi]);
+
   const handleHomeGameToggle = (value: HomeGameFilter) => {
     setHomeGameVisibility(value);
   };
