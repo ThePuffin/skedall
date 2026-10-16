@@ -5,9 +5,12 @@ import {
   fetchGamesByLeagueDay,
   fetchSelectableTeams,
   getCanonicalTeamId,
+  getOlympicTeamGroupKey,
   getOlympicTeamIds,
+  getTeamLeagueFromId,
   groupOlympicTeams,
   restrictToSelectableTeams,
+  teamsEnumToTeamArray,
   teamsMatchSelection,
 } from "./fetchData";
 import { Team } from "./types";
@@ -87,6 +90,20 @@ describe("Olympic team identity helpers", () => {
     expect(getOlympicTeamIds("NHL-BOS")).toEqual(["NHL-BOS"]);
   });
 
+  it("recognizes unified Olympic display ids (genre + country only)", () => {
+    // The unified id `OLYMPICS-{GENDER}-{COUNTRY}` groups to itself.
+    expect(getOlympicTeamGroupKey("OLYMPICS-WOMEN-USA")).toBe("OLYMPICS-WOMEN-USA");
+    expect(getOlympicTeamGroupKey("OLYMPICS-MEN-FRA")).toBe("OLYMPICS-MEN-FRA");
+    // Expanding a unified id still yields both sport-specific ids for match calls.
+    expect(getOlympicTeamIds("OLYMPICS-WOMEN-USA")).toEqual([
+      "OLYMPICS-HOCKEY-WOMEN-USA",
+      "OLYMPICS-BASKETBALL-WOMEN-USA",
+    ]);
+    // League derivation collapses to the gender-level chip.
+    expect(getTeamLeagueFromId("OLYMPICS-WOMEN-USA")).toBe("OLYMPICS-WOMEN");
+    expect(getTeamLeagueFromId("OLYMPICS-MEN-FRA")).toBe("OLYMPICS-MEN");
+  });
+
   it("groups duplicate Olympic country entries while keeping gender variants separate", () => {
     const teams = [
       olympicTeam("OLYMPICS-HOCKEY-MEN-FRA", "France", "OLYMPICS-MEN"),
@@ -111,6 +128,42 @@ describe("Olympic team identity helpers", () => {
     );
     expect(teamsMatchSelection("OLYMPICS-HOCKEY-MEN-FRA", "OLYMPICS-BASKETBALL-MEN-FRA")).toBe(true);
     expect(teamsMatchSelection("OLYMPICS-HOCKEY-MEN-FRA", "OLYMPICS-BASKETBALL-WOMEN-FRA")).toBe(false);
+  });
+});
+
+describe("Olympic league derivation from team id", () => {
+  it("derives the gender-level league for Olympic sport-specific ids", () => {
+    expect(getTeamLeagueFromId("OLYMPICS-HOCKEY-MEN-FRA")).toBe("OLYMPICS-MEN");
+    expect(getTeamLeagueFromId("OLYMPICS-BASKETBALL-MEN-FRA")).toBe("OLYMPICS-MEN");
+    expect(getTeamLeagueFromId("OLYMPICS-HOCKEY-WOMEN-USA")).toBe("OLYMPICS-WOMEN");
+    expect(getTeamLeagueFromId("OLYMPICS-BASKETBALL-WOMEN-USA")).toBe("OLYMPICS-WOMEN");
+  });
+
+  it("keeps the first segment for non-Olympic teams", () => {
+    expect(getTeamLeagueFromId("NHL-BOS")).toBe("NHL");
+    expect(getTeamLeagueFromId("NBA-LAL")).toBe("NBA");
+    expect(getTeamLeagueFromId("MLB-ARI")).toBe("MLB");
+    expect(getTeamLeagueFromId("")).toBe("");
+  });
+
+  it("derives OLYMPICS-MEN/WOMEN in teamsEnumToTeamArray instead of OLYMPICS", () => {
+    const teams = teamsEnumToTeamArray();
+    const olympic = teams.filter((t) => t.uniqueId.startsWith("OLYMPICS-"));
+    expect(olympic.length).toBeGreaterThan(0);
+    // No league label should remain at the raw value "OLYMPICS"
+    // (this was the bug: the selector's league filter found no matching chip).
+    expect(olympic.some((t) => t.league === "OLYMPICS")).toBe(false);
+    // Hockey and basketball for the same country/gender share the same league.
+    const canMen = olympic.filter(
+      (t) =>
+        t.uniqueId.endsWith("-MEN-CAN") &&
+        (t.uniqueId.startsWith("OLYMPICS-HOCKEY-MEN-CAN") ||
+          t.uniqueId.startsWith("OLYMPICS-BASKETBALL-MEN-CAN")),
+    );
+    if (canMen.length >= 2) {
+      expect(new Set(canMen.map((t) => t.league)).size).toBe(1);
+      expect(canMen[0].league).toBe("OLYMPICS-MEN");
+    }
   });
 });
 

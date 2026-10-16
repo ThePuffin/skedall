@@ -4,7 +4,15 @@ import TeamReorderSelector from '@/components/TeamReorderSelector';
 import { LeaguesEnum } from '@/constants/Leagues';
 import { useAuth } from '@/context/AuthContext';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { fetchLeagues, fetchSelectableTeams, fetchTeams, getCache, restrictToSelectableTeams, saveCache } from '@/utils/fetchData';
+import {
+  fetchLeagues,
+  fetchSelectableTeams,
+  fetchTeams,
+  getCache,
+  getTeamLeagueFromId,
+  restrictToSelectableTeams,
+  saveCache,
+} from '@/utils/fetchData';
 import { syncToFirestore } from '@/utils/syncService';
 import { Team } from '@/utils/types';
 import { translateWord } from '@/utils/utils';
@@ -160,7 +168,11 @@ const FavModal = ({
       return;
     }
 
-    const filteredFavorites = localFavorites.filter((team) => team !== '' && localLeagues.includes(team.split('-')[0]));
+    const filteredFavorites = localFavorites.filter(
+      (team) =>
+        team !== '' &&
+        localLeagues.includes(getTeamLeagueFromId(team)),
+    );
     onSave(filteredFavorites);
     saveCache('leaguesSelected', localLeagues);
     saveCache('showScores', showScores);

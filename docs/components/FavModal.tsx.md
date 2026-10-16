@@ -53,7 +53,7 @@ The **FavModal** component is a modal dialog that lets users manage their favori
 
 ### `handleSave()`
 
-Validates selection (forces team selector open if empty), filters favorites to only those in selected leagues, calls `onSave`, persists `leaguesSelected` and `showScores` to cache, syncs to Firestore if logged in, dispatches update events, and closes the modal.
+Validates selection (forces team selector open if empty), filters favorites to only those whose league — derived via `getTeamLeagueFromId(team)` — is in the selected leagues, calls `onSave`, persists `leaguesSelected` and `showScores` to cache, syncs to Firestore if logged in, dispatches update events, and closes the modal. Using `getTeamLeagueFromId` (instead of `team.split('-')[0]`) keeps Olympic sport-specific ids (`OLYMPICS-HOCKEY/BASKETBALL-M/W-PAYS`) mapped to their `OLYMPICS-MEN` / `OLYMPICS-WOMEN` chip so they are not silently dropped on save.
 
 ### `handleSelectorOpen()` / `handleSelectorClose()`
 
