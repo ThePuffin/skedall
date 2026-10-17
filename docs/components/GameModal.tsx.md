@@ -53,6 +53,15 @@ The **GameModal** component displays a detailed game popup with team logos, reco
   land; a team with no id never shows one
 - **Scrollable content** — the modal card is capped at `maxHeight: '92%'` and its content is wrapped
   in a `ScrollView`, so the added form rows can never push the card past the viewport
+- **Status text and close (X) on one line** — `renderStatusText()` and the close button share a
+  single **header row** (`styles.statusRow`: `flexDirection: 'row'`, `alignItems: 'center'`,
+  `width: '100%'`) instead of stacking vertically. The button (`styles.closeButton`) is a fixed
+  30×30 centered box, mirrored by an invisible `styles.statusSpacer` (30×30) on the left, and
+  `styles.dateText` fills the space between them (`flex: 1`, `textAlign: 'center'`) — so the text
+  keeps the exact center of the card while the (X) sits on the same line at the right end. The
+  `marginBottom: 20` that used to live on `dateText` now belongs to `statusRow` (a margin inside
+  the row would push the text off the icon's baseline). The button carries
+  `accessibilityRole="button"` / `accessibilityLabel="Close"`.
 - **Click-outside close** — backdrop press and close button dismiss the modal
 
 ## Props
@@ -144,7 +153,10 @@ Builds the ESPN standings URL from the `leagueMapping` constant, or returns `nul
 
 ### `renderStatusText()`
 
-Renders the game status area:
+Renders the game status area. It is placed inside the card's **header row**
+(`styles.statusRow`), on the same line as the close (X) button: every branch returns a
+`ThemedText` styled with `styles.dateText` (`flex: 1`, `textAlign: 'center'`), which centers
+it between the invisible `statusSpacer` and the `closeButton`.
 
 - **Live** — red clock/period text (or status string); interrupted (`DELAYED`) games are excluded from live
 - **Finalized late** — "Final" fallback when no scores were reported

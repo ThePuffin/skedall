@@ -3,6 +3,25 @@
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
 
+## Changed: match-card status is translated (lowercase) and live games show their time
+
+Raw backend status keywords (e.g. `SCHEDULED`) no longer render verbatim on the match cards. The pre-existing `displayGameStatus()` helper in `CardLarge.tsx` (keyword → `translateWord()` + first letter uppercase, e.g. `SCHEDULED` → `Programmé`) is now actually applied at every point where the raw `gameStatus` could reach the center pill (`timeText`), in all places where the card appears (calendar, schedule, favorites…). A match in progress keeps showing its time (`"{clock} - {period}"`, e.g. `"20:00 - 2nd Period"`), which takes priority over the keyword translation.
+
+### Changes
+
+- **`frontend/components/CardLarge.tsx`** — `displayGameStatus()` applied in the *started 4h+ ago*, *live* (period-only fallback) and *has score today* branches of the `timeText` computation.
+- **`frontend/docs/components/CardLarge.tsx.md`** — Time Text Logic documents the keyword translation and live-time priority.
+
+## Changed: GameModal status text and close (X) share one line
+
+In the game popup, the status/date line and the close button used to be two separate blocks, so the (X) appeared **below** the text. They now sit on a single header row at the top of the card.
+
+### Changes
+
+- **`frontend/components/GameModal.tsx`** — `{renderStatusText()}` and the close button are wrapped in a new `styles.statusRow` (`flexDirection: 'row'`, `alignItems: 'center'`, `width: '100%'`). The text keeps the exact center of the card: `styles.dateText` now has `flex: 1` with `textAlign: 'center'` and is framed by an invisible `styles.statusSpacer` (30×30) on the left and the button on the right. `styles.closeButton` changed from `alignSelf: 'flex-end'` + `padding: 5` (a column-flow rule) to a fixed **30×30 centered box** mirroring the spacer, and the button gained `accessibilityRole="button"` / `accessibilityLabel="Close"`. `dateText`'s `marginBottom: 20` moved to `statusRow` — kept inside the row it would have pushed the text out of alignment with the icon.
+- **`frontend/docs/components/GameModal.tsx.md`** — new "Status text and close (X) on one line" feature bullet; `renderStatusText()` section describes the header row.
+- **`frontend/docs/components/DatePicker.tsx.md`** — removed the now-stale "identical to `GameModal`'s `closeButton` style" claim.
+
 ## Fixed: Olympic teams display and deduplication in team selectors
 
 Olympic teams were mishandled in the league-based team selector and silently dropped from favorites:
