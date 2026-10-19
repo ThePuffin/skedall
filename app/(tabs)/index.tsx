@@ -1245,19 +1245,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
                           { label: translateWord('all'), value: 'ALL' },
                           ...userLeagues.filter((l) => l !== 'ALL').map((l) => ({ label: l, value: l })),
                           {
-                            label: '',
-                            value: 'BOOKMARKS',
-                            icon: (
-                              <Icon
-                                name={isAnyGameSelectedToday ? 'bookmark' : 'bookmark-o'}
-                                type="font-awesome"
-                                size={18}
-                                color={activeFilter === 'BOOKMARKS' ? selectedTextColor : defaultColor}
-                              />
-                            ),
-                          },
-                          {
-                            // Star chip, right after BOOKMARKS: shows only the games
+                            // Star chip, right before BOOKMARKS (after ALL): shows only the games
                             // involving a favorite team (any date). Filled when at least
                             // one game of the displayed day involves a favorite, and
                             // disabled otherwise (same availability rule as BOOKMARKS).
@@ -1269,6 +1257,18 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
                                 type="font-awesome"
                                 size={18}
                                 color={activeFilter === 'FAVORITES' ? selectedTextColor : defaultColor}
+                              />
+                            ),
+                          },
+                          {
+                            label: '',
+                            value: 'BOOKMARKS',
+                            icon: (
+                              <Icon
+                                name={isAnyGameSelectedToday ? 'bookmark' : 'bookmark-o'}
+                                type="font-awesome"
+                                size={18}
+                                color={activeFilter === 'BOOKMARKS' ? selectedTextColor : defaultColor}
                               />
                             ),
                           },

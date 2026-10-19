@@ -220,8 +220,8 @@ export default function FilterSlider(props: Readonly<FilterSliderProps>) {
       items = [
         ...(selectedItem ? [selectedItem] : []),
         ...(allItem ? [allItem] : []),
-        ...(bookmarksItem ? [bookmarksItem] : []),
         ...(favoritesItem ? [favoritesItem] : []),
+        ...(bookmarksItem ? [bookmarksItem] : []),
         ...favoriteItems,
         ...otherItems,
       ];

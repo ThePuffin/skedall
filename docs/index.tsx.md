@@ -16,8 +16,8 @@ The team selector uses the stable callback identifier `teamsOfDay`. `Selector` c
 - **Date navigation** via `SliderDatePicker` (horizontal date slider)
 - **Calendar picker** — an imperatively-controlled `DateRangePicker` (single-date mode) is rendered alongside the slider; its dropdown is opened by the magnifier icon in `SliderDatePicker` (`onSearch`) and writes the picked date back to `selectDate` via `handleDateChange`
 - **Swipe gestures** to navigate between days (PanResponder)
-- **League filter** via `FilterSlider` (ALL, specific leagues, BOOKMARKS, star FAVORITES)
-- **Star FAVORITES chip** — filters the displayed day to favorite-team games, for **past, scheduled and in-progress** dates alike; positioned right after BOOKMARKS, and dimmed/non-clickable when the displayed day has no favorite game
+- **League filter** via `FilterSlider` (ALL, star FAVORITES, BOOKMARKS, specific leagues)
+- **Star FAVORITES chip** — filters the displayed day to favorite-team games, for **past, scheduled and in-progress** dates alike; positioned between ALL and BOOKMARKS, and dimmed/non-clickable when the displayed day has no favorite game
 - **Team filter** via `TeamFilter` (search icon + slider)
 - **Live score updates** every 30 seconds via `fetchLiveScores`
 - **Games grouped by hour** with status sections in a fixed order — **In Progress, Final, Scheduled (by hour), Ended** — for **today and upcoming** dates
@@ -197,7 +197,7 @@ Leagues with no active games today + `BOOKMARKS` while no bookmarked game is sch
 
 ## Star FAVORITES Chip (client-side, no refetch)
 
-The `FAVORITES` filter is a star chip in the league `FilterSlider`, sorted right after BOOKMARKS (filled `star` while at least one game of the displayed day involves a favorite team, outlined `star-o` otherwise). When active it keeps only favorite-team games (`getFavoriteGameIndex`, Olympic-aware) on **any** date:
+The `FAVORITES` filter is a star chip in the league `FilterSlider`, sorted between ALL and BOOKMARKS (filled `star` while at least one game of the displayed day involves a favorite team, outlined `star-o` otherwise). When active it keeps only favorite-team games (`getFavoriteGameIndex`, Olympic-aware) on **any** date:
 
 - **today / upcoming dates** → inside `visibleGamesByHour`, before the status categorization, so past (Final/Ended), in-progress and scheduled favorite games are all shown;
 - **past dates** → inside each league group of `visibleLeagueGroups`, so favorites stay grouped by league.

@@ -15,6 +15,16 @@ Until the backend is redeployed, no stale payload can reintroduce the group eith
 - **`frontend/utils/types.tsx`** — `LeagueDayGroup` doc: `key` is only a league code, the route never returns a favorites section.
 - **Docs** — `frontend/docs/index.tsx.md`, `frontend/docs/types.tsx.md`, `frontend/docs/fetchData.ts.md` no longer describe a legacy/dropped favorites group.
 
+## Changed: star FAVORITES chip now sits before BOOKMARKS
+
+The league filter of the day view now orders its pseudo-chips **ALL → ⭐ FAVORITES → BOOKMARKS → leagues**: the star chip moved from the right of BOOKMARKS to its left. The order comes from `FilterSlider`'s `sortedItems`, and the chip `data` array of `index.tsx` was reordered to match, so the position stays the same even when sorting is disabled.
+
+### Changes
+
+- **`frontend/components/FilterSlider.tsx`** — `sortedItems`: the `FAVORITES` item is assembled before the `BOOKMARKS` item.
+- **`frontend/app/(tabs)/index.tsx`** — league-filter `data`: the star entry is now declared before the BOOKMARKS entry (comment updated).
+- **Docs** — `frontend/docs/components/FilterSlider.tsx.md` (sort order) and `frontend/docs/index.tsx.md` (chip position) updated.
+
 ## Fixed: day view reacts immediately to bookmark toggles (missing `gamesSelected` dep)
 
 `visibleGamesByHour` uses `gamesSelected` to apply the BOOKMARKS chip filter, but the memo's dependency array omitted it, so toggling a bookmark while the BOOKMARKS chip was active on today/an upcoming day did not refresh the sections until another dependency changed. `gamesSelected` (max 10 items, stable state reference) is now part of the dependencies, matching `visibleLeagueGroups` which already declared it. This also clears the last `react-hooks/exhaustive-deps` warning introduced by the day-view filter rework.
