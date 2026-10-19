@@ -9,7 +9,7 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useFavoriteColor } from '@/hooks/useFavoriteColor';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { twoYearsBeforeCurrentYear } from '@/utils/date';
+import { yearsBeforeCurrentYear } from '@/utils/date';
 import { syncToFirestore } from '@/utils/syncService';
 import {
   getFilterAccordionLabel,
@@ -1087,11 +1087,12 @@ export default function Schedule() {
           if (showPreviousScores) {
             // "All" pulls a whole league's history, which is huge for leagues
             // with thousands of games per season (mainly the college ones):
-            // only the two years before the current one are requested. A real
-            // team selection (below) keeps its full, unbounded history.
+            // only the four years before the current one are requested — "5000
+            // results or 4 years" with the backend cap. A real team selection
+            // (below) keeps its full, unbounded history.
             const resultsByLeague = await fetchResultsByLeague(
               selectionLeague,
-              twoYearsBeforeCurrentYear(),
+              yearsBeforeCurrentYear(4),
             );
             setResults(resultsByLeague);
           } else {
