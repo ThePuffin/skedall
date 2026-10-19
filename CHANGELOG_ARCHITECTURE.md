@@ -3,6 +3,19 @@
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
 
+## Changed: Schedule "All" selection requests league results from the two years before the current one
+
+When the Schedule screen is on the "All" pseudo-team with previous scores enabled, the league-results request (`GET /games/league/:league/results`) was sent without `startDate`, so the backend defaulted to its full retention window (up to 7 years, capped at 5000 results). For leagues with huge schedules — mainly the college leagues — this produced thousands of past games and dozens of month accordions.
+
+The request now carries `startDate = January 1st two years before the current year` (`twoYearsBeforeCurrentYear()`), so only the two years before the current one plus the current year itself are fetched. A **team** selection is deliberately untouched: it keeps fetching its complete history without any date bound (a team plays a few dozen games per season). The upcoming-games request is unchanged too: the backend already bounds it to today, i.e. the current/upcoming season.
+
+### Changes
+
+- **`frontend/utils/date.ts`** — new `twoYearsBeforeCurrentYear(now = new Date())` helper returning the `YYYY-MM-DD` of January 1st two calendar years before `now` (built on `readableDate`).
+- **`frontend/app/(tabs)/schedule.tsx`** — `getGamesFromApi()` "All" branch passes that date as `startDate` to `fetchResultsByLeague`; the team branch keeps `fetchResultsByTeam` unbounded.
+- **`frontend/utils/date.test.ts`** — unit tests for the new helper.
+- **Docs** — `frontend/docs/date.ts.md` and `frontend/docs/schedule.tsx.md` updated.
+
 ## Removed: legacy `FAVORITES` group handling from the day view
 
 The day view no longer defensively drops a leading `FAVORITES` group from the `/games/league-day` payload: the backend route has been cleaned up in the same change (it no longer accepts a `favoriteTeams` query param nor returns such a group — see `backend/CHANGELOG_ARCHITECTURE.md`), so there is nothing left to drop. `FAVORITES_GROUP_KEY` and its `group.key !== FAVORITES_GROUP_KEY` filter in `visibleLeagueGroups` are gone. The star FAVORITES chip behavior is unchanged: it still filters favorite-team games client-side, on any date, inside each league group for past days.

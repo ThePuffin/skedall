@@ -9,6 +9,19 @@ export const readableDate = (date: string | Date) => {
   return `${year}-${month}-${day}`;
 };
 
+/**
+ * `YYYY-MM-DD` of January 1st two calendar years before the one of `now`
+ * (e.g. called during 2026 → `2024-01-01`), so the two years before the
+ * current one plus the current year itself are kept.
+ *
+ * Used as the `startDate` bound of the league-results request when the
+ * Schedule screen is on the "All" pseudo-team: a whole league's retention
+ * window (7 years, thousands of games for college leagues) made the history
+ * view huge, while a real team selection keeps its full, unbounded history.
+ */
+export const twoYearsBeforeCurrentYear = (now: Date = new Date()): string =>
+  readableDate(new Date(now.getFullYear() - 2, 0, 1));
+
 export const getHourGame = (
   startTimeUTC: string | Date,
   venueUTCOffset: string,
