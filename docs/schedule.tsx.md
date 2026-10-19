@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The **Schedule** tab (also called "Focus Team" / "Suivre une équipe") displays the remaining games of a selected team, grouped by month. It allows filtering by league, team, opponent (VS), and month.
+The **Schedule** tab (also called "Focus Team" / "Follow a team") displays the remaining games of a selected team, grouped by month. It allows filtering by league, team, opponent (VS), and month.
 
 ## Selection stability
 
@@ -52,6 +52,8 @@ Merges two `FilterGames` objects by date, deduplicating by `uniqueId` and sortin
 
 Restores the team selection from URL params, localStorage, or favorites. Falls back to a random team.
 
+When URL params point to an **unknown league**, a random available league is selected and the team falls back to `'all'`. When the league is known but the team id does not belong to it, the team falls back to `'all'` for that league. In both cases the screen shows the league's games instead of a blank screen.
+
 ### `storeTeamSelected(teamSelection, teamsList?)`
 
 Persists the selected team to localStorage and updates `teamSelected`, `leagueOfSelectedTeam`, and `leagueTeams`.
@@ -72,7 +74,7 @@ Called when the user changes the league. Resets filters, updates URL params, sel
 
 Fetches games from the API:
 
-- If `teamSelected === 'all'`: fetches all games for the league. When `showPreviousScores` is on, the league results are requested with `startDate = yearsBeforeCurrentYear(4)` (the four years before the current one plus the current year — "5000 results or 4 years" with the backend cap), because a whole league's retention window is huge for leagues with thousands of games per season (mainly the college ones)
+- If `teamSelected === 'all'`: fetches all games for the league. When `showPreviousScores` is on, the league results are requested without `startDate`; the backend caps the response at 2500 completed games (the most recent ones), so a whole league's history stays bounded even for leagues with thousands of games per season (mainly the college ones)
 - Otherwise: fetches remaining games for the selected team; Olympic country ids cover both hockey and basketball for the same gender. When `showPreviousScores` is on, the team results are fetched **without any date bound** (full history)
 - Caches data in localStorage via `saveCache('scheduleData', ...)`
 

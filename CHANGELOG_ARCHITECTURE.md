@@ -3,18 +3,47 @@
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
 
-## Changed: Schedule "All" selection requests league results over the four years before the current one
+## Changed: Schedule "All" selection caps league results at 2500 games (no date bound)
 
-When the Schedule screen is on the "All" pseudo-team with previous scores enabled, the league-results request (`GET /games/league/:league/results`) was sent without `startDate`, so the backend defaulted to its full retention window (up to 7 years, capped at 5000 results). For leagues with huge schedules — mainly the college leagues — this produced thousands of past games and dozens of month accordions.
+When the Schedule screen is on the "All" pseudo-team with previous scores enabled, the league-results
+request (`GET /games/league/:league/results`) was sent without `startDate`, so the backend defaulted to
+its full retention window (up to 7 years, capped at 5000 results). For leagues with huge schedules —
+mainly the college leagues — this produced thousands of past games and dozens of month accordions.
 
-The request now carries `startDate = January 1st four years before the current year` (`yearsBeforeCurrentYear(4)`), so only the four years before the current one plus the current year itself are fetched — "5000 results or 4 years", matching the backend default cap. A **team** selection is deliberately untouched: it keeps fetching its complete history without any date bound (a team plays a few dozen games per season). The upcoming-games request is unchanged too: the backend already bounds it to today, i.e. the current/upcoming season.
+The frontend now calls the endpoint without any `startDate`, and the backend caps the response at
+**2500 completed games** (newest-first query, so the most recent results are kept). A **team** selection
+is deliberately untouched: it keeps fetching its complete history without any date bound (a team plays a
+few dozen games per season). The upcoming-games request is unchanged too: the backend already bounds it
+to today, i.e. the current/upcoming season.
 
 ### Changes
 
-- **`frontend/utils/date.ts`** — new `yearsBeforeCurrentYear(years, now = new Date())` helper returning the `YYYY-MM-DD` of January 1st of the year `years` calendar years before `now` (built on `readableDate`).
-- **`frontend/app/(tabs)/schedule.tsx`** — `getGamesFromApi()` "All" branch passes `yearsBeforeCurrentYear(4)` as `startDate` to `fetchResultsByLeague`; the team branch keeps `fetchResultsByTeam` unbounded.
-- **`frontend/utils/date.test.ts`** — unit tests for the new helper.
-- **Docs** — `frontend/docs/date.ts.md` and `frontend/docs/schedule.tsx.md` updated.
+- **`frontend/app/(tabs)/schedule.tsx`** — `getGamesFromApi()` "All" branch calls `fetchResultsByLeague`
+  without `startDate`; the team branch keeps `fetchResultsByTeam` unbounded.
+- **`frontend/utils/date.ts`** — removed the `yearsBeforeCurrentYear` helper (no longer needed).
+- **`frontend/utils/date.test.ts`** — removed the related tests.
+- **`backend/src/games/games.service.ts`** — `leagueResultsMaxResults` reduced from 5000 to **2500**;
+  `leagueResultsYearsToKeep` removed; `findResultsByLeague()` no longer applies a default `startDate`
+  (no date bound). `filterGames()` only adds the `gameDate` lower bound when `startDate` is provided,
+  so a league-results call without a bound scans the whole retention window but stops at 2500 rows.
+- **Docs** — `frontend/docs/date.ts.md`, `frontend/docs/schedule.tsx.md`,
+  `backend/docs/games/games.service.ts.md`, `backend/docs/games/games.controller.ts.md` updated.
+
+## Changed: Schedule screen no longer shows a blank screen for invalid league/team params
+
+When the Schedule screen is opened with URL params that do not match any known league or team (e.g. `/schedule?league=NBL&team=NBL-TET`), it previously ended with an empty `games` state and a blank/loading screen because `getGamesFromApi()` was never triggered.
+
+`getSelectedTeams()` now handles these cases:
+
+- **Unknown league**: a random available league is selected and the team is set to `'all'`
+- **Known league, unknown team**: the league is kept and the team is set to `'all'`
+
+In both cases the screen renders the league's games (`team = 'all'`) instead of staying blank.
+
+### Changes
+
+- **`frontend/app/(tabs)/schedule.tsx`** — `getSelectedTeams()`: when `forcedLeague` is not found in the teams catalog, picks a random league and forces `team = 'all'`; when the league is known but the forced team does not belong to it, forces `team = 'all'` for that league.
+- **Docs** — `frontend/docs/schedule.tsx.md` updated.
 
 ## Removed: legacy `FAVORITES` group handling from the day view
 
@@ -1106,7 +1135,7 @@ When the index tab shows `NoResults` for the displayed day, the screen now calls
 
 ## Feature: Schedule — "Enable history" button via `closest` route when no upcoming games
 
-When the Schedule tab has no upcoming games (`visibleGamesByMonth` empty) and history is not already enabled, the screen now calls `GET /games/dates/closest` — with `teamSelectedIds=<team>` (or `leagues=<league>` when team selection is `all`) — and if the response contains a `previousDate`, renders an "Activer l'historique" button (label `translateWord('enableHistory')`, `MaterialIcons` `history` icon, matching the provided image) above the "Pas de résultat" (`NoResults`) text. Clicking it enables `showPreviousScores` via `handlePreviousScoreToggle(true)`. The button is hidden while loading or once history is enabled, and requests are deduped per selection via `closestRequestRef`.
+When the Schedule tab has no upcoming games (`visibleGamesByMonth` empty) and history is not already enabled, the screen now calls `GET /games/dates/closest` — with `teamSelectedIds=<team>` (or `leagues=<league>` when team selection is `all`) — and if the response contains a `previousDate`, renders an "Enable history" button (label `translateWord('enableHistory')`, `MaterialIcons` `history` icon, matching the provided image) above the "No results" (`NoResults`) text. Clicking it enables `showPreviousScores` via `handlePreviousScoreToggle(true)`. The button is hidden while loading or once history is enabled, and requests are deduped per selection via `closestRequestRef`.
 
 ### Files
 

@@ -9,7 +9,6 @@ import { Colors } from '@/constants/Colors';
 import { useAuth } from '@/context/AuthContext';
 import { useFavoriteColor } from '@/hooks/useFavoriteColor';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { yearsBeforeCurrentYear } from '@/utils/date';
 import { syncToFirestore } from '@/utils/syncService';
 import {
   getFilterAccordionLabel,
@@ -348,6 +347,32 @@ export default function Schedule() {
         if (selection === 'all') {
           localStorage.setItem('leagueSelected', forcedLeague);
         }
+      } else {
+        // Unknown or unavailable league: pick a random league
+        // and show "all" instead of a blank screen.
+        const leaguesInTeams = [
+          ...new Set(allTeams.map((t) => t.league).filter(Boolean)),
+        ];
+        if (leaguesInTeams.length > 0) {
+          leagueToSet = leaguesInTeams[randomNumber(leaguesInTeams.length - 1)];
+        }
+        selection = 'all';
+        if (leagueToSet) {
+          localStorage.setItem('leagueSelected', leagueToSet);
+        }
+      }
+    }
+
+    // If a league is targeted but the selected team does not belong to it
+    // (invalid forced id, team removed from the league, …), fall back to "all"
+    // for this league instead of a blank screen.
+    if (leagueToSet && selection !== 'all') {
+      const teamsInLeague = getLeagueTeamOptions(allTeams, leagueToSet);
+      const isValidTeam = teamsInLeague.some((t) =>
+        getTeamIdsForSelection(t.uniqueId).includes(selection),
+      );
+      if (!isValidTeam) {
+        selection = 'all';
       }
     }
 
@@ -1085,15 +1110,7 @@ export default function Schedule() {
           );
           scheduleData = mergeGames(smallScheduleData, remainingScheduleData);
           if (showPreviousScores) {
-            // "All" pulls a whole league's history, which is huge for leagues
-            // with thousands of games per season (mainly the college ones):
-            // only the four years before the current one are requested — "5000
-            // results or 4 years" with the backend cap. A real team selection
-            // (below) keeps its full, unbounded history.
-            const resultsByLeague = await fetchResultsByLeague(
-              selectionLeague,
-              yearsBeforeCurrentYear(4),
-            );
+            const resultsByLeague = await fetchResultsByLeague(selectionLeague);
             setResults(resultsByLeague);
           } else {
             setResults({});
