@@ -3,6 +3,51 @@
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
 
+## Removed: legacy `FAVORITES` group handling from the day view
+
+The day view no longer defensively drops a leading `FAVORITES` group from the `/games/league-day` payload: the backend route has been cleaned up in the same change (it no longer accepts a `favoriteTeams` query param nor returns such a group — see `backend/CHANGELOG_ARCHITECTURE.md`), so there is nothing left to drop. `FAVORITES_GROUP_KEY` and its `group.key !== FAVORITES_GROUP_KEY` filter in `visibleLeagueGroups` are gone. The star FAVORITES chip behavior is unchanged: it still filters favorite-team games client-side, on any date, inside each league group for past days.
+
+Until the backend is redeployed, no stale payload can reintroduce the group either: the new frontend never sends `favoriteTeams`, and the group was only ever built when that param matched games of the day.
+
+### Changes
+
+- **`frontend/app/(tabs)/index.tsx`** — removed the `FAVORITES_GROUP_KEY` constant and its filter in `visibleLeagueGroups`; related comments updated.
+- **`frontend/utils/types.tsx`** — `LeagueDayGroup` doc: `key` is only a league code, the route never returns a favorites section.
+- **Docs** — `frontend/docs/index.tsx.md`, `frontend/docs/types.tsx.md`, `frontend/docs/fetchData.ts.md` no longer describe a legacy/dropped favorites group.
+
+## Fixed: day view reacts immediately to bookmark toggles (missing `gamesSelected` dep)
+
+`visibleGamesByHour` uses `gamesSelected` to apply the BOOKMARKS chip filter, but the memo's dependency array omitted it, so toggling a bookmark while the BOOKMARKS chip was active on today/an upcoming day did not refresh the sections until another dependency changed. `gamesSelected` (max 10 items, stable state reference) is now part of the dependencies, matching `visibleLeagueGroups` which already declared it. This also clears the last `react-hooks/exhaustive-deps` warning introduced by the day-view filter rework.
+
+### Changes
+
+- **`frontend/app/(tabs)/index.tsx`** — `visibleGamesByHour` dependency array: added `gamesSelected`.
+- **`frontend/docs/index.tsx.md`** — `visibleGamesByHour` documents the `gamesSelected` dependency.
+
+## Changed: day-view accordion order (In Progress → Final → Scheduled → Ended)
+
+For the current/upcoming day, the status sections were rendered in the order In Progress → Scheduled (by hour) → Final → Ended. They now follow a fixed order: **In Progress → Final → Scheduled (by hour, chronological) → Ended** at the bottom. The groups are assembled in the new order directly (the chronological sort now applies only to the scheduled hour sections, so In Progress can never drift below a future hour section); empty sections are still omitted, and past-day (league) groups are untouched.
+
+### Changes
+
+- **`frontend/app/(tabs)/index.tsx`** — `visibleGamesByHour` builds the chronological `scheduledSections` list first, then pushes In Progress, Final, the scheduled sections, and Ended.
+- **`frontend/docs/index.tsx.md`** — Key Features and `visibleGamesByHour` document the new fixed section order.
+
+## Changed: star FAVORITES chip in the league filter (client-side, any date)
+
+The day view's `FAVORITES` filter is now a **star chip** in the league `FilterSlider`, sorted right after BOOKMARKS (filled `star` while at least one game of the displayed day involves a favorite team, outlined `star-o` otherwise). Like BOOKMARKS, it is only available when it has something to show: `disabledFilters` dims it and blocks taps when the displayed day has no favorite game.
+
+When active, it keeps only favorite-team games on **any** date: for today/upcoming dates the filter runs in `visibleGamesByHour` *before* the status categorization (so past, in-progress and scheduled favorite games all show), and for past dates it runs client-side *inside each league group* (`visibleLeagueGroups`), replacing the former dedicated favorites section of the past-day view. The backend `FAVORITES` group is always dropped defensively, `/games/league-day` no longer receives `favoriteTeams`, and the past-day refetch-on-favorites-change effect is gone (filtering no longer needs a request).
+
+### Changes
+
+- **`frontend/app/(tabs)/index.tsx`** — new `hasFavorites` memo (via `getFavoriteGameIndex`, Olympic-aware) driving the star icon and the `disabledFilters` entry; `visibleLeagueGroups` always drops `FAVORITES_GROUP_KEY` and filters favorites per league section; `visibleSections` labels past-day groups by league only; removed `favoriteTeamsRef`, `leagueDayFavoritesKeyRef` and the favorites refetch effect; past-day fetch calls `fetchGamesByLeagueDay(YYYYMMDD, 1000)`.
+- **`frontend/components/FilterSlider.tsx`** — stable sort position for the `FAVORITES` chip: after ALL and BOOKMARKS, before league items.
+- **`frontend/utils/fetchData.ts`** — `fetchGamesByLeagueDay(date, limit?, skip?)` no longer accepts/sends `favoriteTeams`.
+- **`frontend/utils/fetchData.test.ts`** — asserts the league-day request carries no `favoriteTeams` param.
+- **`frontend/utils/types.tsx`** — `LeagueDayGroup` comment: the `FAVORITES` group is legacy and dropped by the day screen.
+- **Docs** — `frontend/docs/index.tsx.md`, `frontend/docs/components/FilterSlider.tsx.md`, `frontend/docs/fetchData.ts.md`, `frontend/docs/types.tsx.md` updated to match.
+
 ## Changed: match-card status is translated (lowercase) and live games show their time
 
 Raw backend status keywords (e.g. `SCHEDULED`) no longer render verbatim on the match cards. The pre-existing `displayGameStatus()` helper in `CardLarge.tsx` (keyword → `translateWord()` + first letter uppercase, e.g. `SCHEDULED` → `Programmé`) is now actually applied at every point where the raw `gameStatus` could reach the center pill (`timeText`), in all places where the card appears (calendar, schedule, favorites…). A match in progress keeps showing its time (`"{clock} - {period}"`, e.g. `"20:00 - 2nd Period"`), which takes priority over the keyword translation.
