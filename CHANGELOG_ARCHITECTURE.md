@@ -3,31 +3,20 @@
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
 
-## Changed: Schedule "All" selection caps league results at 2500 games (no date bound)
+## Reverted: league-results bounds on the Schedule "All" selection (performance issues)
 
-When the Schedule screen is on the "All" pseudo-team with previous scores enabled, the league-results
-request (`GET /games/league/:league/results`) was sent without `startDate`, so the backend defaulted to
-its full retention window (up to 7 years, capped at 5000 results). For leagues with huge schedules —
-mainly the college leagues — this produced thousands of past games and dozens of month accordions.
+The successive bounds added on the league-results route (`GET /games/league/:league/results`) — a frontend `startDate` ("N years" window), then a backend default ("5000 results or 4 years", then "2500 results, no date bound, newest-first") — caused performance issues. They are fully reverted on both sides:
 
-The frontend now calls the endpoint without any `startDate`, and the backend caps the response at
-**2500 completed games** (newest-first query, so the most recent results are kept). A **team** selection
-is deliberately untouched: it keeps fetching its complete history without any date bound (a team plays a
-few dozen games per season). The upcoming-games request is unchanged too: the backend already bounds it
-to today, i.e. the current/upcoming season.
+- the frontend no longer sends any `startDate` (the `yearsBeforeCurrentYear` helper and its tests are gone);
+- the backend is back to its historical contract: `findResultsByLeague()` defaults to `startDate = maxYearBeforeDelete` years ago and `maxResults = 5000` (oldest-first), `filterGames()` always applies the `gameDate` lower bound, and the `sortDirection` / `leagueResults*` additions are gone.
 
 ### Changes
 
-- **`frontend/app/(tabs)/schedule.tsx`** — `getGamesFromApi()` "All" branch calls `fetchResultsByLeague`
-  without `startDate`; the team branch keeps `fetchResultsByTeam` unbounded.
-- **`frontend/utils/date.ts`** — removed the `yearsBeforeCurrentYear` helper (no longer needed).
-- **`frontend/utils/date.test.ts`** — removed the related tests.
-- **`backend/src/games/games.service.ts`** — `leagueResultsMaxResults` reduced from 5000 to **2500**;
-  `leagueResultsYearsToKeep` removed; `findResultsByLeague()` no longer applies a default `startDate`
-  (no date bound). `filterGames()` only adds the `gameDate` lower bound when `startDate` is provided,
-  so a league-results call without a bound scans the whole retention window but stops at 2500 rows.
-- **Docs** — `frontend/docs/date.ts.md`, `frontend/docs/schedule.tsx.md`,
-  `backend/docs/games/games.service.ts.md`, `backend/docs/games/games.controller.ts.md` updated.
+- **`frontend/app/(tabs)/schedule.tsx`** — `getGamesFromApi()` "All" branch calls `fetchResultsByLeague` without `startDate` again; the team branch is unchanged.
+- **`frontend/utils/date.ts`** / **`frontend/utils/date.test.ts`** — `yearsBeforeCurrentYear` helper and tests removed.
+- **`backend/src/games/games.service.ts`** — `findResultsByLeague()` / `filterGames()` restored to the previous behaviour; `leagueResultsMaxResults` and `sortDirection` removed.
+- **`backend/src/games/tests/games.service.spec.ts`** — `findResultsByLeague` suite back to the retention-window / 5000-cap assertions.
+- **Docs** — `frontend/docs/schedule.tsx.md`, `backend/docs/games/games.service.ts.md`, `backend/docs/games/games.controller.ts.md` restored.
 
 ## Changed: Schedule screen no longer shows a blank screen for invalid league/team params
 

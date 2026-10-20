@@ -74,8 +74,9 @@ Called when the user changes the league. Resets filters, updates URL params, sel
 
 Fetches games from the API:
 
-- If `teamSelected === 'all'`: fetches all games for the league. When `showPreviousScores` is on, the league results are requested without `startDate`; the backend caps the response at 2500 completed games (the most recent ones), so a whole league's history stays bounded even for leagues with thousands of games per season (mainly the college ones)
-- Otherwise: fetches remaining games for the selected team; Olympic country ids cover both hockey and basketball for the same gender. When `showPreviousScores` is on, the team results are fetched **without any date bound** (full history)
+- If `teamSelected === 'all'`: fetches all games for the league
+- Otherwise: fetches remaining games for the selected team; Olympic country ids cover both hockey and basketball for the same gender
+- If `showPreviousScores`: also fetches results
 - Caches data in localStorage via `saveCache('scheduleData', ...)`
 
 The Olympic team selector groups hockey and basketball roster entries by country and gender into a single option labelled with the country name only. The opponent selector uses the same country/gender identity so choosing a country applies to either sport.
