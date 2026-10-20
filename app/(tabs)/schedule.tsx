@@ -106,6 +106,9 @@ export default function Schedule() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasPreviousHistory, setHasPreviousHistory] = useState(false);
   const closestRequestRef = useRef('');
+  const fetchSequenceRef = useRef(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showPreviousScores, setShowPreviousScores] = useState<boolean>(
     () => getCache<boolean>('showPreviousScores') || false,
   );
@@ -307,12 +310,39 @@ export default function Schedule() {
   );
 
   useEffect(() => {
-    if (teamSelected && teamSelected.length > 0 && leagueOfSelectedTeam && leagueOfSelectedTeam.length > 0) {
-      async function fetchGames() {
-        await getGamesFromApi();
-      }
-      fetchGames();
+    // Abort any in-flight request from a previous selection so a quick team
+    // switch does not pile up HTTP calls on the server.
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
     }
+    abortControllerRef.current = new AbortController();
+
+    if (!(teamSelected && teamSelected.length > 0 && leagueOfSelectedTeam && leagueOfSelectedTeam.length > 0)) {
+      return;
+    }
+
+    // Debounce rapid team switches: only the last selection within 300 ms
+    // actually fires the API chain.
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(async () => {
+      const seq = ++fetchSequenceRef.current;
+      try {
+        await getGamesFromApi(seq, abortControllerRef.current!.signal);
+      } catch {
+        // Aborted or failed: ignore stale responses from a superseded selection.
+      }
+    }, 300);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [teamSelected, leagueOfSelectedTeam, teams, showPreviousScores]);
 
   const getSelectedTeams = (allTeams: Team[], forcedLeague?: string, forcedTeam?: string) => {
@@ -1070,7 +1100,9 @@ export default function Schedule() {
     return games;
   };
 
-  const getGamesFromApi = async (): Promise<void> => {
+  const getGamesFromApi = async (seq?: number, signal?: AbortSignal): Promise<void> => {
+    const isStale = () => seq !== undefined && fetchSequenceRef.current !== seq;
+
     if (teamSelected && teamSelected.length !== 0) {
       setIsLoading(true);
       try {
@@ -1087,9 +1119,11 @@ export default function Schedule() {
             selectedTeamIds.includes(scheduleTeam) ||
             (teamSelected === 'all' && scheduleLeague?.toUpperCase() === leagueOfSelectedTeam?.toUpperCase())
           ) {
+            if (isStale()) return;
             setGames(removeOldGames(scheduleDataStored));
             setGamesTeamIds(selectedTeamIds);
           } else {
+            if (isStale()) return;
             setGames({});
           }
         }
@@ -1097,6 +1131,7 @@ export default function Schedule() {
           const storedLeague = localStorage.getItem('leagueSelected');
           const selectionLeague = storedLeague || leaguesAvailable[0];
           const smallScheduleData = await smallFetchRemainingGamesByLeague(selectionLeague);
+          if (isStale()) return;
           saveCache('scheduleData', smallScheduleData);
           setGames(removeOldGames(smallScheduleData));
           setGamesTeamIds(['all']);
@@ -1107,22 +1142,29 @@ export default function Schedule() {
             50,
             undefined,
             true,
+            signal,
           );
+          if (isStale()) return;
           scheduleData = mergeGames(smallScheduleData, remainingScheduleData);
           if (showPreviousScores) {
-            const resultsByLeague = await fetchResultsByLeague(selectionLeague);
+            const resultsByLeague = await fetchResultsByLeague(selectionLeague, undefined, undefined, signal);
+            if (isStale()) return;
             setResults(resultsByLeague);
           } else {
+            if (isStale()) return;
             setResults({});
           }
         } else {
           if (showPreviousScores) {
-            const teamResultsByDay = await fetchResultsByTeam(teamSelected);
+            const teamResultsByDay = await fetchResultsByTeam(teamSelected, undefined, signal);
+            if (isStale()) return;
             setResults(teamResultsByDay);
           } else {
+            if (isStale()) return;
             setResults({});
           }
-          scheduleData = await fetchRemainingGamesByTeam(teamSelected);
+          scheduleData = await fetchRemainingGamesByTeam(teamSelected, undefined, signal);
+          if (isStale()) return;
         }
         setLeagueTeams(thisLeagueTeams);
         const storedLeagues = getCache<string[]>('leaguesSelected');
@@ -1138,16 +1180,21 @@ export default function Schedule() {
 
         saveCache('scheduleData', scheduleData);
 
+        if (isStale()) return;
         setGames(removeOldGames(scheduleData));
         setGamesTeamIds(getTeamIdsForSelection(teamSelected));
       } catch (error) {
+        // Aborted requests are expected when the user switches teams quickly.
+        if (signal?.aborted) return;
         console.error('fetch games failed, using cached schedule if available', error);
         const scheduleData = getCache<FilterGames>('scheduleData');
         if (scheduleData) {
+          if (isStale()) return;
           setGames(scheduleData);
           setGamesTeamIds(getTeamIdsForSelection(teamSelected));
         }
       } finally {
+        if (isStale()) return;
         setIsLoading(false);
       }
     } else {
@@ -1155,6 +1202,7 @@ export default function Schedule() {
       const scheduleDataRaw = getCache<FilterGames>('scheduleData');
       if (scheduleDataRaw) {
         try {
+          if (isStale()) return;
           setGames(scheduleDataRaw);
         } catch (e) {
           console.error('cached schedule parse failed', e);

@@ -18,6 +18,23 @@ The successive bounds added on the league-results route (`GET /games/league/:lea
 - **`backend/src/games/tests/games.service.spec.ts`** — `findResultsByLeague` suite back to the retention-window / 5000-cap assertions.
 - **Docs** — `frontend/docs/schedule.tsx.md`, `backend/docs/games/games.service.ts.md`, `backend/docs/games/games.controller.ts.md` restored.
 
+## Fixed: request storm on rapid team/league selection in Schedule
+
+Every team/league change used to relaunch a chain of 2–3 sequential API calls without cancelling previous
+in-flight requests, piling up HTTP calls on the backend.
+
+### Changes
+
+- **`frontend/app/(tabs)/schedule.tsx`** — added a 300 ms debounce (`debounceTimerRef`) on selection changes,
+  an `AbortController` (`abortControllerRef`) that cancels the previous request before starting a new one,
+  and a `fetchSequenceRef` guard so responses from a superseded selection are ignored before every
+  `setGames`/`setResults`/`setIsLoading`.
+- **`frontend/utils/fetchData.ts`** — `fetchWithTimeout()` and `fetchWithCacheStrategy()` accept an optional
+  `signal?: AbortSignal`; when aborted the error propagates immediately (no cache fallback, no retry).
+  `fetchRemainingGamesByTeam()`, `fetchResultsByTeam()`, `fetchResultsByLeague()` and
+  `fetchRemainingGamesByLeague()` forward the signal.
+- **Docs** — `frontend/docs/schedule.tsx.md`, `frontend/docs/fetchData.ts.md` updated (new refs + abort flow).
+
 ## Changed: Schedule screen no longer shows a blank screen for invalid league/team params
 
 When the Schedule screen is opened with URL params that do not match any known league or team (e.g. `/schedule?league=NBL&team=NBL-TET`), it previously ended with an empty `games` state and a blank/loading screen because `getGamesFromApi()` was never triggered.

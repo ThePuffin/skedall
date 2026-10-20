@@ -281,19 +281,36 @@ const fetchWithTimeout = (
   url: string,
   timeoutMs: number = 6000,
   options: RequestInit = {},
+  signal?: AbortSignal,
 ) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
+  let externalAbortListener: (() => void) | null = null;
+  if (signal) {
+    if (signal.aborted) {
+      controller.abort();
+    } else {
+      externalAbortListener = () => controller.abort();
+      signal.addEventListener('abort', externalAbortListener);
+    }
+  }
+
   const mergedOptions: RequestInit = { ...options, signal: controller.signal };
+
+  const removeListener = () => {
+    if (externalAbortListener) signal.removeEventListener('abort', externalAbortListener);
+  };
 
   return fetch(url, mergedOptions)
     .then((res) => {
       clearTimeout(timeout);
+      removeListener();
       return res;
     })
     .catch((error) => {
       clearTimeout(timeout);
+      removeListener();
       throw error;
     });
 };
@@ -306,14 +323,19 @@ const fetchWithCacheStrategy = async <T>(
   customSaveCache?: (data: T) => void,
   retryTimeout: number = 10000,
   storage: Storage = localStorage,
+  signal?: AbortSignal,
 ): Promise<T> => {
   try {
-    const res = await fetchWithTimeout(url, 5000);
+    const res = await fetchWithTimeout(url, 5000, {}, signal);
     const data = (await res.json()) as T;
     if (cacheKey) saveCache(cacheKey, data, storage);
     if (customSaveCache) customSaveCache(data);
     return data;
-  } catch {
+  } catch (error) {
+    // If the caller aborted the request, do not fall back to cache or retry:
+    // propagate the abort so the UI can ignore the stale response.
+    if (signal?.aborted) throw error;
+
     console.warn(`Fetch failed for ${url} (5s). Checking cache...`);
 
     let cached: T | null = null;
@@ -332,7 +354,7 @@ const fetchWithCacheStrategy = async <T>(
     await new Promise((resolve) => setTimeout(resolve, 10000));
 
     try {
-      const res = await fetchWithTimeout(url, retryTimeout);
+      const res = await fetchWithTimeout(url, retryTimeout, {}, signal);
       const data = (await res.json()) as T;
       if (cacheKey) saveCache(cacheKey, data, storage);
       if (customSaveCache) customSaveCache(data);
@@ -618,6 +640,7 @@ export const restrictToSelectableTeams = (
 export const fetchRemainingGamesByTeam = async (
   teamSelected: string,
   startDate?: string,
+  signal?: AbortSignal,
 ) => {
   const teamIds = getOlympicTeamIds(teamSelected);
   const cacheTeamId = teamIds.join(",");
@@ -653,6 +676,7 @@ export const fetchRemainingGamesByTeam = async (
       }
     },
     60000,
+    signal,
   );
 };
 
@@ -727,6 +751,7 @@ export const fetchRecentFormGames = async (
 export const fetchResultsByTeam = async (
   teamSelected: string,
   startDate?: string,
+  signal?: AbortSignal,
 ) => {
   const teamIds = getOlympicTeamIds(teamSelected);
   let url = `${EXPO_PUBLIC_API_BASE_URL}/games/team/${teamIds.join(",")}/results`;
@@ -740,6 +765,7 @@ export const fetchResultsByTeam = async (
     undefined,
     undefined,
     60000,
+    signal,
   );
 };
 
@@ -747,6 +773,7 @@ export const fetchResultsByLeague = async (
   league: string,
   startDate?: string,
   maxResults?: number,
+  signal?: AbortSignal,
 ) => {
   let url = `${EXPO_PUBLIC_API_BASE_URL}/games/league/${league}/results`;
   if (startDate) {
@@ -762,6 +789,7 @@ export const fetchResultsByLeague = async (
     undefined,
     undefined,
     60000,
+    signal,
   );
 };
 
@@ -771,6 +799,7 @@ export const fetchRemainingGamesByLeague = async (
   skip?: number,
   startDate?: string,
   isHome?: boolean,
+  signal?: AbortSignal,
 ) => {
   let cacheKey = `games_league_${league}`;
   if (limit) {
@@ -811,6 +840,7 @@ export const fetchRemainingGamesByLeague = async (
     undefined,
     undefined,
     60000,
+    signal,
   );
 };
 

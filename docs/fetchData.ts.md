@@ -32,11 +32,13 @@ Reads and decompresses cached data. Returns `null` if missing or corrupted (clea
 
 Checks if cache is still valid based on timestamp and max duration in hours.
 
-### `fetchWithTimeout(url, timeoutMs, options?)`
+### `fetchWithTimeout(url, timeoutMs, options?, signal?)`
 
-Wraps `fetch` with an `AbortController` timeout.
+Wraps `fetch` with an `AbortController` timeout. Accepts an optional external
+`AbortSignal`: when it aborts, the underlying `fetch` is aborted immediately
+without falling back to cache or retrying.
 
-### `fetchWithCacheStrategy(url, cacheKey, emptyValue, customGetCache?, customSaveCache?, retryTimeout?, storage?)`
+### `fetchWithCacheStrategy(url, cacheKey, emptyValue, customGetCache?, customSaveCache?, retryTimeout?, storage?, signal?)`
 
 Core fetch strategy:
 
@@ -46,6 +48,14 @@ Core fetch strategy:
 4. If cache valid: return cached data
 5. If cache invalid: wait 10s, retry with `retryTimeout`
 6. If retry fails: return `emptyValue`
+
+When `signal` aborts, the error propagates immediately (no cache fallback, no
+retry) so the caller can ignore a stale response from a superseded request.
+
+All game-fetching helpers (`fetchRemainingGamesByTeam`, `fetchResultsByTeam`,
+`fetchResultsByLeague`, `fetchRemainingGamesByLeague`) accept an optional
+`signal?: AbortSignal` as their last parameter and forward it to
+`fetchWithCacheStrategy`.
 
 ## API Functions
 

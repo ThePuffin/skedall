@@ -37,6 +37,14 @@ Team selectors use stable callback identifiers (`teams` and `teamsFilter`). `Sel
 | `showPreviousScores`   | `boolean`     | Whether to show past results                |
 | `hasPreviousHistory`   | `boolean`     | Whether the `closest` route reported a `previousDate` for the current selection |
 | `closestRequestRef`    | `Ref<string>` | Dedupe key (`team:<id>` or `league:<code>`) of the last `closest` request |
+| `fetchSequenceRef`     | `Ref<number>` | Monotonically increasing sequence; every (re)start of `getGamesFromApi`   |
+|                        |               | bumps it so stale responses from a superseded team selection are ignored  |
+|                        |               | before every `setState`                                                   |
+| `abortControllerRef`   | `Ref<AbortController>` | Holds the `AbortController` of the current request; aborted when the   |
+|                        |               | selection changes or the effect unmounts, so in-flight HTTP calls are     |
+|                        |               | cancelled instead of piling up                                            |
+| `debounceTimerRef`     | `Ref<Timeout>` | Debounce timer (300 ms) on team/league selection changes: only the last   |
+|                        |               | selection within the window fires the API chain                           |
 | `isTeamAccordionOpen`  | `boolean`     | Accordion state for team filter. Defaults to `true` (open on every screen size) |
 | `isDateAccordionOpen`  | `boolean`     | Accordion state for date filter. Defaults to `width >= ACCORDION_MAX_WIDTH` — closed on medium screens and open on large screens |
 | `teamAccordionLabel`   | `string`      | Dynamic label for team/league accordion     |
@@ -156,6 +164,21 @@ if (monthFilter.length > 0) {
 ```
 
 Also changed `showTeamFilter` from `> 1` to `> 0` so the filter shows even with a single opponent.
+
+### Request storm protection (team/league selection changes)
+
+When the user switches teams rapidly, each change used to relaunch a chain of 2–3 sequential API calls
+without cancelling previous in-flight requests. `schedule.tsx` now:
+
+1. **Debounces** the selection change by 300 ms (`debounceTimerRef`): only the last selection within the
+   window actually fires the API chain.
+2. **Aborts** the previous request via `AbortController` (`abortControllerRef`) before starting a new one,
+   so HTTP calls are cancelled server-side instead of stacking up.
+3. **Guards against stale responses** with `fetchSequenceRef`: every `getGamesFromApi` call bumps a
+   sequence number, and every `setGames`/`setResults`/`setIsLoading` returns early if the response belongs
+   to a superseded selection (`fetchSequenceRef.current !== seq`).
+
+The effect cleanup aborts the controller and clears the debounce timer on unmount or re-run.
 
 ## Data Flow
 
