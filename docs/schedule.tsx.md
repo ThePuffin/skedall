@@ -80,12 +80,13 @@ Called when the user changes the league. Resets filters, updates URL params, sel
 
 ### `getGamesFromApi()`
 
-Fetches games from the API:
+Fetches games from the API with a stale-while-revalidate strategy for results:
 
 - If `teamSelected === 'all'`: fetches all games for the league
 - Otherwise: fetches remaining games for the selected team; Olympic country ids cover both hockey and basketball for the same gender
-- If `showPreviousScores`: also fetches results
-- Caches data in localStorage via `saveCache('scheduleData', ...)`
+- **Results are shown from cache immediately** (`scheduleResults_<team|league>` in localStorage) so the UI is never blocked waiting for live-score updates
+- **Results are refreshed in the background** (`fetchResultsByTeam` / `fetchResultsByLeague` fired non-blocking); when complete, the cache and UI are updated with the freshest scores
+- Caches games data in localStorage via `saveCache('scheduleData', ...)`
 
 The Olympic team selector groups hockey and basketball roster entries by country and gender into a single option labelled with the country name only. The opponent selector uses the same country/gender identity so choosing a country applies to either sport.
 
@@ -188,7 +189,10 @@ whole chain is cancelled, not only its first call.
 ## Data Flow
 
 1. On mount (after `firestoreReady`), teams are fetched and selection is restored
-2. `getGamesFromApi()` fetches games for the selected team
+2. `getGamesFromApi()` fetches games for the selected team:
+   - Cached results (`scheduleResults_<team|league>`) are displayed immediately if `showPreviousScores`
+   - Games are fetched from the API (loading indicator shown)
+   - Results are refreshed in the background; fresh scores replace the cache once the fetch settles
 3. `visibleGamesByMonth` groups games by month
 4. `uniqueTeamsFromGames` builds the opponent list (respecting month filter)
 5. UI renders filters + accordions per month

@@ -1106,6 +1106,22 @@ export default function Schedule() {
     if (teamSelected && teamSelected.length !== 0) {
       setIsLoading(true);
       try {
+        // --- Stale-while-revalidate: show cached results immediately ---
+        // The cron (fetchAndApplyScores) already keeps backend results fresh.
+        // Display the last known results instantly instead of waiting for the
+        // potentially slow live-score refresh, then update in the background.
+        let resultsCacheKey = '';
+        if (showPreviousScores) {
+          resultsCacheKey = `scheduleResults_${teamSelected === 'all'
+            ? 'league:' + (localStorage.getItem('leagueSelected') || leaguesAvailable[0])
+            : 'team:' + teamSelected}`;
+          const cachedResults = getCache<FilterGames>(resultsCacheKey);
+          if (cachedResults && Object.keys(cachedResults).length > 0) {
+            if (isStale()) return;
+            setResults(cachedResults);
+          }
+        }
+
         let scheduleData: FilterGames;
         const scheduleDataStored = getCache<FilterGames>('scheduleData') || {};
         const scheduleKeys = Object.keys(scheduleDataStored);
@@ -1127,9 +1143,10 @@ export default function Schedule() {
             setGames({});
           }
         }
+        let selectionLeague = '';
         if (teamSelected === 'all') {
           const storedLeague = localStorage.getItem('leagueSelected');
-          const selectionLeague = storedLeague || leaguesAvailable[0];
+          selectionLeague = storedLeague || leaguesAvailable[0];
           const smallScheduleData = await smallFetchRemainingGamesByLeague(selectionLeague, signal);
           if (isStale()) return;
           saveCache('scheduleData', smallScheduleData);
@@ -1146,23 +1163,7 @@ export default function Schedule() {
           );
           if (isStale()) return;
           scheduleData = mergeGames(smallScheduleData, remainingScheduleData);
-          if (showPreviousScores) {
-            const resultsByLeague = await fetchResultsByLeague(selectionLeague, undefined, undefined, signal);
-            if (isStale()) return;
-            setResults(resultsByLeague);
-          } else {
-            if (isStale()) return;
-            setResults({});
-          }
         } else {
-          if (showPreviousScores) {
-            const teamResultsByDay = await fetchResultsByTeam(teamSelected, undefined, signal);
-            if (isStale()) return;
-            setResults(teamResultsByDay);
-          } else {
-            if (isStale()) return;
-            setResults({});
-          }
           scheduleData = await fetchRemainingGamesByTeam(teamSelected, undefined, signal);
           if (isStale()) return;
         }
@@ -1183,6 +1184,29 @@ export default function Schedule() {
         if (isStale()) return;
         setGames(removeOldGames(scheduleData));
         setGamesTeamIds(getTeamIdsForSelection(teamSelected));
+
+        // --- Background results refresh (non-blocking) ---
+        // Games are already on screen. Fetch updated scores in the background
+        // and replace the cached results once the refresh completes.
+        if (showPreviousScores && resultsCacheKey) {
+          const refreshResults = async () => {
+            try {
+              let freshResults: FilterGames = {};
+              if (teamSelected === 'all') {
+                freshResults = await fetchResultsByLeague(selectionLeague, undefined, undefined, signal);
+              } else {
+                freshResults = await fetchResultsByTeam(teamSelected, undefined, signal);
+              }
+              if (isStale()) return;
+              setResults(freshResults);
+              saveCache(resultsCacheKey, freshResults);
+            } catch (error) {
+              if (signal?.aborted) return;
+              console.error('Background results refresh failed:', error);
+            }
+          };
+          void refreshResults();
+        }
       } catch (error) {
         // Aborted requests are expected when the user switches teams quickly.
         if (signal?.aborted) return;

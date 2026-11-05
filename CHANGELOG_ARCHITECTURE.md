@@ -4,6 +4,21 @@
 
 
 
+## Added: stale-while-revalidate for results on the Schedule screen
+
+When many games are in progress simultaneously, fetching results used to block the UI (`isLoading` stayed `true` until `fetchResultsByTeam` / `fetchResultsByLeague` completed). The Schedule screen now follows a stale-while-revalidate strategy:
+
+- **Cached results are displayed immediately** — the last known results stored under `scheduleResults_<team|league>` in localStorage are shown right away when `showPreviousScores` is enabled, with no network wait
+- **Games load normally** — remaining/upcoming games are fetched from the API with the loading indicator
+- **Results refresh in the background** — a fire-and-forget fetch updates scores without blocking; when it settles, the UI and the localStorage cache are replaced with the freshest results
+
+### Changes
+
+- **`frontend/app/(tabs)/schedule.tsx`** — `getGamesFromApi()` now reads cached results (`scheduleResults_<team|league>`) and calls `setResults()` synchronously before any network call; the inline `await fetchResultsByTeam` / `fetchResultsByLeague` + `setResults` was removed from both the `"all"` and team branches and replaced with a non-blocking background refresh (`void refreshResults()`) that updates state and cache once the fetch settles
+- **`frontend/docs/schedule.tsx.md`** — `getGamesFromApi()` and Data Flow sections updated to describe the stale-while-revalidate results behavior
+
+
+
 ## Reduced: leagues cache on the index page (stale-while-revalidate: 72 h valid, background refresh after 6 h)
 
 The `leagues` cache used by the index page now follows a stale-while-revalidate strategy:
