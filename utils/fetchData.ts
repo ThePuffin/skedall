@@ -468,30 +468,71 @@ export const fetchGamesByLeagueDay = async (
   return data?.groups ?? [];
 };
 
+// Maximum validity of the leagues cache used by the index page. A cached value
+// is still returned to the UI within this window (stale-while-revalidate) with
+// no network call at all.
+const LEAGUES_CACHE_TTL_HOURS = 72;
+
+// If the cached value is older than this, a background refresh is triggered so
+// the list stays in sync (e.g. after a timezone change). The UI is never
+// blocked: the cached value is returned immediately and the cache is updated
+// once the background fetch settles.
+const LEAGUES_BACKGROUND_REFRESH_HOURS = 6;
+
+/** Fetches the leagues from the API, updates the cache and notifies the UI.
+ *  Used both for foreground fetches (cache expired) and background refreshes
+ *  (cache stale but still usable). */
+const fetchLeaguesData = async (
+  cacheKey: string,
+  setLeaguesAvailable: (leagues: string[]) => void,
+): Promise<string[]> => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+
+  try {
+    const res = await fetch(`${EXPO_PUBLIC_API_BASE_URL}/teams/leagues`, {
+      signal: controller.signal,
+    });
+    const data = (await res.json()) as string[];
+    saveCache(cacheKey, data);
+    setLeaguesAvailable(data);
+    return data;
+  } catch (error) {
+    console.warn("Failed to refresh leagues cache", error);
+    return [];
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 export const fetchLeagues = async (
   setLeaguesAvailable: (leagues: string[]) => void,
 ) => {
   const cacheKey = "leagues";
+  const now = Date.now();
 
-  if (isCacheValid(cacheKey, 24)) {
-    const cached = getCache<string[]>(cacheKey);
-    if (cached) {
-      console.info("Using cached leagues");
-      setLeaguesAvailable(cached);
-      return cached;
+  const cached = getCache<string[]>(cacheKey);
+  const timestampStr = localStorage.getItem(`${cacheKey}_timestamp`);
+  const timestamp = timestampStr ? Number.parseInt(timestampStr, 10) : NaN;
+  const ttlMs = LEAGUES_CACHE_TTL_HOURS * 60 * 60 * 1000;
+  const isFresh = !Number.isNaN(timestamp) && now - timestamp < ttlMs;
+
+  // Cache hit and still fresh (< 24 h): return immediately without network.
+  if (isFresh && cached) {
+    console.info("Using cached leagues");
+    setLeaguesAvailable(cached);
+
+    // Stale-but-valid: trigger a background refresh if older than 6 h. This
+    // does not block the UI — the cached value is returned right away.
+    if (!Number.isNaN(timestamp) && now - timestamp > LEAGUES_BACKGROUND_REFRESH_HOURS * 60 * 60 * 1000) {
+      void fetchLeaguesData(cacheKey, setLeaguesAvailable);
     }
+
+    return cached;
   }
 
-  const data = await fetchWithCacheStrategy<string[]>(
-    `${EXPO_PUBLIC_API_BASE_URL}/teams/leagues`,
-    cacheKey,
-    [],
-    undefined,
-    undefined,
-    60000,
-  );
-  setLeaguesAvailable(data);
-  return data;
+  // Cache missing or expired (> 24 h): fetch and wait.
+  return fetchLeaguesData(cacheKey, setLeaguesAvailable);
 };
 
 export const fetchTeams = async (): Promise<Team[]> => {

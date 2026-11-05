@@ -73,7 +73,15 @@ Fetches games for a specific date, **grouped by league** (`GET /games/league-day
 
 ### `fetchLeagues(setLeaguesAvailable)`
 
-Fetches available leagues. Cached for 24 hours.
+Fetches available leagues using a stale-while-revalidate strategy:
+
+- The cached value is returned immediately for up to **72 h** (no network call at all).
+- If the cached value is older than **6 h**, a background refresh is triggered
+  so the list stays in sync (e.g. after a timezone change) — the UI is never
+  blocked, the cached value is returned right away and the cache is updated
+  once the background fetch settles.
+- If the cache is missing or older than 72 h, the call fetches synchronously
+  and waits for the response.
 
 ### `fetchTeams()`
 

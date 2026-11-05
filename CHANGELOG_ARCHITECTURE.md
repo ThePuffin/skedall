@@ -3,6 +3,26 @@
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
 
+
+## Reduced: leagues cache on the index page (stale-while-revalidate: 72 h valid, background refresh after 6 h)
+
+The `leagues` cache used by the index page now follows a stale-while-revalidate strategy:
+- The cached value is returned immediately for up to **72 h** (no network call at all).
+- If the cached value is older than **6 h**, a background refresh is triggered so
+  the list stays in sync (e.g. after a timezone change) — the UI is never blocked,
+  the cached value is returned right away and the cache is updated once the
+  background fetch settles.
+- If the cache is missing or older than 72 h, the call fetches synchronously
+  and waits for the response.
+
+### Changes
+
+- **`frontend/utils/fetchData.ts`** — `fetchLeagues()` implements stale-while-revalidate
+  with `LEAGUES_CACHE_TTL_HOURS = 72` and `LEAGUES_BACKGROUND_REFRESH_HOURS = 6`,
+  plus a new internal `fetchLeaguesData()` helper used for both foreground and
+  background fetches.
+- **`frontend/docs/fetchData.ts.md`** — `fetchLeagues()` strategy updated.
+
 ## Added: request cancellation (AbortController) on navigation / parameter change across all screens
 
 Every front-to-back API call can now be cancelled when the user changes page, date, or filter parameters, preventing useless backend calls from piling up.
