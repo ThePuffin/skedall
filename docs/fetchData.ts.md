@@ -53,17 +53,17 @@ When `signal` aborts, the error propagates immediately (no cache fallback, no
 retry) so the caller can ignore a stale response from a superseded request.
 
 All game-fetching helpers (`fetchRemainingGamesByTeam`, `fetchResultsByTeam`,
-`fetchResultsByLeague`, `fetchRemainingGamesByLeague`) accept an optional
-`signal?: AbortSignal` as their last parameter and forward it to
+`fetchResultsByLeague`, `fetchRemainingGamesByLeague`, `smallFetchRemainingGamesByLeague`)
+accept an optional `signal?: AbortSignal` as their last parameter and forward it to
 `fetchWithCacheStrategy`.
 
 ## API Functions
 
-### `fetchGamesByHour(date, limit?, skip?)`
+### `fetchGamesByHour(date, limit?, skip?, signal?)`
 
-Fetches games for a specific date, grouped by hour. Uses sessionStorage with 2-minute TTL. Includes `leagues` param from `leaguesSelected` cache.
+Fetches games for a specific date, grouped by hour. Uses sessionStorage with 2-minute TTL. Includes `leagues` param from `leaguesSelected` cache. Accepts an optional `AbortSignal` to cancel the request.
 
-### `fetchGamesByLeagueDay(date, limit?, skip?)`
+### `fetchGamesByLeagueDay(date, limit?, skip?, signal?)`
 
 Fetches games for a specific date, **grouped by league** (`GET /games/league-day/:gameDate`), used by the day view for **past dates**. Returns `LeagueDayGroup[]` (the `groups` array of the response), one entry per league in alphabetical order (games oldest-to-newest within each group). The route takes no `favoriteTeams` param at all (support removed from the API): favorite games are filtered **client-side** by the star FAVORITES chip of the day view, inside each league group.
 
@@ -149,17 +149,27 @@ game, so it returned an incomplete history for the opponent.
   the duplicates are not served anymore — bumping it is the way to invalidate this cache from the
   server side.
 
-### `fetchResultsByLeague(league, startDate?, maxResults?)`
+### `fetchResultsByLeague(league, startDate?, maxResults?, signal?)`
 
-Fetches past results for a league.
+Fetches past results for a league. Accepts an optional `AbortSignal`.
 
-### `fetchRemainingGamesByLeague(league, limit?, skip?, startDate?, isHome?)`
+### `fetchResultsByTeam(teamSelected, startDate?, signal?)`
 
-Fetches remaining games for a league with optional pagination and home-only filter.
+Fetches past results for a team. Accepts an optional `AbortSignal`.
 
-### `smallFetchRemainingGamesByLeague(league)`
+### `fetchRemainingGamesByTeam(teamSelected, startDate?, signal?)`
+
+Fetches the remaining games of a team. Accepts an optional `AbortSignal`.
+
+### `fetchRemainingGamesByLeague(league, limit?, skip?, startDate?, isHome?, signal?)`
+
+Fetches remaining games for a league with optional pagination and home-only filter. Accepts an optional `AbortSignal`.
+
+### `smallFetchRemainingGamesByLeague(league, signal?)`
 
 Fetches a small batch (50 games, home only) for a league — used for quick initial load.
+Accepts an optional `AbortSignal` to cancel the request when the user navigates away
+or changes parameters.
 
 ### `refreshGamesLeague(league)`
 
@@ -169,26 +179,31 @@ Triggers a backend refresh for a league's games (POST).
 
 Triggers a backend refresh for teams (POST).
 
-### `fetchGames(date)`
+### `fetchGames(date, signal?)`
 
-Fetches games for a specific date (no cache).
+Fetches games for a specific date (no cache). Accepts an optional `AbortSignal` to
+cancel the request when the user navigates away or changes parameters.
 
-### `fetchLiveScores(gameIds)`
+### `fetchLiveScores(gameIds, signal?)`
 
-Fetches live scores for a batch of game IDs (POST, 15s timeout).
+Fetches live scores for a batch of game IDs (POST, 15s timeout). Accepts an optional
+`AbortSignal` to cancel the request when the user navigates away or changes parameters.
 
-### `fetchDateRangeFromApi(leagues?, force?)`
+### `fetchDateRangeFromApi(leagues?, force?, signal?)`
 
 Fetches min/max date limits from `GET /games/dates/range`. An optional `leagues?`
 array is sent as the `leagues` query param (joined with `+`) and scopes the 24h
 cache key (`date_range_limits_<LEAGUES>`). Passing `force = true` bypasses the
-24h cache and always hits the API.
+24h cache and always hits the API. Accepts an optional `AbortSignal` to cancel the
+request when the user navigates away or changes parameters.
 
-### `fetchClosestDates({ league?, teamSelectedId?, date? })`
+### `fetchClosestDates({ league?, teamSelectedId?, date? }, signal?)`
 
 Calls `GET /games/dates/closest` with `leagues` and/or `teamSelectedIds` query params.
 Returns `{ previousDate, nextDate }` (nullable). No cache — used when the Schedule
 screen has no upcoming games to decide whether to offer the "Enable history" button.
+Accepts an optional `AbortSignal` to cancel the request when the user navigates away
+or changes parameters.
 
 ## Team Games Cache
 

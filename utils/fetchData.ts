@@ -299,7 +299,9 @@ const fetchWithTimeout = (
   const mergedOptions: RequestInit = { ...options, signal: controller.signal };
 
   const removeListener = () => {
-    if (externalAbortListener) signal.removeEventListener('abort', externalAbortListener);
+    if (externalAbortListener && signal) {
+      signal.removeEventListener('abort', externalAbortListener);
+    }
   };
 
   return fetch(url, mergedOptions)
@@ -370,6 +372,7 @@ export const fetchGamesByHour = async (
   date: string,
   limit?: number,
   skip?: number,
+  signal?: AbortSignal,
 ): Promise<{ [key: string]: GameFormatted[] }> => {
   const leaguesSelected = getCache<string[]>("leaguesSelected") || [];
   let cacheKey = `games_hour_${date}`;
@@ -410,6 +413,7 @@ export const fetchGamesByHour = async (
     undefined,
     100000,
     sessionStorage,
+    signal,
   );
 };
 
@@ -417,6 +421,7 @@ export const fetchGamesByLeagueDay = async (
   date: string,
   limit?: number,
   skip?: number,
+  signal?: AbortSignal,
 ): Promise<LeagueDayGroup[]> => {
   const leaguesSelected = getCache<string[]>("leaguesSelected") || [];
   let cacheKey = `games_league_day_${date}`;
@@ -457,6 +462,7 @@ export const fetchGamesByLeagueDay = async (
     undefined,
     100000,
     sessionStorage,
+    signal,
   );
 
   return data?.groups ?? [];
@@ -676,6 +682,7 @@ export const fetchRemainingGamesByTeam = async (
       }
     },
     60000,
+    undefined,
     signal,
   );
 };
@@ -765,6 +772,7 @@ export const fetchResultsByTeam = async (
     undefined,
     undefined,
     60000,
+    undefined,
     signal,
   );
 };
@@ -789,6 +797,7 @@ export const fetchResultsByLeague = async (
     undefined,
     undefined,
     60000,
+    undefined,
     signal,
   );
 };
@@ -840,12 +849,16 @@ export const fetchRemainingGamesByLeague = async (
     undefined,
     undefined,
     60000,
+    undefined,
     signal,
   );
 };
 
-export const smallFetchRemainingGamesByLeague = async (league: string) => {
-  return fetchRemainingGamesByLeague(league, 50, undefined, undefined, true);
+export const smallFetchRemainingGamesByLeague = async (
+  league: string,
+  signal?: AbortSignal,
+) => {
+  return fetchRemainingGamesByLeague(league, 50, undefined, undefined, true, signal);
 };
 
 export const refreshGamesLeague = async (league: string): Promise<void> => {
@@ -876,7 +889,10 @@ export const refreshTeams = async (endpoint: string): Promise<void> => {
   }
 };
 
-export const fetchGames = async (date: string): Promise<GameFormatted[]> => {
+export const fetchGames = async (
+  date: string,
+  signal?: AbortSignal,
+): Promise<GameFormatted[]> => {
   date = date || new Date().toISOString().split("T")[0];
   return fetchWithCacheStrategy<GameFormatted[]>(
     `${EXPO_PUBLIC_API_BASE_URL}/games/date/${date}`,
@@ -885,11 +901,14 @@ export const fetchGames = async (date: string): Promise<GameFormatted[]> => {
     undefined,
     undefined,
     10000,
+    undefined,
+    signal,
   );
 };
 
 export const fetchLiveScores = async (
   gameIds: string[],
+  signal?: AbortSignal,
 ): Promise<GameFormatted[]> => {
   if (gameIds.length === 0) return [];
 
@@ -904,6 +923,7 @@ export const fetchLiveScores = async (
         },
         body: JSON.stringify({ gameIds }),
       },
+      signal,
     );
 
     if (res.ok) {
@@ -916,11 +936,14 @@ export const fetchLiveScores = async (
   }
 };
 
-export const fetchClosestDates = async (params: {
-  league?: string;
-  teamSelectedId?: string;
-  date?: string;
-}): Promise<{ previousDate: string | null; nextDate: string | null }> => {
+export const fetchClosestDates = async (
+  params: {
+    league?: string;
+    teamSelectedId?: string;
+    date?: string;
+  },
+  signal?: AbortSignal,
+): Promise<{ previousDate: string | null; nextDate: string | null }> => {
   const query = new URLSearchParams();
   if (params.league) {
     query.append("leagues", params.league);
@@ -942,10 +965,16 @@ export const fetchClosestDates = async (params: {
     undefined,
     undefined,
     10000,
+    undefined,
+    signal,
   );
 };
 
-export const fetchDateRangeFromApi = async (leagues?: string[], force = false) => {
+export const fetchDateRangeFromApi = async (
+  leagues?: string[],
+  force = false,
+  signal?: AbortSignal,
+) => {
   try {
     const params = new URLSearchParams();
     if (leagues && leagues.length > 0) {
@@ -976,6 +1005,8 @@ export const fetchDateRangeFromApi = async (leagues?: string[], force = false) =
       undefined,
       undefined,
       60000,
+      undefined,
+      signal,
     );
     return dates;
   } catch (error) {

@@ -137,6 +137,11 @@ const GameofTheDayContent = () => {
   const { isScrollingHorizontally } = useHorizontalScroll();
   const allLeaguesList = Object.values(League);
   const currentDate = new Date();
+
+  // Abort in-flight API calls when the date or filters change, and guard
+  // against stale responses from superseded requests.
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const fetchSequenceRef = useRef(0);
   const [games, setGames] = useState<GameFormatted[]>([]);
   const [selectDate, setSelectDate] = useState<Date>(() => {
     if (dateParam) {
@@ -239,27 +244,30 @@ const GameofTheDayContent = () => {
     selectDateRef.current = selectDate;
   }, [selectDate]);
 
-  const fetchAndMergeLiveScores = useCallback(async (currentGames: GameFormatted[]) => {
-    const now = new Date();
-    const gamesToUpdate = currentGames.filter((g) => {
-      const startTime = new Date(g.startTimeUTC);
-      const hoursDiff = (now.getTime() - startTime.getTime()) / (1000 * 60 * 60);
-      return (
-        hoursDiff > -0.25 && g.gameStatus !== 'FINAL' && g.gameStatus !== 'FINISHED' && g.gameStatus !== 'POSTPONED'
-      );
-    });
+  const fetchAndMergeLiveScores = useCallback(
+    async (currentGames: GameFormatted[], signal?: AbortSignal) => {
+      const now = new Date();
+      const gamesToUpdate = currentGames.filter((g) => {
+        const startTime = new Date(g.startTimeUTC);
+        const hoursDiff = (now.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+        return (
+          hoursDiff > -0.25 && g.gameStatus !== 'FINAL' && g.gameStatus !== 'FINISHED' && g.gameStatus !== 'POSTPONED'
+        );
+      });
 
-    if (gamesToUpdate.length === 0) return null;
+      if (gamesToUpdate.length === 0) return null;
 
-    const ids = gamesToUpdate.map((g) => g.uniqueId);
-    const chunkSize = 6;
-    const chunks = [];
-    for (let i = 0; i < ids.length; i += chunkSize) {
-      chunks.push(ids.slice(i, i + chunkSize));
-    }
+      const ids = gamesToUpdate.map((g) => g.uniqueId);
+      const chunkSize = 6;
+      const chunks = [];
+      for (let i = 0; i < ids.length; i += chunkSize) {
+        chunks.push(ids.slice(i, i + chunkSize));
+      }
 
-    try {
-      const results = await Promise.all(chunks.map((chunk) => fetchLiveScores(chunk).catch(() => null)));
+      try {
+        const results = await Promise.all(
+          chunks.map((chunk) => fetchLiveScores(chunk, signal).catch(() => null)),
+        );
       const liveData = results.reduce<GameFormatted[]>((acc, res) => {
         if (Array.isArray(res)) {
           return acc.concat(res);
@@ -562,7 +570,7 @@ const GameofTheDayContent = () => {
   const visibleGroupCount = visibleSections.length;
 
   const getGamesFromApi = useCallback(
-    async (dateToFetch: Date) => {
+    async (dateToFetch: Date, signal?: AbortSignal) => {
       const YYYYMMDD = formatDateLocal(dateToFetch);
       const today = formatDateLocal(new Date());
 
@@ -577,10 +585,12 @@ const GameofTheDayContent = () => {
         // the payload. Favorite filtering is client-side (star chip of the
         // league filter), so the backend favorites section is not requested.
         try {
-          const groups = await fetchGamesByLeagueDay(YYYYMMDD, 1000);
+          const groups = await fetchGamesByLeagueDay(YYYYMMDD, 1000, undefined, signal);
+          if (signal?.aborted) return;
           setLeagueDayGroups(groups);
           setGames(dedupeGames(groups.flatMap((group) => group.games)));
         } catch (error: unknown) {
+          if (signal?.aborted) return;
           console.error(error);
           setLeagueDayGroups([]);
           setGames([]);
@@ -613,8 +623,8 @@ const GameofTheDayContent = () => {
           setGames(gamesToDisplay);
 
           // Try to update live scores immediately for cached content
-          fetchAndMergeLiveScores(gamesToDisplay).then((updated) => {
-            if (updated) {
+          fetchAndMergeLiveScores(gamesToDisplay, signal).then((updated) => {
+            if (updated && !signal?.aborted) {
               setGames(updated);
               gamesDayCache.current[YYYYMMDD] = updated;
             }
@@ -626,13 +636,14 @@ const GameofTheDayContent = () => {
 
       // Fetch from API if not in cache
       try {
-        const gamesByHourData = await fetchGamesByHour(YYYYMMDD, 1000);
+        const gamesByHourData = await fetchGamesByHour(YYYYMMDD, 1000, undefined, signal);
+        if (signal?.aborted) return;
         let allGames = Object.values(gamesByHourData).flat();
 
         // Try to update live scores immediately for new content
         if (YYYYMMDD === today) {
-          const updated = await fetchAndMergeLiveScores(allGames);
-          if (updated) {
+          const updated = await fetchAndMergeLiveScores(allGames, signal);
+          if (updated && !signal?.aborted) {
             allGames = updated;
           }
         }
@@ -652,6 +663,7 @@ const GameofTheDayContent = () => {
           persistPrunedGamesCache();
         }
       } catch (error: unknown) {
+        if (signal?.aborted) return;
         console.error(error);
         if (!cachedGames) {
           gamesDayCache.current[YYYYMMDD] = [];
@@ -690,7 +702,16 @@ const GameofTheDayContent = () => {
         setGames([]);
       }
 
-      getGamesFromApi(startDate).finally(() => {
+      // Abort any in-flight request from the previous date so a quick date
+      // switch does not pile up HTTP calls on the server.
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+
+      const seq = ++fetchSequenceRef.current;
+      getGamesFromApi(startDate, abortControllerRef.current.signal).finally(() => {
+        if (fetchSequenceRef.current !== seq) return;
         readonlyRef.current = false;
         setIsLoading(false);
       });
@@ -992,7 +1013,15 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     } else {
       // Re-fetch games for the current date while preserving the current filters
       // (leagues, team, active filter) instead of reloading the whole page.
-      return <NoResults onRetry={() => getGamesFromApi(selectDate)} />;
+      return <NoResults
+        onRetry={() => {
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
+          abortControllerRef.current = new AbortController();
+          getGamesFromApi(selectDate, abortControllerRef.current.signal);
+        }}
+      />;
     }
   }, [isLoading, getGamesFromApi, selectDate]);
 
@@ -1033,13 +1062,28 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
       if (isFiltered) {
         return (
           <NoResults
-            onRetry={() => getGamesFromApi(selectDate)}
+            onRetry={() => {
+              if (abortControllerRef.current) {
+                abortControllerRef.current.abort();
+              }
+              abortControllerRef.current = new AbortController();
+              getGamesFromApi(selectDate, abortControllerRef.current.signal);
+            }}
             onShowAll={() => handleFilterChange('ALL')}
             {...closestProps}
           />
         );
       }
-      return <NoResults onRetry={() => getGamesFromApi(selectDate)} {...closestProps} />;
+      return <NoResults
+        onRetry={() => {
+          if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+          }
+          abortControllerRef.current = new AbortController();
+          getGamesFromApi(selectDate, abortControllerRef.current.signal);
+        }}
+        {...closestProps}
+      />;
     }
 
     return (
@@ -1088,7 +1132,15 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
         gamesDayCache.current = {};
         saveCache('gamesDay', {});
         setIsLoading(true);
-        getGamesFromApi(selectDateRef.current).finally(() => setIsLoading(false));
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        const seq = ++fetchSequenceRef.current;
+        getGamesFromApi(selectDateRef.current, abortControllerRef.current.signal).finally(() => {
+          if (fetchSequenceRef.current !== seq) return;
+          setIsLoading(false);
+        });
       }
     };
     if (globalThis.window !== undefined) {
@@ -1133,7 +1185,11 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
       }
 
       try {
-        await getGamesFromApi(selectDate);
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        await getGamesFromApi(selectDate, abortControllerRef.current.signal);
       } finally {
         setIsLoading(false);
       }
@@ -1194,8 +1250,28 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
       setLeagueDayGroups([]);
       setGames([]);
     }
-    getGamesFromApi(d).finally(() => setIsLoading(false));
+    // Abort any in-flight request from the previous date so a quick date
+    // switch does not pile up HTTP calls on the server.
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+    const seq = ++fetchSequenceRef.current;
+    getGamesFromApi(d, abortControllerRef.current.signal).finally(() => {
+      if (fetchSequenceRef.current !== seq) return;
+      setIsLoading(false);
+    });
   }, [dateParam, selectDate, getGamesFromApi, router, minDate, maxDate]);
+
+  // Cancel any in-flight request when the component unmounts so a superseded
+  // request cannot update state after unmount.
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   useFocusEffect(
     useCallback(() => {

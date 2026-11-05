@@ -180,6 +180,11 @@ without cancelling previous in-flight requests. `schedule.tsx` now:
 
 The effect cleanup aborts the controller and clears the debounce timer on unmount or re-run.
 
+`getGamesFromApi(seq?, signal?)` forwards the signal to every helper it calls
+(`smallFetchRemainingGamesByLeague`, `fetchRemainingGamesByLeague`,
+`fetchResultsByLeague`, `fetchResultsByTeam`, `fetchRemainingGamesByTeam`), so the
+whole chain is cancelled, not only its first call.
+
 ## Data Flow
 
 1. On mount (after `firestoreReady`), teams are fetched and selection is restored

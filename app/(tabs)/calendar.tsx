@@ -103,6 +103,7 @@ export default function Calendar() {
   const [gamesModalVisible, setGamesModalVisible] = useState(false);
   const isRestoringSelectionRef = useRef(false);
   const isScrollingHorizontallyRef = useRef(isScrollingHorizontally);
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [isTeamAccordionOpen, setIsTeamAccordionOpen] = useState(true);
   const [isDateAccordionOpen, setIsDateAccordionOpen] = useState(false);
   const [datepickerOpen, setDatepickerOpen] = useState(false);
@@ -236,7 +237,11 @@ export default function Calendar() {
         startDate: beginDate,
         endDate: endDate,
       });
-      getGamesFromApi(startStr, endStr);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
+      getGamesFromApi(startStr, endStr, abortControllerRef.current.signal);
     }
   };
 
@@ -425,7 +430,11 @@ export default function Calendar() {
   }, [getSelectedTeams]);
 
   const getGamesFromApi = useCallback(
-    async (startDate: string | undefined = undefined, endDate: string | undefined = undefined): Promise<void> => {
+    async (
+      startDate: string | undefined = undefined,
+      endDate: string | undefined = undefined,
+      signal?: AbortSignal,
+    ): Promise<void> => {
       if (teamsSelected && teamsSelected.length !== 0) {
         let start = readableDate(dateRange.startDate);
         let end = readableDate(dateRange.endDate);
@@ -438,11 +447,15 @@ export default function Calendar() {
           const expandedTeamIds = Array.from(new Set(teamsSelected.flatMap(getOlympicTeamIds)));
           const response = await fetch(
             `${EXPO_PUBLIC_API_BASE_URL}/games/filter?startDate=${start}&endDate=${end}&teamSelectedIds=${expandedTeamIds.join(',')}`,
+            { signal },
           );
+          if (signal?.aborted) return;
           const gamesData = await response.json();
+          if (signal?.aborted) return;
           saveCache('gamesData', gamesData);
           setGames(gamesData);
         } catch (error: unknown) {
+          if (signal?.aborted) return;
           console.error(error);
         }
       }
@@ -456,7 +469,15 @@ export default function Calendar() {
     const end = endDate.toISOString();
     localStorage.setItem('startDate', start);
     localStorage.setItem('endDate', end);
-    await getGamesFromApi(start, end);
+
+    // Abort any in-flight request from a previous date range change so a quick
+    // switch does not pile up HTTP calls on the server.
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    await getGamesFromApi(start, end, abortControllerRef.current.signal);
     setDateRange({ startDate, endDate });
 
     const startStr = readableDate(startDate);
@@ -624,7 +645,11 @@ export default function Calendar() {
       const end = localStorage.getItem('endDate');
       if (start && end) {
         setDateRange({ startDate: new Date(start), endDate: new Date(end) });
-        getGamesFromApi(start, end);
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        getGamesFromApi(start, end, abortControllerRef.current.signal);
       }
     };
     if (globalThis.window !== undefined) {
@@ -745,12 +770,28 @@ export default function Calendar() {
 
   useEffect(() => {
     if (teamsSelected.length > 0) {
+      // Abort the previous in-flight request before starting a new one so a
+      // quick selection change does not pile up HTTP calls on the server.
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      abortControllerRef.current = new AbortController();
       async function fetchGames() {
-        await getGamesFromApi();
+        await getGamesFromApi(undefined, undefined, abortControllerRef.current!.signal);
       }
       fetchGames();
     }
-  }, [teamsSelected, teams]);
+  }, [teamsSelected, teams, getGamesFromApi]);
+
+  // Cancel any in-flight request when the component unmounts so a superseded
+  // request cannot update state after unmount.
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   // Swipe gesture to cycle through home / all / away filters.
   // IMPORTANT: panHandlers are attached ONLY to the games-cards container

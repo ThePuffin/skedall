@@ -3,6 +3,20 @@
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
 
+## Added: request cancellation (AbortController) on navigation / parameter change across all screens
+
+Every front-to-back API call can now be cancelled when the user changes page, date, or filter parameters, preventing useless backend calls from piling up.
+
+### Changes
+
+- **`frontend/utils/fetchData.ts`** — `fetchWithTimeout()` and `fetchWithCacheStrategy()` accept an optional `signal?: AbortSignal` as their last parameter and forward it to the underlying `fetch`. When the signal aborts, the error propagates immediately: no cache fallback and no retry, so a superseded request can never write stale data into the cache. All game-fetching helpers (`fetchGamesByHour`, `fetchGamesByLeagueDay`, `fetchGames`, `fetchLiveScores`, `fetchRemainingGamesByTeam`, `fetchResultsByTeam`, `fetchResultsByLeague`, `fetchRemainingGamesByLeague`, `smallFetchRemainingGamesByLeague`, `fetchDateRangeFromApi`, `fetchClosestDates`) now support cancellation.
+- **`frontend/app/(tabs)/schedule.tsx`** — the `getGamesFromApi(seq?, signal?)` chain forwards the signal to every helper it calls (`smallFetchRemainingGamesByLeague`, `fetchRemainingGamesByLeague`, `fetchResultsByLeague`, `fetchResultsByTeam`, `fetchRemainingGamesByTeam`). The 300 ms debounce on a team switch aborts the previous request, and the `fetchSequenceRef` guard ignores stale responses.
+- **`frontend/app/(tabs)/index.tsx`** — added `abortControllerRef` + `fetchSequenceRef` to `getGamesFromApi(dateToFetch, signal?)`. Any in-flight request is aborted when the date changes (slider, calendar, swipe, route param), on league update, on retry, and on unmount. Stale responses are ignored before every state update.
+- **`frontend/app/(tabs)/calendar.tsx`** — added `abortControllerRef` to `getGamesFromApi(startDate?, endDate?, signal?)`. The raw `fetch()` now passes `{ signal }`. Any in-flight request is aborted when the date range changes, when the team selection changes, on the `dateRangeUpdated` event, on mount re-initialization, and on unmount.
+- **Refresh screen untouched** — `frontend/app/refresh.tsx` (manual league/teams/scores refresh) intentionally keeps its long-running POST requests: aborting them would cancel a refresh the user explicitly asked for. `refreshGamesLeague()` and `refreshTeams()` therefore accept no `AbortSignal`.
+- **Docs** — `frontend/docs/fetchData.ts.md`, `frontend/docs/index.tsx.md`, `frontend/docs/calendar.tsx.md`, `frontend/docs/schedule.tsx.md` updated (signal parameters + abort flow).
+
+
 ## Reverted: league-results bounds on the Schedule "All" selection (performance issues)
 
 The successive bounds added on the league-results route (`GET /games/league/:league/results`) — a frontend `startDate` ("N years" window), then a backend default ("5000 results or 4 years", then "2500 results, no date bound, newest-first") — caused performance issues. They are fully reverted on both sides:

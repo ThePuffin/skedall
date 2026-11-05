@@ -1130,7 +1130,7 @@ export default function Schedule() {
         if (teamSelected === 'all') {
           const storedLeague = localStorage.getItem('leagueSelected');
           const selectionLeague = storedLeague || leaguesAvailable[0];
-          const smallScheduleData = await smallFetchRemainingGamesByLeague(selectionLeague);
+          const smallScheduleData = await smallFetchRemainingGamesByLeague(selectionLeague, signal);
           if (isStale()) return;
           saveCache('scheduleData', smallScheduleData);
           setGames(removeOldGames(smallScheduleData));

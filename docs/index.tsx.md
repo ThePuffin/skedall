@@ -79,20 +79,26 @@ Removes cached games older than yesterday. The restored `gamesDay` cache is prun
 
 Fetches live scores for games that started within the last 15 minutes and are not final. Chunks requests by 6 game IDs.
 
-### `getGamesFromApi(dateToFetch)`
+### `getGamesFromApi(dateToFetch, signal?)`
 
 Fetches games for a specific date:
 
-- **Past date** (`YYYYMMDD < today`): drops any cached flat games for that day and calls `fetchGamesByLeagueDay(YYYYMMDD, 1000)` (no `favoriteTeams` param: favorites are filtered client-side by the star chip) → sets `leagueDayGroups` from the returned sections and `games` from `dedupeGames(groups.flatMap(g => g.games))`. On failure both are reset to empty.
+- **Past date** (`YYYYMMDD < today`): drops any cached flat games for that day and calls `fetchGamesByLeagueDay(YYYYMMDD, 1000, undefined, signal)` (no `favoriteTeams` param: favorites are filtered client-side by the star chip) → sets `leagueDayGroups` from the returned sections and `games` from `dedupeGames(groups.flatMap(g => g.games))`. On failure both are reset to empty.
 - Checks cache first (`gamesDayCache`)
 - For today: merges recent yesterday games (within 3 hours, no score)
 - Fetches from API if not cached
 - Updates live scores immediately for today's games
 - Prefetches next 5 days for today
 
+Accepts an optional `AbortSignal`. When aborted, all subsequent state updates are skipped so a superseded request cannot overwrite a newer one.
+
 ### `handleDateChange(startDate, endDate)`
 
-Called when the user changes the date. Updates URL params, scrolls to top, fetches games.
+Called when the user changes the date. Aborts any in-flight request from the previous date before starting a new one (via `abortControllerRef`), updates URL params, scrolls to top, fetches games.
+
+## Request cancellation on navigation / parameter change
+
+When the user changes the date, switches tabs, or triggers a retry, any in-flight HTTP request from the previous call is cancelled via `AbortController` (`abortControllerRef`). A `fetchSequenceRef` guard ensures responses from superseded requests are ignored before every state update. On component unmount the controller is aborted so no state update can happen after unmount.
 
 ### `handleFilterChange(filter)`
 
