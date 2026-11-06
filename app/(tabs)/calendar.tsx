@@ -377,7 +377,7 @@ export default function Calendar() {
         isRestoringSelectionRef.current = false;
       }
     },
-    [allowedLeagues, storeTeamsSelected],
+    [storeTeamsSelected],
   );
 
   const getStoredGames = useCallback(() => {
@@ -416,6 +416,8 @@ export default function Calendar() {
       isRestoringSelectionRef.current = false;
     }
   }, [teams, getSelectedTeams, getStoredGames]);
+  const getStoredTeamsRef = useRef(getStoredTeams);
+  getStoredTeamsRef.current = getStoredTeams;
 
   const getTeamsFromApi = useCallback(async (): Promise<Team[]> => {
     try {
@@ -428,6 +430,8 @@ export default function Calendar() {
       return [];
     }
   }, [getSelectedTeams]);
+  const getTeamsFromApiRef = useRef(getTeamsFromApi);
+  getTeamsFromApiRef.current = getTeamsFromApi;
 
   const getGamesFromApi = useCallback(
     async (
@@ -462,6 +466,9 @@ export default function Calendar() {
     },
     [teamsSelected, dateRange],
   );
+  const initializeDateRangeRef = useRef(initializeDateRange);
+  initializeDateRangeRef.current = initializeDateRange;
+  const hasInitializedCalendarRef = useRef(false);
 
   const handleDateChange = async (startDate: Date, endDate: Date) => {
     setGames({});
@@ -712,9 +719,10 @@ export default function Calendar() {
   };
 
   useEffect(() => {
-    if (!firestoreReady) return;
-    initializeDateRange();
-    getStoredTeams();
+    if (!firestoreReady || hasInitializedCalendarRef.current) return;
+    hasInitializedCalendarRef.current = true;
+    void initializeDateRangeRef.current();
+    getStoredTeamsRef.current();
   }, [firestoreReady]);
 
   useFocusEffect(
@@ -726,7 +734,7 @@ export default function Calendar() {
   useEffect(() => {
     if (!firestoreReady) return;
     async function fetchTeams() {
-      const teamsData = await getTeamsFromApi();
+      const teamsData = await getTeamsFromApiRef.current();
       setTeams(teamsData);
     }
     fetchTeams();
@@ -764,9 +772,9 @@ export default function Calendar() {
     }
   }, [getTeamsFromApi]);
 
-  const handleHomeGameToggle = (value: HomeGameFilter) => {
+  const handleHomeGameToggle = useCallback((value: HomeGameFilter) => {
     setHomeGameVisibility(value);
-  };
+  }, []);
 
   useEffect(() => {
     if (teamsSelected.length > 0) {

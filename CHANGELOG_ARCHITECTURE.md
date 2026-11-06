@@ -15,6 +15,21 @@ and league order are unchanged.
   client-side priority and chronological sorting after filtering each league.
 - **`frontend/docs/index.tsx.md`** — documents the past-day game ordering.
 
+## Fixed: Frontend React hook dependency warnings
+
+Corrected the remaining React hook dependency warnings across the frontend.
+Effects and callbacks now use their required dependencies or current callback
+references, and date-list effects settle when their current range is valid.
+This keeps initialization and selection refreshes responsive without repeated
+state-update loops.
+
+### Changes
+
+- **`frontend/app/(tabs)/_layout.tsx`**, **`frontend/app/(tabs)/calendar.tsx`**,
+  **`frontend/app/(tabs)/schedule.tsx`**, **`frontend/components/CardLarge.tsx`**,
+  and **`frontend/components/SliderDatePicker.tsx`** — corrected hook dependencies
+  and stabilized callbacks/initialization where appropriate.
+
 
 ## Added: stale-while-revalidate for results on the Schedule screen
 
