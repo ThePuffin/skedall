@@ -28,7 +28,6 @@ import {
   fetchClosestDates,
   fetchGamesByHour,
   fetchGamesByLeagueDay,
-  fetchLeagues,
   fetchLiveScores,
   fetchTeams,
   getOlympicTeamIds,
@@ -131,7 +130,7 @@ const pruneOldGamesCache = (cache: { [key: string]: GameFormatted[] }) => {
 
 const GameofTheDayContent = () => {
   const { width } = useWindowDimensions();
-  const { user, firestoreReady } = useAuth();
+  const { firestoreReady } = useAuth();
   const router = useRouter();
   const { date: dateParam } = useLocalSearchParams<{ date: string }>();
   const { isScrollingHorizontally } = useHorizontalScroll();
@@ -163,7 +162,6 @@ const GameofTheDayContent = () => {
   // On medium screens only the date filter is open by default; on large screens everything starts open
   const [leagueAccordionExpanded, setLeagueAccordionExpanded] = useState<boolean>(width >= ACCORDION_MAX_WIDTH);
 
-  const [leaguesAvailable, setLeaguesAvailable] = useState<string[]>([]);
   const [retryCount, setRetryCount] = useState(0);
   const retryIntervals = useMemo(() => [1000, 10000, 20000, 30000], []);
   const [isLoading, setIsLoading] = useState(true);
@@ -525,11 +523,9 @@ const GameofTheDayContent = () => {
     return groups;
   }, [games, selectLeagues, teamSelectedId, selectedTeamUniqueId, activeFilter, favoriteTeams, gamesSelected]);
 
-  // Past days are rendered from the league groups built by the backend
-  // (`/games/league-day`). Only the client-side filters are applied here
-  // (selected leagues, team, favorites/bookmarks chips): the grouping and the
-  // group order come from the API. The star favorites chip filters
-  // favorite-team games inside each league group.
+  // Past days use the backend's league grouping and order. The client applies
+  // filters and prioritizes favorite-team games, then bookmarks, within each
+  // league while keeping every priority group in chronological order.
   const visibleLeagueGroups = useMemo(() => {
     const selectedTeam = selectedTeamUniqueId || teamSelectedId;
     const matchesFilters = (game: GameFormatted) =>
@@ -545,8 +541,23 @@ const GameofTheDayContent = () => {
       (activeFilter !== 'BOOKMARKS' ||
         gamesSelected.some((g) => g.uniqueId === game.uniqueId || g._id === game._id));
 
+    const getPastGamePriority = (game: GameFormatted) => {
+      if (getFavoriteGameIndex(game, favoriteTeams) !== -1) return 0;
+      if (gamesSelected.some((selected) => selected.uniqueId === game.uniqueId || selected._id === game._id)) {
+        return 1;
+      }
+      return 2;
+    };
+
     return leagueDayGroups
-      .map((group) => ({ ...group, games: group.games.filter(matchesFilters) }))
+      .map((group) => ({
+        ...group,
+        games: group.games.filter(matchesFilters).sort((a, b) => {
+          const priorityDifference = getPastGamePriority(a) - getPastGamePriority(b);
+          if (priorityDifference !== 0) return priorityDifference;
+          return new Date(a.startTimeUTC).getTime() - new Date(b.startTimeUTC).getTime();
+        }),
+      }))
       .filter((group) => group.games.length > 0);
   }, [leagueDayGroups, selectLeagues, teamSelectedId, selectedTeamUniqueId, activeFilter, favoriteTeams, gamesSelected]);
 
@@ -936,7 +947,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
 
   const displayScoreToggle = useCallback(() => {
     return <PageHeader rightElement={<ScoreToggle value={showScores} onValueChange={handleScoreToggle} />} />;
-  }, [showScores, handleScoreToggle, user]);
+  }, [showScores, handleScoreToggle]);
 
   const displayFilters = useCallback(() => {
     const handleTeamFilterChange = (val: string) => {
@@ -1005,7 +1016,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
         favoriteValues={favoriteLabels}
       />
     );
-  }, [leaguesAvailable, selectLeagues, teamsOfTheDay, teamSelectedId, handleTeamSelectionChange, favoriteTeams]);
+  }, [teamsOfTheDay, teamSelectedId, handleTeamSelectionChange, favoriteTeams]);
 
   const displayNoContent = useCallback(() => {
     if (isLoading) {
@@ -1121,6 +1132,8 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     handleFilterChange,
     closestDates,
     goToClosestDate,
+    getGamesFromApi,
+    selectDate,
   ]);
 
   useEffect(() => {
@@ -1156,7 +1169,6 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     hasInitializedRef.current = true;
 
     async function initializeGames() {
-      fetchLeagues(setLeaguesAvailable);
       // restore persisted games cache (current day + next 5 days)
       const localStorageGamesDay = getCache<{ [key: string]: GameFormatted[] }>('gamesDay');
       if (localStorageGamesDay) {
@@ -1166,12 +1178,8 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
           saveCache('gamesDay', gamesDayCache.current);
         }
       }
-      const storedLeagues = getCache<string[]>('leagues');
       const storedLeaguesSelected = getCache<League[]>('leaguesSelected');
 
-      if (storedLeagues) {
-        setLeaguesAvailable(storedLeagues);
-      }
       if (storedLeaguesSelected) {
         setSelectLeagues(storedLeaguesSelected);
       }
@@ -1196,7 +1204,7 @@ const handleDateAccordionExpanded = useCallback((expanded: boolean) => {
     }
 
     initializeGames();
-  }, [firestoreReady]); // Only run once on mount (once firestore is ready)
+  }, [firestoreReady, getGamesFromApi, selectDate]); // Only run once on mount (once firestore is ready)
 
   useEffect(() => {
     const param = Array.isArray(dateParam) ? dateParam[0] : dateParam;

@@ -2,6 +2,18 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Changed: Priority order for past-day league games
+
+Past-day game sections now put games involving favorite teams first, bookmarked
+games second, and all remaining games last. Within each priority, games are
+ordered by start time from oldest to newest. The API-provided league grouping
+and league order are unchanged.
+
+### Changes
+
+- **`frontend/app/(tabs)/index.tsx`** — `visibleLeagueGroups` applies the
+  client-side priority and chronological sorting after filtering each league.
+- **`frontend/docs/index.tsx.md`** — documents the past-day game ordering.
 
 
 ## Added: stale-while-revalidate for results on the Schedule screen
