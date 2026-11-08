@@ -2,6 +2,14 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Changed: Web export uses client-side rendering
+
+The web export now uses Expo Router's single-page output instead of statically rendering every route. This avoids rendering React Navigation's layout-effect-based screens on the server and prevents React Native Web's deprecated `pointerEvents` prop warning during static prerendering. Web hosting must serve the generated `index.html` for app routes.
+
+### Changes
+
+- **`frontend/app.json`** — sets `expo.web.output` to `"single"` to disable static route prerendering.
+
 ## Added: Fuzzy team search in Selector (typo-tolerant search)
 
 When searching for a team or league in the `Selector` modal, typing a typo or omitting spaces (e.g. `"new jerzey"`, `"nou jersey"`, `"newjersey"`, `"jarz"`, or `"mlf"`) now returns the closest matches instead of showing nothing. A fuzzy search based on Levenshtein distance (`frontend/utils/fuzzySearch.ts`) finds the nearest options and displays a localized message explaining that no exact match was found. The search respects any currently selected league filter. League chips exclude the special "All" option and any league named "all", showing only one localized global "All" chip when multiple leagues exist.

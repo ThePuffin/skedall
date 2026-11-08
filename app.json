@@ -21,7 +21,7 @@
     "web": {
       "name": "SkedAll",
       "bundler": "metro",
-      "output": "static",
+      "output": "single",
       "favicon": "./assets/images/logo512.png"
     },
     "plugins": [
