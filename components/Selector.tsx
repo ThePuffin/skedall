@@ -2,6 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { emoticonEnum, leagueLogos } from '@/constants/enum';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { getCache, getTeamLeagueFromId } from '@/utils/fetchData';
+import { fuzzySearchOptions } from '@/utils/fuzzySearch';
 import { SelectorProps } from '@/utils/types';
 import { translateWord } from '@/utils/utils';
 import { Icon } from '@rneui/themed';
@@ -168,7 +169,16 @@ export default function Selector({
 
   const allOptions = getOptions();
   const uniqueLeagues = Array.from(
-    new Set(allOptions.map((o) => o.league).filter((l) => !!l && typeof l === 'string')),
+    new Set(
+      allOptions
+        .filter(
+          (option) =>
+            option.id.toLowerCase() !== 'all' &&
+            !!option.league &&
+            option.league.toLowerCase() !== 'all',
+        )
+        .map((option) => option.league)
+    ),
   );
 
   useEffect(() => {
@@ -198,11 +208,29 @@ export default function Selector({
     }
   }, [allOptions, allowMultipleSelection, itemsSelectedIds, itemSelectedId, i, onItemSelectionChange]);
 
-  const filteredOptions = allOptions.filter((opt) => {
-    const matchesSearch = opt.label.toLowerCase().includes(debouncedSearch.toLowerCase());
-    const matchesLeague = selectedLeague ? opt.league === selectedLeague : true;
-    return matchesSearch && matchesLeague;
-  });
+  const searchTerm = debouncedSearch.toLowerCase().trim();
+  const leagueFiltered = selectedLeague
+    ? allOptions.filter((opt) => opt.league === selectedLeague)
+    : allOptions;
+
+  const exactMatches = leagueFiltered.filter((opt) =>
+    opt.label.toLowerCase().includes(searchTerm),
+  );
+
+  // Fuzzy fallback: when no exact match and the user typed something,
+  // show all closest options sorted by edit distance (e.g. "jarsey" → "New Jersey").
+  // Results from every fallback level are aggregated so all similar teams are proposed.
+  let fuzzyResults: { option: (typeof allOptions)[number]; distance: number }[] = [];
+  let filteredOptions = exactMatches;
+  if (searchTerm && exactMatches.length === 0) {
+    fuzzyResults = fuzzySearchOptions(
+      searchTerm,
+      leagueFiltered,
+      (opt) => opt.label,
+      15,
+    );
+    filteredOptions = fuzzyResults.map(({ option }) => option);
+  }
 
   useEffect(() => {
     if (visible && debouncedSearch && filteredOptions.length > 0 && filteredOptions.length < 5) {
@@ -436,6 +464,20 @@ export default function Selector({
               )}
 
               {/* Options list */}
+              {fuzzyResults.length > 0 && !!debouncedSearch && (
+                <View style={{ marginHorizontal: 10, marginBottom: 8 }}>
+                  <ThemedText
+                    style={{
+                      fontSize: 12,
+                      fontWeight: '600',
+                      color: '#999',
+                      marginBottom: 4,
+                    }}
+                  >
+                    {translateWord('noExactResults')} "{debouncedSearch}". {translateWord('closestMatches')}:
+                  </ThemedText>
+                </View>
+              )}
               <FlatList
                 data={listData}
                 keyExtractor={(item) => item.id}

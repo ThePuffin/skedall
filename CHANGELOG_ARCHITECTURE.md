@@ -2,6 +2,20 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Added: Fuzzy team search in Selector (typo-tolerant search)
+
+When searching for a team or league in the `Selector` modal, typing a typo or omitting spaces (e.g. `"new jerzey"`, `"nou jersey"`, `"newjersey"`, `"jarz"`, or `"mlf"`) now returns the closest matches instead of showing nothing. A fuzzy search based on Levenshtein distance (`frontend/utils/fuzzySearch.ts`) finds the nearest options and displays a localized message explaining that no exact match was found. The search respects any currently selected league filter. League chips exclude the special "All" option and any league named "all", showing only one localized global "All" chip when multiple leagues exist.
+
+Fuzzy ranking compares query words against label words and compact substrings, so a close word match such as `"jarsey"` → `"Jersey"` is ranked ahead of unrelated full labels.
+
+### Changes
+
+- **`frontend/utils/fuzzySearch.ts`** — new file: Levenshtein distance computation + `fuzzySearchOptions()` helper returning closest matches sorted by edit distance.
+- **`frontend/components/Selector.tsx`** — when no exact substring match is found, falls back to fuzzy search and shows the closest results with an informational message.
+- **`frontend/utils/utils.tsx`** — adds a localized closest-matches label in all supported languages.
+- **`frontend/docs/components/Selector.tsx.md`** — documents the fuzzy search behaviour.
+- **`frontend/docs/utils/fuzzySearch.ts.md`** — documents the new utility.
+
 ## Changed: Priority order for past-day league games
 
 Past-day game sections now put games involving favorite teams first, bookmarked
