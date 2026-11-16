@@ -114,7 +114,7 @@ export default function Selector({
     debounceTimerRef.current = setTimeout(() => {
       setDebouncedSearch(search);
       debounceTimerRef.current = null;
-    }, 700);
+    }, 350);
 
     return () => {
       if (debounceTimerRef.current) {
@@ -208,23 +208,24 @@ export default function Selector({
     }
   }, [allOptions, allowMultipleSelection, itemsSelectedIds, itemSelectedId, i, onItemSelectionChange]);
 
-  const searchTerm = debouncedSearch.toLowerCase().trim();
+  const immediateTerm = search.toLowerCase().trim();
+  const debouncedTerm = debouncedSearch.toLowerCase().trim();
   const leagueFiltered = selectedLeague
     ? allOptions.filter((opt) => opt.league === selectedLeague)
     : allOptions;
 
   const exactMatches = leagueFiltered.filter((opt) =>
-    opt.label.toLowerCase().includes(searchTerm),
+    opt.label.toLowerCase().includes(immediateTerm),
   );
 
   // Fuzzy fallback: when no exact match and the user typed something,
   // show all closest options sorted by edit distance (e.g. "jarsey" → "New Jersey").
-  // Results from every fallback level are aggregated so all similar teams are proposed.
+  // Triggered once the debounced search settles so edit distances are not computed on every keystroke.
   let fuzzyResults: { option: (typeof allOptions)[number]; distance: number }[] = [];
   let filteredOptions = exactMatches;
-  if (searchTerm && exactMatches.length === 0) {
+  if (immediateTerm && exactMatches.length === 0 && debouncedTerm) {
     fuzzyResults = fuzzySearchOptions(
-      searchTerm,
+      debouncedTerm,
       leagueFiltered,
       (opt) => opt.label,
       15,
@@ -464,7 +465,7 @@ export default function Selector({
               )}
 
               {/* Options list */}
-              {fuzzyResults.length > 0 && !!debouncedSearch && (
+              {fuzzyResults.length > 0 && !!debouncedTerm && (
                 <View style={{ marginHorizontal: 10, marginBottom: 8 }}>
                   <ThemedText
                     style={{
@@ -474,7 +475,7 @@ export default function Selector({
                       marginBottom: 4,
                     }}
                   >
-                    {translateWord('noExactResults')} "{debouncedSearch}". {translateWord('closestMatches')}:
+                    {translateWord('noExactResults')} "{debouncedTerm}". {translateWord('closestMatches')}:
                   </ThemedText>
                 </View>
               )}

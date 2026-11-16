@@ -7,7 +7,7 @@ Searchable modal for league/team selection, supporting single and multiple selec
 ## State and data flow
 
 - `visible` controls the modal; opening clears search and focuses the input after 700ms.
-- `search` is trimmed by the input handler; `debouncedSearch` filters options after 700ms.
+- `search` is trimmed by the input handler; exact substring matches filter immediately on every keystroke, while `debouncedSearch` (350ms) triggers the fuzzy search fallback only when exact matches are empty.
 - `selectedLeague` and cached `favoriteTeams` filter and order options. Each option's `league` is derived from the team id via `getTeamLeagueFromId()`, so Olympic sport-specific ids (`OLYMPICS-HOCKEY/BASKETBALL-M/W-PAYS`) collapse to their gender chip (`OLYMPICS-MEN` / `OLYMPICS-WOMEN`) and actually match a selected league chip instead of being hidden.
 - League filter chips are based on actual leagues, not the special `all` option or any league label equal to `all` (case-insensitive). When multiple leagues are available, the global filter is shown once using the localized `translateWord('all')` label; with only one league, no league chips are shown.
 - `tempSelectedId` / `tempSelectedIds` hold draft selections until validation.

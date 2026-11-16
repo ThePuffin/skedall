@@ -235,6 +235,14 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#ec1458',
     backgroundColor: '#001544',
   },
+  'MLS-TBD Away': {
+    color: '#C60000',
+    backgroundColor: '#000000',
+  },
+  'MLS-TBD Home': {
+    color: '#C60000',
+    backgroundColor: '#000000',
+  },
   'MLS-TOR': {
     color: '#a2a9ad',
     backgroundColor: '#aa182c',
@@ -8743,6 +8751,10 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#C8C8C8',
     backgroundColor: '#752936',
   },
+  'NCCABB-BETH': {
+    color: '#ffffff',
+    backgroundColor: '#000000',
+  },
   'NCCABB-BGSU': {
     color: '#663300',
     backgroundColor: '#000000',
@@ -8752,8 +8764,8 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#00614A',
   },
   'NCCABB-BOIS': {
-    color: '#d64309',
-    backgroundColor: '#0033a0',
+    color: '#0033a0',
+    backgroundColor: '#29299c',
   },
   'NCCABB-BRAD': {
     color: '#b70002',
@@ -8839,6 +8851,10 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     color: '#2e3192',
     backgroundColor: '#000000',
   },
+  'NCCABB-CHST': {
+    color: '#006700',
+    backgroundColor: '#000000',
+  },
   'NCCABB-CIN': {
     color: '#e00122',
     backgroundColor: '#000000',
@@ -8896,7 +8912,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#000000',
   },
   'NCCABB-COLU': {
-    color: '#7ba4db',
+    color: '#183863',
     backgroundColor: '#183863',
   },
   'NCCABB-CONC': {
@@ -8929,6 +8945,10 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   },
   'NCCABB-CREI': {
     color: '#13299E',
+    backgroundColor: '#000000',
+  },
+  'NCCABB-CRIA': {
+    color: '#ffffff',
     backgroundColor: '#000000',
   },
   'NCCABB-CSLA': {
@@ -8982,6 +9002,10 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
   'NCCABB-DET': {
     color: '#165b9e',
     backgroundColor: '#000000',
+  },
+  'NCCABB-DETM': {
+    color: '#d31733',
+    backgroundColor: '#165b9e',
   },
   'NCCABB-DPU': {
     color: '#ffffff',
@@ -9268,7 +9292,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#000000',
   },
   'NCCABB-JKST': {
-    color: '#b5b7ba',
+    color: '#123297',
     backgroundColor: '#123297',
   },
   'NCCABB-JMU': {
@@ -10220,7 +10244,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#000000',
   },
   'NCCABB-UNF': {
-    color: '#babcbe',
+    color: '#004B8D',
     backgroundColor: '#004B8D',
   },
   'NCCABB-UNH': {
@@ -10340,7 +10364,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#000000',
   },
   'NCCABB-VAL': {
-    color: '#794500',
+    color: '#381e0e',
     backgroundColor: '#381e0e',
   },
   'NCCABB-VALD': {
@@ -12860,7 +12884,7 @@ export const ColorsTeamEnum: Record<string, { color: string; backgroundColor: st
     backgroundColor: '#080808',
   },
   'WNCAAB-MERC': {
-    color: '#ffffff',
+    color: '#182752',
     backgroundColor: '#000000',
   },
   'WNCAAB-MGA': {

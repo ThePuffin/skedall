@@ -2,6 +2,16 @@
 
 > **📚 Per-file documentation:** For detailed AI-readable documentation of each file, see the [`frontend/docs/`](./docs/) directory. Each file has a corresponding `.md` file explaining its purpose, features, state, functions, and data flow.
 
+## Fixed: Instant search filtering in Selector and Olympic deduplication
+
+When searching in the `Selector` modal, filtering previously waited 700ms for a debounce timer before updating the list, causing the entire unfiltered list (showing unrelated teams) to remain visible while typing. The search now applies exact substring matches immediately on every keystroke, while the 350ms debounce is reserved exclusively for the heavier fuzzy search fallback when no exact matches exist. Additionally, `fetchTeams()` deduplicates merged regular and Olympic entries by `uniqueId` to prevent duplicate team cache entries.
+
+### Changes
+
+- **`frontend/components/Selector.tsx`** — filters exact matches immediately on `search` input and reduces debounce to 350ms for fuzzy search.
+- **`frontend/utils/fetchData.ts`** — deduplicates background-fetched teams by `uniqueId` when merging regular and Olympic datasets.
+- **`frontend/docs/components/Selector.tsx.md`** — document immediate search and debounced fuzzy fallback.
+
 ## Changed: Web export uses client-side rendering
 
 The web export now uses Expo Router's single-page output instead of statically rendering every route. This avoids rendering React Navigation's layout-effect-based screens on the server and prevents React Native Web's deprecated `pointerEvents` prop warning during static prerendering. Web hosting must serve the generated `index.html` for app routes.

@@ -578,12 +578,18 @@ export const fetchTeams = async (): Promise<Team[]> => {
           60000,
         ),
       ]);
-      const merged = [
+      const seen = new Set<string>();
+      const merged: Team[] = [];
+      for (const t of [
         ...regular,
         ...olympic.filter((t) =>
           String(t.uniqueId || "").startsWith("OLYMPICS-"),
         ),
-      ];
+      ]) {
+        if (!t?.uniqueId || seen.has(t.uniqueId)) continue;
+        seen.add(t.uniqueId);
+        merged.push(t);
+      }
       if (merged && merged.length > 0) {
         saveSessionCache(merged);
         saveCache("teams", merged);
